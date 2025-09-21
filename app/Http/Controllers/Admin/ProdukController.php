@@ -54,11 +54,10 @@ class ProdukController extends Controller
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
             'harga_jual' => 'required|numeric|min:0',
-            'stok' => 'required|integer|min:0',
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'nullable|boolean'
+            'status' => 'required|in:0,1'
         ]);
 
         $data = [
@@ -67,10 +66,10 @@ class ProdukController extends Controller
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
             'harga_jual' => $request->harga_jual,
-            'stok' => $request->stok,
+            'stok' => 0, // Default stok 0 untuk produk baru
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->status ? 'aktif' : 'nonaktif'
+            'status' => $request->status
         ];
 
         // Handle foto upload
@@ -107,7 +106,6 @@ class ProdukController extends Controller
     public function update(Request $request, Produk $produk)
     {
         $request->validate([
-            'kode_produk' => 'required|string|max:50|unique:produks,kode_produk,' . $produk->id,
             'nama_produk' => 'required|string|max:255',
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
@@ -115,18 +113,17 @@ class ProdukController extends Controller
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'nullable|boolean'
+            'status' => 'required|in:0,1'
         ]);
 
         $data = [
-            'kode_produk' => $request->kode_produk,
             'nama_produk' => $request->nama_produk,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
             'harga_jual' => $request->harga_jual,
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->status ? 'aktif' : 'nonaktif'
+            'status' => $request->status
         ];
 
         // Handle foto upload

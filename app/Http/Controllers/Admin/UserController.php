@@ -48,7 +48,24 @@ class UserController extends Controller
      */
     public function store(Request $request)
     {
-        // TODO: Implement store logic
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username',
+            'email' => 'required|string|email|max:255|unique:users,email',
+            'password' => 'required|string|min:8|confirmed',
+            'role' => 'required|in:super_admin,admin',
+            'status' => 'required|boolean'
+        ]);
+
+        User::create([
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'password' => bcrypt($request->password),
+            'role' => $request->role,
+            'status' => $request->status
+        ]);
+
         return redirect()->route('backoffice.master-user.index')->with('success', 'User berhasil dibuat.');
     }
 
@@ -65,7 +82,8 @@ class UserController extends Controller
      */
     public function edit(string $id)
     {
-        return view('admin.pages.master-user.edit-master-user', compact('id'));
+        $user = User::findOrFail($id);
+        return view('admin.pages.master-user.edit-master-user', compact('user'));
     }
 
     /**
@@ -73,7 +91,32 @@ class UserController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        // TODO: Implement update logic
+        $user = User::findOrFail($id);
+
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'username' => 'required|string|max:255|unique:users,username,' . $id,
+            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+            'password' => 'nullable|string|min:8|confirmed',
+            'role' => 'required|in:super_admin,admin',
+            'status' => 'required|boolean'
+        ]);
+
+        $data = [
+            'name' => $request->name,
+            'username' => $request->username,
+            'email' => $request->email,
+            'role' => $request->role,
+            'status' => $request->status
+        ];
+
+        // Only update password if provided
+        if ($request->filled('password')) {
+            $data['password'] = bcrypt($request->password);
+        }
+
+        $user->update($data);
+
         return redirect()->route('backoffice.master-user.index')->with('success', 'User berhasil diperbarui.');
     }
 
