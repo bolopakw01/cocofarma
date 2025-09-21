@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="csrf-token" content="{{ csrf_token() }}">
 
-    <title>{{ config('app.name', 'Laravel') }} | {{ $pageTitle ?? 'Backoffice' }}</title>
+    <title>{{ config('app.name', 'Laravel') }} | @yield('pageTitle', $pageTitle ?? 'Backoffice')</title>
 
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.bunny.net">
@@ -125,8 +125,8 @@
         <!-- Header -->
         @include('admin.partials.header')
 
-        <!-- Page Content -->
-        <main class="main-content" style="flex: 1; position: relative; padding-bottom: 20px;">
+    <!-- Page Content -->
+    <main class="main-content" style="flex: 1; position: relative; padding-top: 20px; padding-bottom: 20px;">
             <div id="loading-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px);">
                 <div id="page">
                     <div id="container">
