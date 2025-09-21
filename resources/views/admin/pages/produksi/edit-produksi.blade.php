@@ -29,8 +29,8 @@
         box-sizing: border-box;
         margin: 0;
         padding: 0;
-        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
+        font-family: inherit;
+    
 
     html, body {
         height: 100%;

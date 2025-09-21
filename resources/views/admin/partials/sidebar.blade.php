@@ -11,17 +11,21 @@
       <img class="group-icon" src="{{ asset('bolopa/back/images/icon/line-md--home-md.svg') }}" alt="operasional" style="width:18px;height:18px;filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(63deg) brightness(108%) contrast(103%);" />
       <span class="group-text">Operasional</span>
     </button>
+  @if(Auth::check() && Auth::user()->role === 'super_admin')
   <button type="button" id="menuGroupMaster" class="group-btn {{ (request()->routeIs('backoffice.master-produk.*') || request()->routeIs('backoffice.master-user.*') || request()->routeIs('backoffice.pengaturan.*') || request()->routeIs('backoffice.bahanbaku.*')) ? 'active' : '' }}" title="Tampilkan Master">
       <img class="group-icon" src="{{ asset('bolopa/back/images/icon/line-md--monitor-screenshot.svg') }}" alt="master" style="width:18px;height:18px;filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(63deg) brightness(108%) contrast(103%);" />
       <span class="group-text">Master</span>
     </button>
+  @endif
   </div>
 
   {{-- Ensure the correct menu group is selected on first load based on the current route (without overwriting an existing user preference) --}}
   @if(request()->routeIs('backoffice.pesanan.*') || request()->routeIs('backoffice.produksi.*') || request()->routeIs('backoffice.transaksi.*') || request()->routeIs('backoffice.laporan.*'))
     <script>if(!localStorage.getItem('sidebar-group')) localStorage.setItem('sidebar-group','operational');</script>
   @elseif(request()->routeIs('backoffice.master-produk.*') || request()->routeIs('backoffice.master-user.*') || request()->routeIs('backoffice.pengaturan.*') || request()->routeIs('backoffice.bahanbaku.*'))
-    <script>if(!localStorage.getItem('sidebar-group')) localStorage.setItem('sidebar-group','master');</script>
+    @if(Auth::check() && Auth::user()->role === 'super_admin')
+      <script>if(!localStorage.getItem('sidebar-group')) localStorage.setItem('sidebar-group','master');</script>
+    @endif
   @endif
   <ul class="nav-list">
     <!-- search removed -->
@@ -76,6 +80,7 @@
       <span class="tooltip">Laporan</span>
     </li>
 
+    @if(Auth::check() && Auth::user()->role === 'super_admin')
     <!-- Master Group -->
     <li class="menu-group-title" data-group="master">
       <span class="links_name group-full" style="opacity:1;color:#bbb;padding:8px 12px;font-size:13px;">Master</span>
@@ -109,6 +114,7 @@
         </a>
         <span class="tooltip">Pengaturan</span>
       </li>
+    @endif
     
         <li class="profile">
             <div class="profile-details">
@@ -136,13 +142,12 @@
 </aside>
 
 <style>
-/* Google Font Link */
-@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+/* Global font is loaded in the main layout (Poppins). Keep styles font-agnostic so the layout controls typography. */
 *{
   margin: 0;
   padding: 0;
   box-sizing: border-box;
-  font-family: "Poppins" , sans-serif;
+  font-family: inherit;
 }
 .sidebar{
   position: fixed;
@@ -730,9 +735,13 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Restore selected menu group (default operational)
   let selectedGroup = localStorage.getItem('sidebar-group') || 'operational';
+  // If master button is not present (user is not super_admin) and saved group is 'master', fallback
+  if(selectedGroup === 'master' && !menuMaster){
+    selectedGroup = 'operational';
+  }
   function applySelectedGroup(group){
-    menuOperational.classList.toggle('active', group === 'operational');
-    menuMaster.classList.toggle('active', group === 'master');
+    if(menuOperational){ menuOperational.classList.toggle('active', group === 'operational'); }
+    if(menuMaster){ menuMaster.classList.toggle('active', group === 'master'); }
 
     menuItems.forEach(item => {
       if(item.dataset.group === group){

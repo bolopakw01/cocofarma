@@ -7,9 +7,8 @@
 
     <title>{{ config('app.name', 'Laravel') }} | @yield('pageTitle', $pageTitle ?? 'Backoffice')</title>
 
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.bunny.net">
-    <link href="https://fonts.bunny.net/css?family=poppins:400,500,600,700&display=swap" rel="stylesheet" />
+    <!-- Central admin UI CSS (includes Google Fonts Poppins and base variables) -->
+    <link rel="stylesheet" href="{{ asset('bolopa/back/css/admin-ui.css') }}">
 
     <!-- Favicon (tab icon) -->
     <link rel="icon" type="image/svg+xml" href="{{ asset('bolopa/back/images/icon/twemoji--coconut.svg') }}">
@@ -116,7 +115,7 @@
 
     @stack('styles')
 </head>
-<body style="margin: 0; min-height: 100vh; display: flex; flex-direction: column; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: #e4e9f7;">
+<body style="margin: 0; min-height: 100vh; display: flex; flex-direction: column; background: #e4e9f7;">
     <!-- Sidebar -->
     @include('admin.partials.sidebar')
 

@@ -1,7 +1,8 @@
 <style>
+  /* inherit global font from layout */
   body {
     margin: 0;
-    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    font-family: inherit;
     background: #f8fafc;
   }
 

@@ -29,7 +29,7 @@
         box-sizing: border-box;
         margin: 0;
         padding: 0;
-        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        font-family: inherit;
 
     /* Smaller, muted up/down icons that stack vertically */
     .table th i.sort-up,
@@ -740,7 +740,7 @@
         margin: auto;
         text-align: left;
         color: #343a40;
-        font-family: "Segoe UI", Roboto, sans-serif;
+    font-family: inherit;
     }
 
     .detail-header {
