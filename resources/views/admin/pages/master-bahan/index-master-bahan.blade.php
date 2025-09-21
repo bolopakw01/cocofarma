@@ -69,7 +69,7 @@
         font-size: 0.75rem;
     }
     .container {
-        max-width: 1100px;
+        max-width: 1200px;
         margin: 0 auto;
         background: white;
         border-radius: var(--border-radius);

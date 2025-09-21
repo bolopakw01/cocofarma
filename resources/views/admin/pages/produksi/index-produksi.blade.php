@@ -69,14 +69,14 @@
         font-size: 0.75rem;
     }
     .container {
-        max-width: 1100px;
+        max-width: 1200px;
         margin: 0 auto;
         background: white;
         border-radius: var(--border-radius);
         box-shadow: var(--box-shadow);
         padding: 20px;
         overflow: hidden;
-        margin-top: 20px;
+        
     }
     
     header {
@@ -868,7 +868,7 @@
     <table class="table" id="dataTable">
         <thead>
             <tr>
-                <th data-sort="no" style="width: 6%;">No</th>
+                <th data-sort="no" style="width: 6%;">No <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
                 <th data-sort="nomor_produksi" style="width: 15%;">Nomor Produksi
                     <span class="sort-icons">
                         <i class="fas fa-sort-up sort-up"></i>
@@ -942,7 +942,10 @@
             </tr>
             @empty
             <tr>
-                <td colspan="9" style="text-align: center; padding: 40px;">Belum ada data produksi</td>
+                <td colspan="9" style="text-align: center; padding: 40px; color: #6c757d;">
+                    <i class="fas fa-industry" style="font-size:3rem; margin-bottom:10px;"></i><br>
+                    Belum ada data produksi
+                </td>
             </tr>
             @endforelse
         </tbody>
