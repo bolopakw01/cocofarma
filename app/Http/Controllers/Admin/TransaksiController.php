@@ -48,9 +48,17 @@ class TransaksiController extends Controller
             $query->whereDate('tanggal_transaksi', '<=', $request->tanggal_sampai);
         }
 
+    // Handle per-page entries (support 'all' => 1000). Default to 5 for transaksi page.
+    $perPage = $request->get('per_page', 5);
+        if ($perPage === 'all') {
+            $perPage = 1000;
+        } else {
+            $perPage = intval($perPage) > 0 ? intval($perPage) : 15;
+        }
+
         $transaksis = $query->orderBy('tanggal_transaksi', 'desc')
                            ->orderBy('created_at', 'desc')
-                           ->paginate(15);
+                           ->paginate($perPage);
 
         return view('admin.pages.transaksi.index-transaksi', compact('transaksis'));
     }

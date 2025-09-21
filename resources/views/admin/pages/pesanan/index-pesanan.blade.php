@@ -249,6 +249,34 @@
         opacity: 1;
     }
 
+    /* Sort icons style (stacked up/down arrows) - match operational pages */
+    .table th i.sort-up,
+    .table th i.sort-down {
+        color: rgba(0,0,0,0.35);
+        font-size: 0.65rem;
+        margin-left: 6px;
+    }
+
+    .sort-icons {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        vertical-align: middle;
+        line-height: 1;
+    }
+
+    .table th .sort-icons i { margin: 0; padding: 0; height: 12px; }
+    .table th .sort-icons i.sort-up { margin-bottom: -5px; }
+    .table th .sort-icons i.sort-down { margin-top: -5px; }
+
+    .table th.active i.sort-up.active-up,
+    .table th.active i.sort-down.active-down {
+        color: #000 !important;
+        font-size: 0.75rem;
+    }
+
     tr {
         transition: var(--transition);
     }
@@ -734,12 +762,12 @@
     <table class="table" id="dataTable">
         <thead>
             <tr>
-                <th data-sort="no" style="width: 5%;">No</th>
-                <th data-sort="kode_pesanan" style="width: 12%;">Kode Pesanan</th>
-                <th data-sort="tanggal_pesanan" style="width: 10%;">Tanggal</th>
-                <th data-sort="nama_pelanggan" style="width: 18%;">Pelanggan</th>
-                <th data-sort="total_harga" style="width: 12%;">Total</th>
-                <th data-sort="status" style="width: 10%;">Status</th>
+                <th data-sort="no" style="width: 5%;">No <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
+                <th data-sort="kode_pesanan" style="width: 12%;">Kode Pesanan <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
+                <th data-sort="tanggal_pesanan" style="width: 10%;">Tanggal <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
+                <th data-sort="nama_pelanggan" style="width: 18%;">Pelanggan <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
+                <th data-sort="total_harga" style="width: 12%;">Total <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
+                <th data-sort="status" style="width: 10%;">Status <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
                 <th style="width: 15%;">Aksi</th>
             </tr>
         </thead>
