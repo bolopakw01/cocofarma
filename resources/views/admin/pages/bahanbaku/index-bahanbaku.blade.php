@@ -76,6 +76,7 @@
         box-shadow: var(--box-shadow);
         padding: 20px;
         overflow: hidden;
+        margin-top: 20px;
     }
     
     header {

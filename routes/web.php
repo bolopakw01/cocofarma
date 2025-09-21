@@ -60,6 +60,17 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
             Route::post('/{produksi}/complete', [MainProduksiController::class, 'completeProduction'])->name('complete');
         });
 
+        // Master produk routes (only accessible by super_admin)
+        Route::middleware('role:super_admin')->prefix('master-produk')->name('master-produk.')->group(function () {
+            Route::get('/', [ProdukController::class, 'index'])->name('index');
+            Route::get('/create', [ProdukController::class, 'create'])->name('create');
+            Route::post('/', [ProdukController::class, 'store'])->name('store');
+            Route::get('/{produk}', [ProdukController::class, 'show'])->name('show');
+            Route::get('/{produk}/edit', [ProdukController::class, 'edit'])->name('edit');
+            Route::put('/{produk}', [ProdukController::class, 'update'])->name('update');
+            Route::delete('/{produk}', [ProdukController::class, 'destroy'])->name('destroy');
+        });
+
         Route::prefix('transaksi')->name('transaksi.')->group(function () {
             Route::resource('/', TransaksiController::class)->parameters(['' => 'transaksi']);
         });
@@ -77,10 +88,6 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
 
     // Master routes (only accessible by super_admin)
     Route::middleware('role:super_admin')->group(function () {
-        Route::prefix('master-produk')->name('master-produk.')->group(function () {
-            Route::resource('/', ProdukController::class)->parameters(['' => 'produk']);
-        });
-
         Route::prefix('master-bahan')->name('master-bahan.')->group(function () {
             Route::resource('/', BahanBakuController::class)->parameters(['' => 'bahanbaku']);
         });

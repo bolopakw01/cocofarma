@@ -30,6 +30,14 @@
         margin: 0;
         padding: 0;
         font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    /* Smaller, muted up/down icons that stack vertically */
+    .table th i.sort-up,
+    .table th i.sort-down {
+        color: rgba(0,0,0,0.35);
+        font-size: 0.65rem;
+        margin-left: 6px;
+    }
     }
 
     html, body {
@@ -38,64 +46,55 @@
         overflow-y: auto;
     }
 
-    body {
-        background: #f5f7fa;
-        font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+
+    .sort-icons {
+        display: inline-flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        margin-left: 8px;
+        vertical-align: middle;
+        line-height: 1;
     }
 
+    .table th .sort-icons i { margin: 0; padding: 0; height: 12px; }
+
+    /* Bring the two arrows closer so they visually connect */
+    .table th .sort-icons i.sort-up { margin-bottom: -5px; }
+    .table th .sort-icons i.sort-down { margin-top: -5px; }
+
+    .table th.active i.sort-up.active-up,
+    .table th.active i.sort-down.active-down {
+        color: #000 !important;
+        font-size: 0.75rem;
+    }
     .container {
-        max-width: 1400px;
-        margin: 40px auto 60px auto;
+        max-width: 1100px;
+        margin: 0 auto;
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        padding: 30px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 20px;
         overflow: hidden;
-        min-height: calc(100vh - 200px);
+        margin-top: 20px;
     }
 
-    /* HEADER */
-    .header-section {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--light-gray);
     }
 
-    .header-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #212529;
-        margin: 0;
-    }
-
-    .header-subtitle {
-        color: #6c757d;
-        font-size: 0.95rem;
-        margin: 5px 0 0 0;
-    }
-
-    .btn-add {
-        background: #4361ee;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
+    .page-header h1 {
+        color: var(--dark);
+        font-size: 1.6rem;
         font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        display: inline-flex;
+        display: flex;
         align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
-    }
-
-    .btn-add:hover {
-        background: #3a4fd8;
-        transform: translateY(-2px);
-        box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
+        gap: 10px;
     }
 
     .controls {
@@ -137,7 +136,7 @@
         outline: none;
         border-color: var(--primary);
         box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
-        width: 280px; /* expand on focus to match master-produk */
+        width: 280px;
     }
 
     .search-box i {
@@ -213,26 +212,6 @@
         margin: 0 2px;
     }
 
-    .search-box .clear-btn {
-        position: absolute;
-        right: 10px;
-        top: 50%;
-        transform: translateY(-50%);
-        background: transparent;
-        border: none;
-        color: var(--gray);
-        cursor: pointer;
-        padding: 6px;
-        display: none;
-    }
-
-    .right-controls .btn {
-        height: 38px;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-    }
-
     .btn-info {
         background: var(--info);
         color: white;
@@ -248,109 +227,108 @@
         color: white;
     }
 
+    .btn-warning:hover {
+        background: #d61c6a;
+        transform: translateY(-1px);
+    }
+
     .btn-secondary {
-        background: var(--gray);
+        background: #6c757d;
         color: white;
+        border: 1px solid #6c757d;
     }
 
     .btn-secondary:hover {
         background: #5a6268;
+        border-color: #5a6268;
         transform: translateY(-1px);
     }
 
-    .table {
+    table {
         width: 100%;
-        border-collapse: collapse;
-        margin-top: 20px;
-        background: white;
-        border-radius: var(--border-radius);
-        overflow: hidden;
-        box-shadow: var(--box-shadow);
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 20px;
+        position: relative;
+        table-layout: fixed;
+        min-width: 100%;
+        max-width: none;
     }
 
-    .table th,
-    .table td {
-        padding: 12px 16px;
+    th, td {
+        padding: 8px 10px;
         text-align: left;
         border-bottom: 1px solid var(--light-gray);
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        max-width: 0;
     }
 
-    .table th {
-        background: var(--light);
+    th:nth-child(3), td:nth-child(3) {
+        white-space: normal;
+        overflow: visible;
+        text-overflow: clip;
+    }
+
+    th {
+        background-color: var(--light);
         font-weight: 600;
         color: var(--dark);
         position: sticky;
         top: 0;
-        z-index: 10;
+        z-index: 5;
+        cursor: pointer;
+        user-select: none;
+        font-size: 0.9rem;
+        white-space: nowrap;
     }
 
-    /* Muted sort icons by default, colored when active.
-       Icons are smaller and always visible; only the active column icon is black. */
-
-    /* Two icons (up and down) are present; both visible but muted by default. */
-    .table th i.sort-up,
-    .table th i.sort-down {
-        color: rgba(0,0,0,0.35);
-        margin-left: 6px;
-        transition: color 0.18s ease, transform 0.18s ease;
-        font-size: 0.65rem; /* smaller icon size */
-        opacity: 1; /* always visible */
-        margin-left: 8px;
+    th:hover {
+        background-color: #e9ecef;
     }
 
-    /* Container to stack icons vertically and align them to the right */
-    .sort-icons {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin-left: 8px;
-        vertical-align: middle;
-        line-height: 1;
+    th i {
+        margin-left: 5px;
+        font-size: 0.8rem;
+        opacity: 0.6;
     }
 
-    .table th .sort-icons i {
-        display: block;
-        width: 12px;
-        text-align: center;
-        line-height: 1;
-        margin: 0; /* remove gaps */
-        padding: 0;
-        height: 12px; /* compact height */
+    th.active i {
+        opacity: 1;
     }
 
-    /* Bring the two arrows closer so they visually connect */
-    .table th .sort-icons i.sort-up { margin-bottom: -5px; }
-    .table th .sort-icons i.sort-down { margin-top: -5px; }
-
-    /* Active direction classes make the relevant icon black and slightly larger */
-    .table th.active i.sort-up.active-up,
-    .table th.active i.sort-down.active-down {
-        color: #000000 !important;
-        font-size: 0.75rem;
-    }
-
-    /* Keep hover from changing color; active is the only indicator */
-    .table th:hover i.fas {
-        color: rgba(0,0,0,0.35);
-    }
-
-    .table tbody tr {
+    tr {
         transition: var(--transition);
     }
 
-    .table tbody tr:hover {
-        background: rgba(67, 97, 238, 0.05);
+    tr:hover {
+        background-color: #f8f9fa;
+        transform: translateY(-1px);
+        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
     }
 
-    .table tbody tr:last-child td {
-        border-bottom: none;
+    .badge {
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 600;
     }
 
-    .action-buttons {
+    .badge-success {
+        background: #d4edda;
+        color: #155724;
+    }
+
+    .badge-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+
+    .actions {
         display: flex;
-        gap: 8px;
         justify-content: center;
+        gap: 5px;
+        min-width: 120px;
     }
 
     .pagination {
@@ -411,35 +389,222 @@
         cursor: not-allowed;
     }
 
+    .modal {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        justify-content: center;
+        align-items: center;
+        z-index: 1000;
+        backdrop-filter: blur(3px);
+    }
+
+    .modal-content {
+        background: white;
+        padding: 28px;
+        border-radius: var(--border-radius);
+        width: 500px;
+        max-width: 90%;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+        transform: scale(0.95);
+        opacity: 0;
+        transition: all 0.3s ease;
+    }
+
+    .modal.show .modal-content {
+        transform: scale(1);
+        opacity: 1;
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 15px;
+        border-bottom: 1px solid var(--light-gray);
+    }
+
+    .modal-header h2 {
+        font-size: 1.4rem;
+        color: var(--dark);
+    }
+
+    .close {
+        font-size: 1.5rem;
+        cursor: pointer;
+        color: var(--gray);
+        transition: var(--transition);
+    }
+
+    .close:hover {
+        color: var(--dark);
+        transform: rotate(90deg);
+    }
+
+    .form-group {
+        margin-bottom: 16px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 6px;
+        font-weight: 500;
+        color: var(--dark);
+        font-size: 0.9rem;
+    }
+
+    .form-group input, .form-group select, .form-group textarea {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid var(--light-gray);
+        border-radius: var(--border-radius);
+        font-size: 0.9rem;
+        transition: var(--transition);
+    }
+
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+    }
+
+    .form-group textarea {
+        min-height: 100px;
+        resize: vertical;
+    }
+
+    .modal-footer {
+        display: flex;
+        justify-content: flex-end;
+        gap: 10px;
+        margin-top: 20px;
+        padding-top: 15px;
+        border-top: 1px solid var(--light-gray);
+    }
+
     @media (max-width: 768px) {
-        .pagination {
+        body {
+            padding: 10px;
+        }
+
+        .container {
+            margin: 10px;
+            padding: 15px;
+        }
+
+        header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 15px;
+        }
+
+        .controls {
             flex-direction: column;
             align-items: stretch;
+        }
+
+        .left-controls, .right-controls {
+            justify-content: center;
+        }
+
+        .search-box input {
+            width: 200px;
+        }
+
+        .search-box input:focus {
+            width: 220px;
+        }
+
+        th, td {
+            padding: 6px 8px;
+            font-size: 0.85rem;
+        }
+
+        .table-responsive {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        table {
+            min-width: 600px;
+        }
+
+        .btn-action {
+            padding: 4px 8px;
+            font-size: 0.75rem;
+        }
+
+        .actions {
+            gap: 3px;
+        }
+
+        .pagination {
+            flex-direction: column;
+            align-items: center;
             gap: 15px;
         }
 
         .pagination-info {
-            text-align: center;
             max-width: 100%;
-            font-size: 0.85rem;
+            text-align: center;
         }
 
         .pagination-buttons {
-            justify-content: center;
             max-width: 100%;
+            justify-content: center;
         }
 
         .pagination-buttons button {
-            padding: 6px 8px;
             min-width: 30px;
             height: 30px;
+            font-size: 0.8rem;
+        }
+    }
+
+    @media (min-width: 1200px) {
+        table {
+            table-layout: auto;
+        }
+
+        .table-responsive {
+            overflow-x: visible;
+        }
+
+        .btn-action {
+            padding: 6px 12px;
             font-size: 0.85rem;
+        }
+
+        .actions {
+            gap: 8px;
+        }
+
+        .pagination {
+            justify-content: space-between;
+        }
+
+        .pagination-info {
+            max-width: 30%;
+        }
+
+        .pagination-buttons {
+            max-width: 70%;
+        }
+
+        .pagination-buttons button {
+            min-width: 36px;
+            height: 36px;
+            font-size: 0.95rem;
         }
     }
 
     @media (min-width: 769px) and (max-width: 1199px) {
         .pagination-info {
-            font-size: 0.85rem;
             max-width: 40%;
         }
 
@@ -448,10 +613,56 @@
         }
 
         .pagination-buttons button {
-            padding: 6px 10px;
             min-width: 32px;
-            font-size: 0.85rem;
+            height: 32px;
         }
+
+        .search-box input {
+            width: 220px;
+        }
+
+        .search-box input:focus {
+            width: 240px;
+        }
+    }
+
+    /* Animation for table rows */
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+            transform: translateY(10px);
+        }
+        to {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    }
+
+    tbody tr {
+        animation: fadeIn 0.3s ease-out;
+    }
+
+    tbody tr:nth-child(odd) {
+        animation-delay: 0.1s;
+    }
+
+    /* Status indicator */
+    .status-indicator {
+        display: inline-block;
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        margin-right: 8px;
+    }
+
+    .status-active {
+        background: #28a745;
+        box-shadow: 0 0 6px rgba(40, 167, 69, 0.4);
+    }
+
+    .status-inactive {
+        background: #dc3545;
+        box-shadow: 0 0 6px rgba(220, 53, 69, 0.4);
     }
 
     /* Toast notification */
@@ -475,35 +686,6 @@
         transform: translateY(0);
     }
 
-    /* TABLE */
-    .table-container {
-        background: white;
-        border-radius: 12px;
-        overflow: hidden;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-        border: 1px solid #e9ecef;
-    }
-
-    .table-header {
-        background: #f8f9fa;
-        padding: 20px;
-        border-bottom: 1px solid #dee2e6;
-    }
-
-    .table-title {
-        font-size: 1.2rem;
-        font-weight: 600;
-        color: #212529;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .table-title i {
-        color: #4361ee;
-    }
-
     .table-responsive {
         position: relative;
         border: 1px solid var(--light-gray);
@@ -512,29 +694,6 @@
         -webkit-overflow-scrolling: touch;
         width: 100%;
     }
-
-/* SweetAlert Custom Styling untuk Delete Confirmation */
-.swal-delete-popup {
-    border-radius: var(--border-radius) !important;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3) !important;
-}
-
-.swal-delete-popup .swal2-title {
-    color: var(--dark) !important;
-    font-weight: 600 !important;
-    font-size: 1.4rem !important;
-}
-
-.swal-delete-popup .swal2-html-container {
-    color: var(--gray) !important;
-    font-size: 1rem !important;
-    line-height: 1.6 !important;
-}
-
-.swal-delete-popup .swal2-icon.swal2-warning {
-    border-color: var(--warning) !important;
-    color: var(--warning) !important;
-}
 </style>
 
 <style>
@@ -661,18 +820,9 @@
 </style>
 
 <div class="container">
-    <div class="header-section">
-        <div>
-            <h1 class="header-title">
-                <i class="fas fa-cubes"></i>
-                Master Bahan Baku
-            </h1>
-            <p class="header-subtitle">Kelola data master bahan baku untuk produksi</p>
-        </div>
-        <a href="{{ route('backoffice.master-bahan.create') }}" class="btn-add">
-            <i class="fas fa-plus"></i>
-            Tambah Master Bahan
-        </a>
+    <div class="page-header">
+        <h1><i class="fas fa-cubes"></i> Master Bahan Baku</h1>
+        <a href="{{ route('backoffice.master-bahan.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Master Bahan</a>
     </div>
 
     <div class="controls">
@@ -684,7 +834,7 @@
                     <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
                     <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
                     <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
-                    <option value="all">Semua</option>
+                    <option value="all" {{ request('per_page') == 'all' ? 'selected' : '' }}>Semua</option>
                 </select>
                 <span>entri</span>
             </div>
@@ -693,99 +843,87 @@
         <div class="right-controls">
             <div class="search-box">
                 <i class="fas fa-search"></i>
-                <input type="text" id="searchInput" placeholder="Cari bahan baku..." value="{{ request('search') }}">
+                <input type="text" id="searchInput" placeholder="Cari master bahan..." value="{{ request('search') }}">
                 <button type="button" class="clear-btn" onclick="clearSearch()" style="display:none;"><i class="fas fa-times"></i></button>
             </div>
 
-            <button id="btnExport" class="btn btn-primary" type="button"><i class="fas fa-file-export"></i> Export</button>
-            <button id="btnPrint" class="btn btn-secondary" type="button"><i class="fas fa-print"></i> Print</button>
+            <button class="btn btn-success" id="btnExport"><i class="fas fa-file-export"></i> Export</button>
+            <button class="btn btn-primary" id="btnPrint"><i class="fas fa-print"></i> Print</button>
         </div>
     </div>
 
-    <div class="table-container">
-        <div class="table-header">
-            <h2 class="table-title">
-                <i class="fas fa-list"></i>
-                Daftar Master Bahan Baku
-            </h2>
-        </div>
-
-        <div class="table-responsive">
-            <table class="table" id="dataTable">
-            <thead>
-                <tr>
-                    <th data-sort="no">No
-                        <span class="sort-icons">
-                            <i class="fas fa-sort-up sort-up"></i>
-                            <i class="fas fa-sort-down sort-down"></i>
-                        </span>
-                    </th>
-                    <th data-sort="nama">Nama Bahan
-                        <span class="sort-icons">
-                            <i class="fas fa-sort-up sort-up"></i>
-                            <i class="fas fa-sort-down sort-down"></i>
-                        </span>
-                    </th>
-                    <th data-sort="satuan">Satuan
-                        <span class="sort-icons">
-                            <i class="fas fa-sort-up sort-up"></i>
-                            <i class="fas fa-sort-down sort-down"></i>
-                        </span>
-                    </th>
-                    <th data-sort="harga">Harga per Unit
-                        <span class="sort-icons">
-                            <i class="fas fa-sort-up sort-up"></i>
-                            <i class="fas fa-sort-down sort-down"></i>
-                        </span>
-                    </th>
-                    <th data-sort="status">Status
-                        <span class="sort-icons">
-                            <i class="fas fa-sort-up sort-up"></i>
-                            <i class="fas fa-sort-down sort-down"></i>
-                        </span>
-                    </th>
-                    <th>Aksi</th>
-                </tr>
-            </thead>
-            <tbody>
-                @forelse($bahanBakus ?? [] as $index => $bahan)
-                <tr>
-                    <td>{{ ($bahanBakus->currentPage() - 1) * $bahanBakus->perPage() + $index + 1 }}</td>
-                    <td>{{ $bahan->nama_bahan }}</td>
-                    <td>{{ $bahan->satuan }}</td>
-                    <td>Rp {{ number_format($bahan->harga_per_satuan, 0, ',', '.') }}</td>
-                    <td>
-                        <span class="badge bg-{{ $bahan->status === 'aktif' ? 'success' : 'secondary' }}">
-                            {{ $bahan->status === 'aktif' ? 'Aktif' : 'Non Aktif' }}
-                        </span>
-                    </td>
-                    <td class="action-buttons">
-                        <button type="button" class="btn btn-info btn-action" onclick="showDetail({{ $bahan->id }}, '{{ $bahan->nama_bahan }}', '{{ $bahan->satuan }}', {{ $bahan->harga_per_satuan }}, '{{ $bahan->status }}')">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <a href="{{ route('backoffice.master-bahan.edit', $bahan->id) }}" class="btn btn-warning btn-action">
-                            <i class="fas fa-edit"></i>
-                        </a>
-                        <button type="button" class="btn btn-danger btn-action delete-btn"
-                                data-id="{{ $bahan->id }}"
-                                data-nama="{{ $bahan->nama_bahan }}"
-                                data-url="{{ route('backoffice.master-bahan.destroy', $bahan->id) }}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-                @empty
-                <tr>
-                    <td colspan="7" style="text-align: center; padding: 40px; color: var(--gray);">
-                        <i class="fas fa-inbox fa-3x mb-3"></i>
-                        <br>
-                        Tidak ada data master bahan baku
-                    </td>
-                </tr>
-                @endforelse
-            </tbody>
-        </table>
-        </div>
+    <div class="table-responsive">
+    <table class="table" id="dataTable">
+        <thead>
+            <tr>
+                <th data-sort="no" style="width: 6%;">No
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
+                <th data-sort="nama" style="width: 25%;">Nama Bahan
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
+                <th data-sort="satuan" style="width: 15%;">Satuan
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
+                <th data-sort="harga" style="width: 20%;">Harga per Unit
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
+                <th data-sort="status" style="width: 15%;">Status
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
+                <th style="width: 19%;">Aksi</th>
+            </tr>
+        </thead>
+        <tbody>
+            @forelse($bahanBakus ?? [] as $index => $bahan)
+            <tr>
+                <td>{{ ($bahanBakus->currentPage() - 1) * $bahanBakus->perPage() + $index + 1 }}</td>
+                <td>{{ $bahan->nama_bahan }}</td>
+                <td>{{ $bahan->satuan }}</td>
+                <td>Rp {{ number_format($bahan->harga_per_satuan, 0, ',', '.') }}</td>
+                <td>
+                                        <span class="badge {{ $bahan->status == 'aktif' ? 'badge-success' : 'badge-danger' }}">
+                        {{ $bahan->status == 'aktif' ? 'Aktif' : 'Non-Aktif' }}
+                    </span>
+                </td>
+                <td class="actions">
+                                        <button class="btn btn-info btn-action" onclick="showDetail({{ $bahan->id }}, '{{ $bahan->nama_bahan }}', '{{ $bahan->satuan }}', {{ $bahan->harga_per_satuan }}, '{{ $bahan->status }}')">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <a href="{{ route('backoffice.master-bahan.edit', $bahan->id) }}" class="btn btn-warning btn-action">
+                        <i class="fas fa-edit"></i>
+                    </a>
+                    <button class="btn btn-danger btn-action" onclick="confirmDelete({{ $bahan->id }}, '{{ $bahan->nama_bahan }}', '{{ route('backoffice.master-bahan.destroy', $bahan->id) }}', this)">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            </tr>
+            @empty
+            <tr>
+                <td colspan="6" style="text-align: center; padding: 40px;">
+                    <i class="fas fa-cubes" style="font-size: 3rem; color: #6c757d; margin-bottom: 10px;"></i>
+                    <br>
+                    Tidak ada data master bahan baku
+                </td>
+            </tr>
+            @endforelse
+        </tbody>
+    </table>
     </div>
 
     @if(isset($bahanBakus) && $bahanBakus->hasPages() && $bahanBakus->lastPage() > 1)
@@ -836,160 +974,235 @@
     @endif
 </div>
 
+<!-- Toast Notification -->
+<div class="toast" id="toast"></div>
+
 <script>
-    // Enhanced toast notification with icon
-    function showToastWithIcon(message, type = 'success') {
-        const toast = document.createElement('div');
-        toast.className = `toast ${type}`;
+    // DOM Elements
+    const searchInput = document.getElementById('searchInput');
+    const entriesSelect = document.getElementById('entriesSelect');
+    const btnExport = document.getElementById('btnExport');
+    const btnPrint = document.getElementById('btnPrint');
+    const table = document.getElementById('dataTable');
+    const thElements = document.querySelectorAll('th[data-sort]');
+    const toast = document.getElementById('toast');
 
-        let iconClass = 'fas fa-info-circle';
-        switch(type) {
-            case 'success': iconClass = 'fas fa-check-circle'; break;
-            case 'error': iconClass = 'fas fa-exclamation-triangle'; break;
-            case 'warning': iconClass = 'fas fa-exclamation-circle'; break;
-            case 'info': iconClass = 'fas fa-info-circle'; break;
-        }
+    // Data untuk sorting
+    let currentSort = {
+        column: null,
+        direction: 'asc'
+    };
 
-        toast.innerHTML = `<i class="${iconClass}"></i> ${message}`;
-        document.body.appendChild(toast);
+    // Event Listeners
+    if (searchInput) {
+        searchInput.addEventListener('input', filterData);
+        searchInput.addEventListener('input', toggleClearButton);
+    }
+    if (entriesSelect) {
+        entriesSelect.addEventListener('change', changeEntries);
+    }
+    if (btnExport) {
+        btnExport.addEventListener('click', exportData);
+    }
+    if (btnPrint) {
+        btnPrint.addEventListener('click', printData);
+    }
 
-        setTimeout(() => toast.classList.add('show'), 100);
+    // Add event listeners to table headers for sorting
+    thElements.forEach(th => {
+        th.addEventListener('click', () => sortTable(th.getAttribute('data-sort')));
+    });
+
+    // Functions
+    function showToast(message, type = 'success') {
+        const toast = document.getElementById('toast');
+        toast.textContent = message;
+        toast.className = `toast ${type} show`;
+
         setTimeout(() => {
             toast.classList.remove('show');
-            setTimeout(() => document.body.removeChild(toast), 300);
         }, 3000);
     }
 
-    // Search/filter functionality (unified)
     function filterData() {
-        const input = document.getElementById('searchInput');
-        const filter = (input && input.value || '').toLowerCase();
-        const table = document.getElementById('dataTable');
-        if (!table) return;
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
-        let visible = 0;
+        const searchTerm = searchInput.value.toLowerCase();
+        const rows = table.querySelectorAll('tbody tr');
 
-        for (let i = 0; i < rows.length; i++) {
-            const cells = rows[i].getElementsByTagName('td');
-            let found = false;
-            for (let j = 0; j < cells.length - 1; j++) {
-                if (cells[j].textContent.toLowerCase().indexOf(filter) > -1) {
-                    found = true; break;
-                }
-            }
-            rows[i].style.display = found ? '' : 'none';
-            if (found) visible++;
+        rows.forEach(row => {
+            const text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchTerm) ? '' : 'none';
+        });
+
+        resetPagination();
+    }
+
+    function changeEntries() {
+        const value = entriesSelect.value;
+        const url = new URL(window.location);
+
+        if (value === 'all') {
+            url.searchParams.set('per_page', '1000');
+        } else {
+            url.searchParams.set('per_page', value);
         }
 
-        updateRowNumbers();
-        if (filter.length > 0) {
-            showToastWithIcon(`Ditemukan ${visible} hasil untuk "${filter}"`, visible > 0 ? 'info' : 'warning');
-        }
-        toggleClearButton();
+        window.location.href = url.toString();
     }
 
     // Toggle clear button visibility
     function toggleClearButton() {
-        const input = document.getElementById('searchInput');
-        const btn = document.querySelector('.search-box .clear-btn');
-        if (!input || !btn) return;
-        if (input.value.trim().length > 0) btn.style.display = 'block'; else btn.style.display = 'none';
+        const clearBtn = document.querySelector('.clear-btn');
+        if (searchInput.value.length > 0) {
+            clearBtn.style.display = 'block';
+        } else {
+            clearBtn.style.display = 'none';
+        }
     }
 
     function clearSearch() {
-        const input = document.getElementById('searchInput');
-        if (!input) return;
-        input.value = '';
+        searchInput.value = '';
         filterData();
         toggleClearButton();
-        input.focus();
     }
 
-    // Change entries per page (supports 'all')
-    const entriesSelect = document.getElementById('entriesSelect');
-    function changeEntries(value) {
-        value = value || (entriesSelect ? entriesSelect.value : null);
-        if (!value) return;
+    function sortTable(column) {
+        const tbody = table.querySelector('tbody');
+        const rows = Array.from(tbody.querySelectorAll('tr'));
 
-        // Always request the server with the selected per_page value (including 'all')
-        const url = new URL(window.location);
-        url.searchParams.set('per_page', value);
-        url.searchParams.delete('page');
-        window.location.href = url.toString();
+        // Update sort direction
+        if (currentSort.column === column) {
+            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+        } else {
+            currentSort.column = column;
+            currentSort.direction = 'asc';
+        }
+
+        // Sort rows
+        rows.sort((a, b) => {
+            const aValue = a.children[getColumnIndex(column)].textContent.trim();
+            const bValue = b.children[getColumnIndex(column)].textContent.trim();
+
+            let comparison = 0;
+            if (aValue < bValue) comparison = -1;
+            if (aValue > bValue) comparison = 1;
+
+            return currentSort.direction === 'asc' ? comparison : -comparison;
+        });
+
+        // Re-append sorted rows
+        rows.forEach(row => tbody.appendChild(row));
+
+        // Update sort indicators
+        updateSortIndicators();
+
+        resetPagination();
     }
 
-    // Show detail popup
+    function getColumnIndex(column) {
+        const headers = table.querySelectorAll('th[data-sort]');
+        for (let i = 0; i < headers.length; i++) {
+            if (headers[i].getAttribute('data-sort') === column) {
+                return i;
+            }
+        }
+        return 0;
+    }
+
+    function updateSortIndicators() {
+        // Reset all indicators
+        thElements.forEach(th => {
+            const icons = th.querySelectorAll('.sort-up, .sort-down');
+            icons.forEach(icon => {
+                icon.classList.remove('active-up', 'active-down');
+            });
+            th.classList.remove('active');
+        });
+
+        // Set active indicator
+        if (currentSort.column) {
+            const activeTh = table.querySelector(`th[data-sort="${currentSort.column}"]`);
+            if (activeTh) {
+                activeTh.classList.add('active');
+                const iconClass = currentSort.direction === 'asc' ? 'active-up' : 'active-down';
+                const icon = activeTh.querySelector(`.${iconClass.replace('active-', 'sort-')}`);
+                if (icon) {
+                    icon.classList.add(iconClass);
+                }
+            }
+        }
+    }
+
+    function exportData() {
+        showToast('Fitur export akan segera hadir!', 'info');
+    }
+
+    function printData() {
+        showToast('Fitur print akan segera hadir!', 'info');
+    }
+
     function showDetail(id, nama, satuan, hargaPerUnit, status) {
-        const html = `
-            <div class="detail-box">
-                <div class="detail-header">
-                    <div class="icon-wrapper">
-                        <i class="fas fa-cube"></i>
+        Swal.fire({
+            title: 'Detail Master Bahan',
+            html: `
+                <div class="detail-box">
+                    <div class="detail-header">
+                        <div class="icon-wrapper">
+                            <i class="fas fa-cube"></i>
+                        </div>
+                        <div>
+                            <div class="detail-title">${nama}</div>
+                            <div class="detail-sub">Master Bahan Baku</div>
+                        </div>
                     </div>
-                    <div>
-                        <div class="detail-title">${nama}</div>
-                        <div class="detail-sub">Master Bahan Baku</div>
-                    </div>
-                </div>
-
-                <div class="detail-content">
-                    <div class="detail-item">
-                        <div class="detail-label">Nama Bahan</div>
-                        <div class="detail-value">${nama}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Satuan</div>
-                        <div class="detail-value">${satuan}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Harga per Unit</div>
-                        <div class="detail-value">Rp ${hargaPerUnit.toLocaleString('id-ID')}</div>
-                    </div>
-                    <div class="detail-item">
-                        <div class="detail-label">Status</div>
-                        <div class="detail-value">
-                            <span class="badge bg-${status === 'aktif' ? 'success' : 'secondary'}">${status.charAt(0).toUpperCase() + status.slice(1)}</span>
+                    <div class="detail-content">
+                        <div class="detail-item">
+                            <div class="detail-label">Satuan</div>
+                            <div class="detail-value">${satuan}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Harga per Unit</div>
+                            <div class="detail-value">Rp ${hargaPerUnit.toLocaleString('id-ID')}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Status</div>
+                            <div class="detail-value">${status === 'aktif' ? 'Aktif' : 'Non-Aktif'}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">ID Bahan</div>
+                            <div class="detail-value">${id}</div>
                         </div>
                     </div>
                 </div>
-            </div>
-        `;
-
-        Swal.fire({
-            title: 'Detail Master Bahan Baku',
-            html: html,
-            showConfirmButton: true,
-            confirmButtonText: '<i class="fas fa-times"></i> Tutup',
-            confirmButtonColor: '#4361ee',
-            showClass: {
-                popup: 'animate__animated animate__fadeInDown'
-            },
-            hideClass: {
-                popup: 'animate__animated animate__fadeOutUp'
-            },
-            width: 600,
-            background: '#ffffff',
-            padding: '1.8rem',
+            `,
+            showConfirmButton: false,
+            showCloseButton: true,
             customClass: {
                 popup: 'swal-detail-popup'
             }
         });
     }
 
-    // Submit delete form
+    // Event listener untuk tombol delete - langsung dan sederhana
+    document.addEventListener('click', function(event) {
+        // Handle delete button clicks
+    });
+
     function submitDeleteForm(url) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = url;
 
-        // CSRF token
-        const csrfInput = document.createElement('input');
-        csrfInput.type = 'hidden';
-        csrfInput.name = '_token';
-        csrfInput.value = '{{ csrf_token() }}';
-        form.appendChild(csrfInput);
+        // Add CSRF token
+        const csrfToken = document.querySelector('meta[name="csrf-token"]');
+        if (csrfToken) {
+            const csrfInput = document.createElement('input');
+            csrfInput.type = 'hidden';
+            csrfInput.name = '_token';
+            csrfInput.value = csrfToken.getAttribute('content');
+            form.appendChild(csrfInput);
+        }
 
-        // Method spoofing untuk DELETE
+        // Add method spoofing for DELETE
         const methodInput = document.createElement('input');
         methodInput.type = 'hidden';
         methodInput.name = '_method';
@@ -1002,21 +1215,14 @@
 
     function confirmDelete(id, nama, url, buttonElement) {
         Swal.fire({
-            title: 'Konfirmasi Hapus',
-            html: `Apakah Anda yakin ingin menghapus master bahan baku <strong>${nama}</strong>?<br><br><small class="text-muted">Data yang dihapus tidak dapat dikembalikan.</small>`,
+            title: 'Hapus Master Bahan',
+            html: `Apakah Anda yakin ingin menghapus master bahan <strong>${nama}</strong>?<br><small style="color: #6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
             icon: 'warning',
             showCancelButton: true,
             confirmButtonColor: '#e63946',
             cancelButtonColor: '#4361ee',
-            confirmButtonText: '<i class="fas fa-trash me-2"></i>Hapus',
-            cancelButtonText: '<i class="fas fa-times me-2"></i>Batal',
-            reverseButtons: true,
-            showClass: {
-                popup: 'animate__animated animate__fadeInDown'
-            },
-            hideClass: {
-                popup: 'animate__animated animate__fadeOutUp'
-            },
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal',
             customClass: {
                 popup: 'swal-delete-popup'
             }
@@ -1027,127 +1233,11 @@
         });
     }
 
-    // Fungsi deleteData lama sudah tidak digunakan
-    // Diganti dengan confirmDelete yang menggunakan SweetAlert2
-    // function deleteData(event) {
-    //     if (confirm('Apakah Anda yakin ingin menghapus bahan baku produksi ini?')) {
-    //         const row = event.target.closest('tr');
-    //         row.remove();
-    //         showToast('Data berhasil dihapus!');
-    //     }
-    // }
-
     function resetPagination() {
-        // Reset to default pagination (5 entries per page)
+        // Reset to first page when filtering/sorting
         const url = new URL(window.location);
-        url.searchParams.set('per_page', '5');
-        url.searchParams.delete('page'); // Reset to first page
-        window.location.href = url.toString();
+        url.searchParams.delete('page');
+        window.history.replaceState({}, '', url);
     }
-
-    // Sorting logic
-    const thElements = document.querySelectorAll('th[data-sort]');
-    let currentSort = { column: null, direction: 'asc' };
-
-    function getColumnIndex(column) {
-        const headers = Array.from(document.querySelectorAll('#dataTable thead th'));
-        return headers.findIndex(h => h.getAttribute('data-sort') === column);
-    }
-
-    function updateSortIndicators() {
-        thElements.forEach(th => {
-            th.classList.remove('active');
-            const up = th.querySelector('i.sort-up');
-            const down = th.querySelector('i.sort-down');
-            if (up) up.classList.remove('active-up');
-            if (down) down.classList.remove('active-down');
-        });
-
-        if (currentSort.column) {
-            const activeTh = document.querySelector(`th[data-sort="${currentSort.column}"]`);
-            if (activeTh) {
-                activeTh.classList.add('active');
-                const up = activeTh.querySelector('i.sort-up');
-                const down = activeTh.querySelector('i.sort-down');
-                if (up) up.classList.remove('active-up');
-                if (down) down.classList.remove('active-down');
-                if (currentSort.direction === 'asc') {
-                    if (up) up.classList.add('active-up');
-                } else {
-                    if (down) down.classList.add('active-down');
-                }
-            }
-        }
-    }
-
-    function sortTable(column) {
-        const table = document.getElementById('dataTable');
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        if (currentSort.column === column) {
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSort.column = column;
-            currentSort.direction = 'asc';
-        }
-
-        updateSortIndicators();
-
-        rows.sort((a, b) => {
-            const aVal = a.cells[getColumnIndex(column)].textContent.trim();
-            const bVal = b.cells[getColumnIndex(column)].textContent.trim();
-
-            let comparison = 0;
-            if (column === 'no') {
-                comparison = parseInt(aVal) - parseInt(bVal);
-            } else if (column === 'harga') {
-                comparison = parseInt(aVal.replace(/[^\d]/g, '')) - parseInt(bVal.replace(/[^\d]/g, ''));
-            } else {
-                comparison = aVal.localeCompare(bVal);
-            }
-
-            return currentSort.direction === 'asc' ? comparison : -comparison;
-        });
-
-        // Reattach rows
-        rows.forEach(r => tbody.appendChild(r));
-    }
-
-    // Attach click handlers
-    thElements.forEach((th, idx) => {
-        th.style.cursor = 'pointer';
-        th.addEventListener('click', () => {
-            const col = th.getAttribute('data-sort');
-            sortTable(col);
-        });
-    });
-
-    // Wire up entries select and search input behaviors
-    document.addEventListener('DOMContentLoaded', function() {
-        const searchInput = document.getElementById('searchInput');
-        const entries = document.getElementById('entriesSelect');
-        const btnExport = document.getElementById('btnExport');
-        const btnPrint = document.getElementById('btnPrint');
-
-        if (searchInput) {
-            searchInput.addEventListener('input', filterData);
-            // Initialize clear button visibility
-            toggleClearButton();
-        }
-
-        if (entries) {
-            entries.addEventListener('change', function() { changeEntries(this.value); });
-        }
-
-        if (btnExport) {
-            btnExport.addEventListener('click', function() { showToastWithIcon('Export belum diimplementasikan', 'info'); });
-        }
-
-        if (btnPrint) {
-            btnPrint.addEventListener('click', function() { window.print(); });
-        }
-    });
-
 </script>
 @endsection

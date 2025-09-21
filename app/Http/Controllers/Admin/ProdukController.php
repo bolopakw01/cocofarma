@@ -49,52 +49,40 @@ class ProdukController extends Controller
     public function store(Request $request)
     {
         $request->validate([
+            'kode_produk' => 'required|string|max:50|unique:produks,kode_produk',
             'nama_produk' => 'required|string|max:255',
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
             'harga_jual' => 'required|numeric|min:0',
+            'stok' => 'required|integer|min:0',
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'boolean'
+            'status' => 'nullable|boolean'
         ]);
 
-        // Generate kode produk
-        $kategoriPrefix = strtoupper(substr($request->kategori, 0, 3));
-        $lastProduk = Produk::where('kategori', $request->kategori)
-                           ->orderBy('kode_produk', 'desc')
-                           ->first();
-
-        if ($lastProduk) {
-            $lastNumber = (int) substr($lastProduk->kode_produk, -3);
-            $newNumber = str_pad($lastNumber + 1, 3, '0', STR_PAD_LEFT);
-        } else {
-            $newNumber = '001';
-        }
-
-        $kodeProduk = $kategoriPrefix . '-' . $newNumber;
-
         $data = [
-            'kode_produk' => $kodeProduk,
+            'kode_produk' => $request->kode_produk,
             'nama_produk' => $request->nama_produk,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
             'harga_jual' => $request->harga_jual,
+            'stok' => $request->stok,
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->has('status')
+            'status' => $request->status ? 'aktif' : 'nonaktif'
         ];
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
             $fotoPath = $request->file('foto')->store('produk', 'public');
-            $data['foto'] = $fotoPath;
+            $data['foto'] = basename($fotoPath);
         }
 
         Produk::create($data);
 
         return redirect()->route('backoffice.master-produk.index')
-                        ->with('success', 'Produk berhasil dibuat dengan kode: ' . $kodeProduk);
+                        ->with('success', 'Produk berhasil dibuat dengan kode: ' . $request->kode_produk);
     }
 
     /**
@@ -119,6 +107,7 @@ class ProdukController extends Controller
     public function update(Request $request, Produk $produk)
     {
         $request->validate([
+            'kode_produk' => 'required|string|max:50|unique:produks,kode_produk,' . $produk->id,
             'nama_produk' => 'required|string|max:255',
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
@@ -126,28 +115,37 @@ class ProdukController extends Controller
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'boolean'
+            'status' => 'nullable|boolean'
         ]);
 
         $data = [
+            'kode_produk' => $request->kode_produk,
             'nama_produk' => $request->nama_produk,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
             'harga_jual' => $request->harga_jual,
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->has('status')
+            'status' => $request->status ? 'aktif' : 'nonaktif'
         ];
 
         // Handle foto upload
         if ($request->hasFile('foto')) {
             // Delete old foto if exists
-            if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-                Storage::disk('public')->delete($produk->foto);
+            if ($produk->foto && Storage::disk('public')->exists('produk/' . $produk->foto)) {
+                Storage::disk('public')->delete('produk/' . $produk->foto);
             }
 
             $fotoPath = $request->file('foto')->store('produk', 'public');
-            $data['foto'] = $fotoPath;
+            $data['foto'] = basename($fotoPath);
+        }
+
+        // Handle foto removal
+        if ($request->remove_foto == '1') {
+            if ($produk->foto && Storage::disk('public')->exists('produk/' . $produk->foto)) {
+                Storage::disk('public')->delete('produk/' . $produk->foto);
+            }
+            $data['foto'] = null;
         }
 
         $produk->update($data);

@@ -60,13 +60,13 @@ class Produksi extends Model
     public function getStatusLabelAttribute()
     {
         $labels = [
-            'pending' => 'Menunggu',
-            'diproses' => 'Diproses',
+            'rencana' => 'Rencana',
+            'proses' => 'Proses',
             'selesai' => 'Selesai',
-            'dibatalkan' => 'Dibatalkan'
+            'gagal' => 'Gagal'
         ];
 
-        return $labels[$this->status] ?? $this->status;
+        return $labels[$this->status] ?? ucfirst($this->status);
     }
 
     // Accessor untuk total bahan digunakan

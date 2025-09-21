@@ -19,9 +19,58 @@ class ProduksiController extends Controller
 {
     public function index()
     {
-        $produksis = Produksi::with(['produk', 'batchProduksi', 'user'])
-            ->orderBy('tanggal_produksi', 'desc')
-            ->paginate(15);
+        $query = Produksi::with(['produk', 'batchProduksi', 'user']);
+
+        // Search functionality
+        if (request('search')) {
+            $search = request('search');
+            $query->where(function($q) use ($search) {
+                $q->where('nomor_produksi', 'like', '%' . $search . '%')
+                  ->orWhereHas('produk', function($produkQuery) use ($search) {
+                      $produkQuery->where('nama_produk', 'like', '%' . $search . '%');
+                  })
+                  ->orWhereHas('batchProduksi', function($batchQuery) use ($search) {
+                      $batchQuery->where('nomor_batch', 'like', '%' . $search . '%');
+                  });
+            });
+        }
+
+        $query->orderBy('tanggal_produksi', 'desc');
+
+        // Sorting functionality
+        if (request('sort')) {
+            $sortColumn = request('sort');
+            $sortDirection = request('direction', 'asc');
+
+            switch ($sortColumn) {
+                case 'nomor_produksi':
+                    $query->orderBy('nomor_produksi', $sortDirection);
+                    break;
+                case 'tanggal':
+                    $query->orderBy('tanggal_produksi', $sortDirection);
+                    break;
+                case 'target':
+                    $query->orderBy('jumlah_target', $sortDirection);
+                    break;
+                case 'hasil':
+                    $query->orderBy('jumlah_hasil', $sortDirection);
+                    break;
+                case 'status':
+                    $query->orderBy('status', $sortDirection);
+                    break;
+                default:
+                    $query->orderBy('tanggal_produksi', 'desc');
+            }
+        } else {
+            $query->orderBy('tanggal_produksi', 'desc');
+        }
+
+        $perPage = request('per_page', 15);
+        if ($perPage === 'all') {
+            $produksis = $query->get();
+        } else {
+            $produksis = $query->paginate((int)$perPage);
+        }
 
         return view('admin.pages.produksi.index-produksi', compact('produksis'));
     }

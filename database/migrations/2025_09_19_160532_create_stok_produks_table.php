@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('stok_produks', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('produk_id')->constrained('produks')->onDelete('cascade');
+            $table->unsignedInteger('produk_id'); // Changed to match produks.id type
             $table->foreignId('batch_produksi_id')->constrained('batch_produksis')->onDelete('cascade');
             $table->decimal('jumlah_masuk', 10, 2)->default(0);
             $table->decimal('jumlah_keluar', 10, 2)->default(0);
@@ -27,6 +27,8 @@ return new class extends Migration
 
             $table->index(['produk_id', 'tanggal']);
             $table->index(['batch_produksi_id']);
+            // Add foreign key manually to match produks.id type
+            // $table->foreign('produk_id')->references('id')->on('produks')->onDelete('cascade');
         });
     }
 

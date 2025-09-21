@@ -168,9 +168,13 @@
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <span>🏠</span>
-    <span><a href="{{ route('backoffice.dashboard') }}" style="text-decoration: none; color: inherit;">BackOffice</a></span>
-    @if(isset($breadcrumb) && is_array($breadcrumb))
-      @foreach($breadcrumb as $item)
+    @php
+      $breadcrumbData = isset($breadcrumb) && is_array($breadcrumb) ? $breadcrumb : generate_breadcrumb();
+    @endphp
+    @foreach($breadcrumbData as $item)
+      @if($loop->first)
+        <span><a href="{{ $item['url'] ?? '#' }}" style="text-decoration: none; color: inherit;">{{ $item['title'] }}</a></span>
+      @else
         <span>/</span>
         @if($loop->last)
           <span class="active">{{ $item['title'] }}</span>
@@ -183,32 +187,8 @@
             @endif
           </span>
         @endif
-      @endforeach
-    @elseif(isset($pageTitle) && $pageTitle !== 'Dashboard')
-      @php
-        $module = '';
-        if(str_contains($pageTitle, 'Master')) {
-          $module = 'Master Data';
-        } elseif(str_contains($pageTitle, 'Produksi')) {
-          $module = 'Operasional';
-        } elseif(in_array($pageTitle, ['Pesanan', 'Transaksi', 'Bahan Baku'])) {
-          $module = 'Operasional';
-        } elseif($pageTitle === 'Laporan') {
-          $module = 'Laporan';
-        } elseif($pageTitle === 'Pengaturan') {
-          $module = 'Pengaturan';
-        }
-      @endphp
-      @if($module)
-        <span>/</span>
-        <span>{{ $module }}</span>
       @endif
-      <span>/</span>
-      <span class="active">{{ $pageTitle }}</span>
-    @else
-      <span>/</span>
-      <span class="active">{{ $pageTitle ?? 'Dashboard' }}</span>
-    @endif
+    @endforeach
   </div>
 
   <!-- Right Info -->

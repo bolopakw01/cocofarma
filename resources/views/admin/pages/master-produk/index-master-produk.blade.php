@@ -104,30 +104,34 @@
 
     /* CONTAINER */
     .container {
-        max-width: 1400px;
-        margin: 40px auto 60px auto;
+        max-width: 1100px;
+        margin: 0 auto;
         background: white;
-        border-radius: 12px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-        padding: 30px;
+        border-radius: var(--border-radius);
+        box-shadow: var(--box-shadow);
+        padding: 20px;
         overflow: hidden;
-        min-height: calc(100vh - 200px);
+        margin-top: 20px;
     }
 
     /* HEADER */
-    .header-section {
+    .page-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 30px;
-        padding-bottom: 20px;
-        border-bottom: 2px solid #e9ecef;
+        margin-bottom: 24px;
+        padding-bottom: 16px;
+        border-bottom: 1px solid var(--light-gray);
     }
 
-    .header-title {
-        font-size: 1.8rem;
-        font-weight: 700;
-        color: #212529;
+    .page-header h1 {
+        color: var(--dark);
+        font-size: 1.6rem;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
         margin: 0;
     }
 
@@ -135,29 +139,6 @@
         color: #6c757d;
         font-size: 0.95rem;
         margin: 5px 0 0 0;
-    }
-
-    .btn-add {
-        background: #4361ee;
-        color: white;
-        padding: 12px 24px;
-        border: none;
-        border-radius: 8px;
-        font-weight: 600;
-        text-decoration: none;
-        transition: all 0.3s ease;
-        display: inline-flex;
-        align-items: center;
-        gap: 8px;
-        box-shadow: 0 4px 12px rgba(67, 97, 238, 0.3);
-    }
-
-    .btn-add:hover {
-        background: #3a4fd8;
-        transform: translateY(-2px);
-        color: white;
-        text-decoration: none;
-        box-shadow: 0 6px 16px rgba(67, 97, 238, 0.4);
     }
 
     /* CONTROLS */
@@ -997,18 +978,9 @@
 
 <div class="container">
     <!-- Header -->
-    <div class="header-section">
-        <div>
-            <h1 class="header-title">
-                <i class="fas fa-box me-2 text-primary"></i>
-                Master Produk
-            </h1>
-            <p class="header-subtitle">Kelola katalog produk Cocofarma</p>
-        </div>
-        <a href="{{ route('backoffice.master-produk.create') }}" class="btn-add">
-            <i class="fas fa-plus"></i>
-            Tambah Produk
-        </a>
+    <div class="page-header">
+        <h1><i class="fas fa-box"></i> Master Produk</h1>
+        <a href="{{ route('backoffice.master-produk.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Produk</a>
     </div>
 
     <!-- Statistics Cards -->

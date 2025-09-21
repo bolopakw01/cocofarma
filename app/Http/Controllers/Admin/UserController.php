@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Models\User;
+use Illuminate\Pagination\LengthAwarePaginator;
+use Illuminate\Pagination\Paginator;
 
 class UserController extends Controller
 {
@@ -12,7 +15,24 @@ class UserController extends Controller
      */
     public function index()
     {
-        return view('admin.pages.master-user.index-master-user');
+        $perPage = request('per_page', 5); // Default 5, bisa diubah via parameter
+
+        if ($perPage === 'all') {
+            // Return all results but wrap them in a paginator so the view stays compatible
+            $allItems = User::query()->get();
+            $currentPage = Paginator::resolveCurrentPage();
+            $perPageCount = $allItems->count() ?: 1; // avoid zero
+            $currentItems = $allItems->slice(($currentPage - 1) * $perPageCount, $perPageCount)->values();
+
+            $users = new LengthAwarePaginator($currentItems, $allItems->count(), $perPageCount, $currentPage, [
+                'path' => Paginator::resolveCurrentPath(),
+                'query' => request()->query()
+            ]);
+        } else {
+            $users = User::query()->paginate((int) $perPage)->appends(request()->query());
+        }
+
+        return view('admin.pages.master-user.index-master-user', compact('users'));
     }
 
     /**

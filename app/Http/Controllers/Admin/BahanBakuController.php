@@ -20,15 +20,25 @@ class BahanBakuController extends Controller
         $isMaster = request()->routeIs('backoffice.master-bahan.*');
         $viewPath = $isMaster ? 'admin.pages.master-bahan.index-master-bahan' : 'admin.pages.bahanbaku.index-bahanbaku';
 
+        // Debug logging
+        Log::info('BahanBakuController index called', [
+            'isMaster' => $isMaster,
+            'route' => request()->route() ? request()->route()->getName() : 'no route',
+            'viewPath' => $viewPath
+        ]);
+
         if ($isMaster) {
             // Untuk master bahan, gunakan MasterBahanBaku model
             $query = MasterBahanBaku::query();
+            Log::info('Using MasterBahanBaku model');
         } else {
             // Untuk operasional, gunakan BahanBaku model
             $query = BahanBaku::query();
+            Log::info('Using BahanBaku model');
         }
 
         $perPage = request('per_page', 5); // Default 5, bisa diubah via parameter
+        Log::info('Per page: ' . $perPage);
 
         if ($perPage === 'all') {
             // Return all results but wrap them in a paginator so the view stays compatible
@@ -44,6 +54,11 @@ class BahanBakuController extends Controller
         } else {
             $bahanBakus = $query->paginate((int) $perPage)->appends(request()->query());
         }
+
+        Log::info('Query result', [
+            'count' => $bahanBakus->count(),
+            'total' => $bahanBakus->total()
+        ]);
 
         return view($viewPath, compact('bahanBakus'));
     }
