@@ -170,7 +170,7 @@ if (!function_exists('generate_breadcrumb')) {
                 default:
                     // For dashboard or other pages
                     if ($module === 'dashboard') {
-                        $breadcrumb = [['title' => 'BackOffice']];
+                        $breadcrumb[] = ['title' => 'Dashboard'];
                     }
                     break;
             }
