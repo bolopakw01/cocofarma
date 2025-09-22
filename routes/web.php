@@ -80,9 +80,18 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
             Route::get('/produksi', [LaporanController::class, 'produksi'])->name('produksi');
             Route::get('/stok', [LaporanController::class, 'stok'])->name('stok');
             Route::get('/penjualan', [LaporanController::class, 'penjualan'])->name('penjualan');
-            Route::get('/cost-analysis', [LaporanController::class, 'costAnalysis'])->name('cost-analysis');
-            Route::get('/export-pdf/{type}', [LaporanController::class, 'exportPdf'])->name('export-pdf');
-            Route::get('/export-excel/{type}', [LaporanController::class, 'exportExcel'])->name('export-excel');
+            // Sensitive/report export actions - restrict to super_admin only
+            Route::get('/cost-analysis', [LaporanController::class, 'costAnalysis'])
+                ->middleware('role:super_admin')
+                ->name('cost-analysis');
+
+            Route::get('/export-pdf/{type}', [LaporanController::class, 'exportPdf'])
+                ->middleware('role:super_admin,admin')
+                ->name('export-pdf');
+
+            Route::get('/export-excel/{type}', [LaporanController::class, 'exportExcel'])
+                ->middleware('role:super_admin,admin')
+                ->name('export-excel');
         });
     });
 

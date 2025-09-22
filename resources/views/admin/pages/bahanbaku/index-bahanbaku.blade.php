@@ -859,8 +859,12 @@
                 <button type="button" class="clear-btn" onclick="clearSearch()" style="display:none;"><i class="fas fa-times"></i></button>
             </div>
 
+            @if(Auth::check() && Auth::user()->role === 'super_admin')
             <button class="btn btn-success" id="btnExport"><i class="fas fa-file-export"></i> Export</button>
+            @endif
+            @if(Auth::check() && Auth::user()->role === 'super_admin')
             <button class="btn btn-primary" id="btnPrint"><i class="fas fa-print"></i> Print</button>
+            @endif
         </div>
     </div>
     
