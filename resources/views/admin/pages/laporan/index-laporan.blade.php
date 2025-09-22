@@ -95,28 +95,44 @@
     .pagination-buttons button:hover { background:var(--light); }
     .pagination-buttons button.active { background:var(--primary); color:white; border-color:var(--primary); }
     .pagination-buttons button:disabled { opacity:0.5; cursor:not-allowed; }
+
+    .filter-group { display:flex; align-items:center; gap:8px; padding:8px 12px; background:#f8f9fb; border-radius:8px; }
+    .filter-group label { margin:0; font-weight:500; color:#555; }
+    .filter-group select { padding:6px 12px; border:1px solid var(--light-gray); border-radius:6px; background:white; cursor:pointer; font-size:0.9rem; }
+
+    .table th .sort-icons i { margin: 0; padding: 0; height: 12px; }
+    .table th .sort-icons i.sort-up { margin-bottom: -5px; }
+    .table th .sort-icons i.sort-down { margin-top: -5px; }
 </style>
 
 <div class="container">
     <div class="page-header">
         <h1><i class="fas fa-chart-line"></i> Laporan</h1>
         <div class="page-actions">
-            {{-- optionally add quick filters here --}}
+            <div class="filter-group">
+                <label for="periodFilter" style="margin-right:8px; font-weight:500;">Periode:</label>
+                <select id="periodFilter" style="padding:6px 12px; border:1px solid var(--light-gray); border-radius:6px; background:white; cursor:pointer;">
+                    <option value="hari" {{ request('period') == 'hari' ? 'selected' : '' }}>Hari Ini</option>
+                    <option value="minggu" {{ request('period') == 'minggu' ? 'selected' : '' }}>Minggu Ini</option>
+                    <option value="bulan" {{ request('period') == 'bulan' || !request('period') ? 'selected' : '' }}>Bulan Ini</option>
+                    <option value="tahun" {{ request('period') == 'tahun' ? 'selected' : '' }}>Tahun Ini</option>
+                </select>
+            </div>
         </div>
     </div>
 
     <div class="cards">
         <div class="card">
-            <h3>Total Produksi (Bulan ini)</h3>
-            <p id="totalProduksi">-</p>
+            <h3>Total Produksi ({{ $periodLabel }})</h3>
+            <p id="totalProduksi">{{ number_format($totalProduksi, 0, ',', '.') }}</p>
         </div>
         <div class="card">
-            <h3>Total Penjualan (Bulan ini)</h3>
-            <p id="totalPenjualan">-</p>
+            <h3>Total Penjualan ({{ $periodLabel }})</h3>
+            <p id="totalPenjualan">Rp {{ number_format($totalPenjualan, 0, ',', '.') }}</p>
         </div>
         <div class="card">
             <h3>Stok Tersisa</h3>
-            <p id="totalStok">-</p>
+            <p id="totalStok">{{ number_format($totalStok, 0, ',', '.') }}</p>
         </div>
     </div>
 
@@ -153,10 +169,6 @@
                 </div>
             </div>
             @endif
-
-            @if(Auth::check() && Auth::user()->role === 'super_admin')
-            <button class="btn btn-primary" id="btnPrint"><i class="fas fa-print"></i> Print</button>
-            @endif
         </div>
     </div>
 
@@ -172,8 +184,23 @@
                 </tr>
             </thead>
             <tbody>
-                {{-- rows will be rendered by server-side or JS --}}
-                <tr><td colspan="5" class="text-center">Tidak ada data</td></tr>
+                @forelse($recentReports as $index => $report)
+                <tr>
+                    <td>{{ $index + 1 }}</td>
+                    <td>{{ $report['type'] }}</td>
+                    <td>{{ $report['tanggal']->format('d/m/Y') }}</td>
+                    <td>{{ $report['keterangan'] }}</td>
+                    <td>{{ $report['jumlah'] }}</td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="5" style="text-align: center; padding: 40px;">
+                        <i class="fas fa-chart-line" style="font-size: 3rem; color: #6c757d; margin-bottom: 10px;"></i>
+                        <br>
+                        Tidak ada data
+                    </td>
+                </tr>
+                @endforelse
             </tbody>
         </table>
     </div>
@@ -181,17 +208,39 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function(){
-        // Placeholder values (replace with real data)
-        document.getElementById('totalProduksi').textContent = '0';
-        document.getElementById('totalPenjualan').textContent = 'Rp 0';
-        document.getElementById('totalStok').textContent = '0';
 
         // Initialize ApexCharts if available
         if (typeof ApexCharts !== 'undefined') {
+            const chartData = @json($chartData);
+            const categories = chartData.map(item => item.month);
+            const produksiData = chartData.map(item => item.produksi);
+            const penjualanData = chartData.map(item => item.penjualan);
+
             const options = {
                 chart: { type: 'area', height: 320 },
-                series: [{ name: 'Produksi', data: [10,20,15,30,25,40,30] }, { name: 'Penjualan', data: [8,18,12,28,20,35,25] }],
-                xaxis: { categories: ['Sen', 'Sel', 'Rab', 'Kam', 'Jum', 'Sab', 'Min'] }
+                series: [
+                    { name: 'Produksi', data: produksiData },
+                    { name: 'Penjualan', data: penjualanData }
+                ],
+                xaxis: { categories: categories },
+                yaxis: {
+                    labels: {
+                        formatter: function(value) {
+                            return value.toLocaleString();
+                        }
+                    }
+                },
+                tooltip: {
+                    y: {
+                        formatter: function(value, { seriesIndex }) {
+                            if (seriesIndex === 0) {
+                                return value + ' unit';
+                            } else {
+                                return 'Rp ' + value.toLocaleString();
+                            }
+                        }
+                    }
+                }
             };
             const chart = new ApexCharts(document.querySelector('#laporanChart'), options);
             chart.render();
@@ -210,11 +259,6 @@
                 exportMenu.style.display = 'none';
             });
         }
-
-        const btnPrint = document.getElementById('btnPrint');
-        if (btnPrint) btnPrint.addEventListener('click', function(){
-            window.print();
-        });
 
         // Simple client-side table header sort UI (visual only) - matches produksi behaviour
         const table = document.getElementById('laporanTable');
@@ -244,6 +288,17 @@
                         }
                         // TODO: hook to server-side sort via query params if needed
                     });
+            });
+        }
+
+        // Handle period filter change
+        const periodFilter = document.getElementById('periodFilter');
+        if (periodFilter) {
+            periodFilter.addEventListener('change', function() {
+                const selectedPeriod = this.value;
+                const currentUrl = new URL(window.location);
+                currentUrl.searchParams.set('period', selectedPeriod);
+                window.location.href = currentUrl.toString();
             });
         }
     });

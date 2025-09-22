@@ -106,11 +106,14 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
         });
 
         Route::prefix('pengaturan')->name('pengaturan.')->group(function () {
-            Route::resource('/', PengaturanController::class)->parameters(['' => 'pengaturan']);
-            // Additional pengaturan actions
-            Route::post('/backup-database', [PengaturanController::class, 'backupDatabase'])->name('backup-database');
-            Route::post('/save-dashboard-goal', [PengaturanController::class, 'saveDashboardGoal'])->name('save-dashboard-goal');
-            Route::get('/alerts', [PengaturanController::class, 'alerts'])->name('alerts');
+                // Additional pengaturan actions (define explicit routes before the resource to avoid parameter conflicts)
+                Route::post('/backup-database', [PengaturanController::class, 'backupDatabase'])->name('backup-database');
+                Route::post('/save-dashboard-goal', [PengaturanController::class, 'saveDashboardGoal'])->name('save-dashboard-goal');
+                Route::get('/goals', [PengaturanController::class, 'goals'])->name('goals');
+                Route::post('/save-goals', [PengaturanController::class, 'saveGoalsList'])->name('save-goals');
+                Route::get('/alerts', [PengaturanController::class, 'alerts'])->name('alerts');
+                // Resource controller (last, so /goals etc aren't shadowed by /{pengaturan})
+                Route::resource('/', PengaturanController::class)->parameters(['' => 'pengaturan']);
         });
     });
 });

@@ -26,10 +26,10 @@
     }
 
     * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: inherit;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: inherit;
     }
 
     html, body {
@@ -41,9 +41,6 @@
     .container {
         max-width: 1100px;
         margin: 0 auto;
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow);
         padding: 20px;
         overflow: hidden;
         margin-top: 20px;
@@ -67,11 +64,24 @@
         gap: 10px;
     }
 
+    .settings-section {
+        margin-bottom: 30px;
+    }
+
+    .settings-section h2 {
+        color: var(--dark);
+        font-size: 1.3rem;
+        font-weight: 600;
+        margin-bottom: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
     .settings-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 15px;
     }
 
     .setting-card {
@@ -80,6 +90,12 @@
         border-radius: var(--border-radius);
         padding: 20px;
         transition: var(--transition);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+        min-height: 200px;
+        justify-content: space-between;
     }
 
     .setting-card:hover {
@@ -89,9 +105,11 @@
 
     .setting-header {
         display: flex;
+        flex-direction: column;
         align-items: center;
-        gap: 12px;
-        margin-bottom: 16px;
+        gap: 10px;
+        margin-bottom: 12px;
+        width: 100%;
     }
 
     .setting-icon {
@@ -107,30 +125,33 @@
     }
 
     .setting-title {
-        font-size: 1.1rem;
+        font-size: 1rem;
         font-weight: 600;
         color: var(--dark);
         margin: 0;
+        text-align: center;
     }
 
     .setting-description {
         color: var(--gray);
-        font-size: 0.9rem;
-        margin-bottom: 16px;
-        line-height: 1.5;
+        font-size: 0.85rem;
+        margin-bottom: 12px;
+        line-height: 1.4;
+        text-align: center;
+        flex-grow: 1;
     }
 
     .btn {
-        padding: 8px 16px;
+        padding: 6px 12px;
         border: none;
         border-radius: var(--border-radius);
         cursor: pointer;
         font-weight: 500;
         transition: var(--transition);
-        font-size: 0.9rem;
+        font-size: 0.85rem;
         display: inline-flex;
         align-items: center;
-        gap: 6px;
+        gap: 5px;
         text-decoration: none;
     }
 
@@ -154,98 +175,6 @@
         transform: translateY(-1px);
     }
 
-    .btn-danger {
-        background: var(--danger);
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: #c22c38;
-        transform: translateY(-1px);
-    }
-
-    .btn-warning {
-        background: var(--warning);
-        color: white;
-    }
-
-    .btn-warning:hover {
-        background: #d61c6a;
-        transform: translateY(-1px);
-    }
-
-    .dashboard-settings {
-        background: white;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        padding: 20px;
-        margin-bottom: 20px;
-    }
-
-    .dashboard-settings h3 {
-        color: var(--dark);
-        font-size: 1.2rem;
-        font-weight: 600;
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .form-group {
-        margin-bottom: 16px;
-    }
-
-    .form-group label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 500;
-        color: var(--dark);
-        font-size: 0.9rem;
-    }
-
-    .form-group input, .form-group select {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        font-size: 0.9rem;
-        transition: var(--transition);
-    }
-
-    .form-group input:focus, .form-group select:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
-    }
-
-    .alert {
-        padding: 12px 16px;
-        border-radius: var(--border-radius);
-        margin-bottom: 16px;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    .alert-info {
-        background: rgba(73, 149, 239, 0.1);
-        border: 1px solid rgba(73, 149, 239, 0.2);
-        color: var(--info);
-    }
-
-    .alert-success {
-        background: rgba(76, 201, 240, 0.1);
-        border: 1px solid rgba(76, 201, 240, 0.2);
-        color: var(--success);
-    }
-
-    .alert-warning {
-        background: rgba(247, 37, 133, 0.1);
-        border: 1px solid rgba(247, 37, 133, 0.2);
-        color: var(--warning);
-    }
-
     @media (max-width: 768px) {
         .container {
             margin: 10px;
@@ -265,133 +194,139 @@
 </style>
 
 <div class="container">
-    <div class="page-header">
-        <h1><i class="fas fa-cog"></i> Pengaturan Sistem</h1>
-    </div>
+    <!-- Dashboard Settings Container -->
+    <div class="settings-section">
+        <h2><i class="fas fa-tachometer-alt"></i> Pengaturan Dashboard</h2>
+        <div class="settings-grid">
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-bullseye"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Set Goals</h4>
+                    </div>
+                </div>
+                <p class="setting-description">
+                    Atur target dan goals untuk dashboard utama. Tetapkan target penjualan, produksi, dan pesanan bulanan.
+                </p>
+                @if(Auth::check() && Auth::user()->role === 'super_admin')
+                <a href="{{ route('backoffice.pengaturan.goals') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Kelola Goals
+                </a>
+                @endif
+            </div>
 
-    <!-- Dashboard Goals Settings -->
-    <div class="dashboard-settings">
-        <h3><i class="fas fa-chart-line"></i> Target Dashboard</h3>
-        <div class="alert alert-info">
-            <i class="fas fa-info-circle"></i>
-            <div>
-                <strong>Target Dashboard</strong> digunakan untuk menampilkan progress pencapaian di halaman dashboard utama.
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Dashboard Metrics</h4>
+                    </div>
+                </div>
+                <p class="setting-description">
+                    Pantau progress pencapaian target dashboard. Lihat statistik penjualan, produksi, dan pesanan terkini.
+                </p>
+                <a href="{{ route('backoffice.dashboard') }}" class="btn btn-info">
+                    <i class="fas fa-eye"></i> Lihat Dashboard
+                </a>
+            </div>
+
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-file-alt"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Laporan Performance</h4>
+                    </div>
+                </div>
+                <p class="setting-description">
+                    Generate laporan performa bulanan. Analisis trend penjualan dan produktivitas perusahaan.
+                </p>
+                <a href="{{ route('backoffice.laporan.index') }}" class="btn btn-warning">
+                    <i class="fas fa-chart-line"></i> Buat Laporan
+                </a>
             </div>
         </div>
-
-        <form action="{{ route('backoffice.pengaturan.save-dashboard-goal') }}" method="POST">
-            @csrf
-            <div class="settings-grid">
-                <div class="form-group">
-                    <label for="monthly_sales_goal">Target Penjualan Bulanan (Rp)</label>
-                    <input type="number" id="monthly_sales_goal" name="monthly_sales_goal"
-                           value="{{ old('monthly_sales_goal', setting('monthly_sales_goal', 50000000)) }}"
-                           placeholder="50000000" min="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="monthly_production_goal">Target Produksi Bulanan (Unit)</label>
-                    <input type="number" id="monthly_production_goal" name="monthly_production_goal"
-                           value="{{ old('monthly_production_goal', setting('monthly_production_goal', 1000)) }}"
-                           placeholder="1000" min="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="monthly_order_goal">Target Pesanan Bulanan</label>
-                    <input type="number" id="monthly_order_goal" name="monthly_order_goal"
-                           value="{{ old('monthly_order_goal', setting('monthly_order_goal', 50)) }}"
-                           placeholder="50" min="0">
-                </div>
-
-                <div class="form-group">
-                    <label for="low_stock_threshold">Batas Stok Rendah (%)</label>
-                    <input type="number" id="low_stock_threshold" name="low_stock_threshold"
-                           value="{{ old('low_stock_threshold', setting('low_stock_threshold', 20)) }}"
-                           placeholder="20" min="0" max="100">
-                </div>
-            </div>
-
-            <button type="submit" class="btn btn-primary">
-                <i class="fas fa-save"></i> Simpan Target Dashboard
-            </button>
-        </form>
     </div>
 
-    <!-- System Settings Grid -->
-    <div class="settings-grid">
-        <!-- Database Backup -->
-        <div class="setting-card">
-            <div class="setting-header">
-                <div class="setting-icon">
-                    <i class="fas fa-database"></i>
+    <!-- Database Settings Container -->
+    <div class="settings-section">
+        <h2><i class="fas fa-database"></i> Pengaturan Sistem & Database</h2>
+        <div class="settings-grid">
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-download"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Backup Database</h4>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="setting-title">Backup Database</h4>
-                </div>
+                <p class="setting-description">
+                    Buat cadangan database untuk keamanan data. Backup akan disimpan di folder storage/app/backups.
+                </p>
+                <form action="{{ route('backoffice.pengaturan.backup-database') }}" method="POST" style="display: inline;">
+                    @csrf
+                    <button type="submit" class="btn btn-success">
+                        <i class="fas fa-download"></i> Backup Sekarang
+                    </button>
+                </form>
             </div>
-            <p class="setting-description">
-                Buat cadangan database untuk keamanan data. Backup akan disimpan di folder storage/app/backups.
-            </p>
-            <form action="{{ route('backoffice.pengaturan.backup-database') }}" method="POST" style="display: inline;">
-                @csrf
-                <button type="submit" class="btn btn-success">
-                    <i class="fas fa-download"></i> Backup Sekarang
+
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Bersihkan Cache</h4>
+                    </div>
+                </div>
+                <p class="setting-description">
+                    Hapus cache aplikasi untuk meningkatkan performa dan mengatasi masalah tampilan yang tidak konsisten.
+                </p>
+                <button class="btn btn-warning" onclick="clearCache()">
+                    <i class="fas fa-trash"></i> Bersihkan Cache
                 </button>
-            </form>
-        </div>
-
-        <!-- System Alerts -->
-        <div class="setting-card">
-            <div class="setting-header">
-                <div class="setting-icon">
-                    <i class="fas fa-bell"></i>
-                </div>
-                <div>
-                    <h4 class="setting-title">Notifikasi Sistem</h4>
-                </div>
             </div>
-            <p class="setting-description">
-                Kelola pengaturan notifikasi untuk alert stok rendah, pesanan baru, dan aktivitas sistem lainnya.
-            </p>
-            <a href="{{ route('backoffice.pengaturan.alerts') }}" class="btn btn-primary">
-                <i class="fas fa-cog"></i> Kelola Notifikasi
-            </a>
-        </div>
 
-        <!-- System Information -->
-        <div class="setting-card">
-            <div class="setting-header">
-                <div class="setting-icon">
-                    <i class="fas fa-info-circle"></i>
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-info-circle"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Info Sistem</h4>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="setting-title">Info Sistem</h4>
-                </div>
+                <p class="setting-description">
+                    Lihat informasi sistem seperti versi aplikasi, penggunaan storage, dan statistik penggunaan.
+                </p>
+                <button class="btn btn-info" onclick="showSystemInfo()">
+                    <i class="fas fa-eye"></i> Lihat Info
+                </button>
             </div>
-            <p class="setting-description">
-                Lihat informasi sistem seperti versi aplikasi, penggunaan storage, dan statistik penggunaan.
-            </p>
-            <button class="btn btn-info" onclick="showSystemInfo()">
-                <i class="fas fa-eye"></i> Lihat Info
-            </button>
-        </div>
 
-        <!-- Cache Management -->
-        <div class="setting-card">
-            <div class="setting-header">
-                <div class="setting-icon">
-                    <i class="fas fa-bolt"></i>
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-bell"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Notifikasi Sistem</h4>
+                    </div>
                 </div>
-                <div>
-                    <h4 class="setting-title">Manajemen Cache</h4>
-                </div>
+                <p class="setting-description">
+                    Kelola pengaturan notifikasi untuk alert stok rendah, pesanan baru, dan aktivitas sistem lainnya.
+                </p>
+                <a href="{{ route('backoffice.pengaturan.alerts') }}" class="btn btn-primary">
+                    <i class="fas fa-cog"></i> Kelola Notifikasi
+                </a>
             </div>
-            <p class="setting-description">
-                Bersihkan cache aplikasi untuk meningkatkan performa dan mengatasi masalah tampilan.
-            </p>
-            <button class="btn btn-warning" onclick="clearCache()">
-                <i class="fas fa-trash"></i> Bersihkan Cache
-            </button>
         </div>
     </div>
 </div>

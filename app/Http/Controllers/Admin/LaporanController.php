@@ -14,9 +14,118 @@ use PDF;
 
 class LaporanController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        return view('admin.pages.laporan.index-laporan');
+        $period = $request->get('period', 'bulan');
+
+        // Determine date range based on period
+        switch ($period) {
+            case 'hari':
+                $startDate = Carbon::today();
+                $endDate = Carbon::today()->endOfDay();
+                $periodLabel = 'Hari Ini';
+                break;
+            case 'minggu':
+                $startDate = Carbon::now()->startOfWeek();
+                $endDate = Carbon::now()->endOfWeek();
+                $periodLabel = 'Minggu Ini';
+                break;
+            case 'tahun':
+                $startDate = Carbon::now()->startOfYear();
+                $endDate = Carbon::now()->endOfYear();
+                $periodLabel = 'Tahun Ini';
+                break;
+            case 'bulan':
+            default:
+                $startDate = Carbon::now()->startOfMonth();
+                $endDate = Carbon::now()->endOfMonth();
+                $periodLabel = 'Bulan Ini';
+                break;
+        }
+
+        // Total Production for selected period
+        $totalProduksi = Produksi::whereBetween('tanggal_produksi', [$startDate, $endDate])
+            ->where('status', 'selesai')
+            ->sum('jumlah_hasil');
+
+        // Total Sales for selected period
+        $totalPenjualan = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
+            ->where('jenis_transaksi', 'penjualan')
+            ->where('status', 'selesai')
+            ->sum('total');
+
+        // Total Stock Remaining (this doesn't change with period)
+        $totalStokProduk = StokProduk::sum('sisa_stok');
+        $totalStokBahanBaku = StokBahanBaku::sum('sisa_stok');
+        $totalStok = $totalStokProduk + $totalStokBahanBaku;
+
+        // Chart Data - Production and Sales for last 6 months (this stays the same for overview)
+        $chartData = [];
+        for ($i = 5; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $monthStart = $date->copy()->startOfMonth();
+            $monthEnd = $date->copy()->endOfMonth();
+            $monthName = $date->format('M');
+
+            $produksi = Produksi::whereBetween('tanggal_produksi', [$monthStart, $monthEnd])
+                ->where('status', 'selesai')
+                ->sum('jumlah_hasil');
+
+            $penjualan = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$monthStart, $monthEnd])
+                ->where('jenis_transaksi', 'penjualan')
+                ->where('status', 'selesai')
+                ->sum('total');
+
+            $chartData[] = [
+                'month' => $monthName,
+                'produksi' => (int)$produksi,
+                'penjualan' => (float)$penjualan
+            ];
+        }
+
+        // Recent Reports Summary (last 10 entries from different report types within selected period)
+        $recentReports = collect();
+
+        // Recent Productions within period
+        $productions = Produksi::with('produk')
+            ->whereBetween('tanggal_produksi', [$startDate, $endDate])
+            ->orderBy('tanggal_produksi', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($p) {
+                return [
+                    'type' => 'Produksi',
+                    'tanggal' => $p->tanggal_produksi,
+                    'keterangan' => 'Produksi ' . ($p->produk->nama_produk ?? 'Unknown'),
+                    'jumlah' => $p->jumlah_hasil . ' ' . ($p->produk->satuan ?? 'unit')
+                ];
+            });
+
+        // Recent Transactions within period
+        $transactions = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
+            ->orderBy('tanggal_transaksi', 'desc')
+            ->limit(5)
+            ->get()
+            ->map(function($t) {
+                return [
+                    'type' => ucfirst($t->jenis_transaksi),
+                    'tanggal' => $t->tanggal_transaksi,
+                    'keterangan' => $t->keterangan ?? 'Transaksi ' . $t->kode_transaksi,
+                    'jumlah' => 'Rp ' . number_format($t->total, 0, ',', '.')
+                ];
+            });
+
+        $recentReports = $productions->concat($transactions)->sortByDesc('tanggal')->take(10);
+
+        return view('admin.pages.laporan.index-laporan', compact(
+            'totalProduksi',
+            'totalPenjualan',
+            'totalStok',
+            'chartData',
+            'recentReports',
+            'periodLabel',
+            'period'
+        ));
     }
 
     public function produksi(Request $request)

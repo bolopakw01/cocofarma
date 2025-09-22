@@ -251,6 +251,82 @@ class PengaturanController extends Controller
     }
 
     /**
+     * Save dashboard goal values (from the Pengaturan -> Target Dashboard form).
+     */
+    public function saveDashboardGoal(Request $request)
+    {
+        $data = $request->validate([
+            'monthly_sales_goal' => 'nullable|numeric|min:0',
+            'monthly_production_goal' => 'nullable|integer|min:0',
+            'monthly_order_goal' => 'nullable|integer|min:0',
+            'low_stock_threshold' => 'nullable|integer|min:0|max:100',
+        ]);
+
+        // Use helper set_setting to persist
+        if (isset($data['monthly_sales_goal'])) {
+            set_setting('monthly_sales_goal', (string) $data['monthly_sales_goal'], 'decimal');
+        }
+        if (isset($data['monthly_production_goal'])) {
+            set_setting('monthly_production_goal', (string) $data['monthly_production_goal'], 'integer');
+        }
+        if (isset($data['monthly_order_goal'])) {
+            set_setting('monthly_order_goal', (string) $data['monthly_order_goal'], 'integer');
+        }
+        if (isset($data['low_stock_threshold'])) {
+            set_setting('low_stock_threshold', (string) $data['low_stock_threshold'], 'integer');
+        }
+
+        // Clear cached settings (the helper caches in static variable)
+        if (function_exists('cache')) {
+            // best-effort: clear any cache key used for settings if implemented
+            try { cache()->forget('app_settings'); } catch (\Exception $e) { /* ignore */ }
+        }
+
+        return redirect()->route('backoffice.pengaturan.index')->with('success', 'Target dashboard berhasil disimpan.');
+    }
+
+    /**
+     * Show form to manage a list of dashboard goals (stored as JSON in pengaturans.dashboard_goals)
+     */
+    public function goals()
+    {
+        // Stored as JSON in 'dashboard_goals'
+        $raw = Pengaturan::where('nama_pengaturan', 'dashboard_goals')->first();
+        $goals = [];
+        if ($raw) {
+            $decoded = json_decode($raw->nilai, true);
+            if (is_array($decoded)) $goals = $decoded;
+        }
+
+        return view('admin.pages.pengaturan.goals', compact('goals'));
+    }
+
+    /**
+     * Save the whole list of dashboard goals (JSON payload)
+     */
+    public function saveGoalsList(Request $request)
+    {
+        $data = $request->validate([
+            'goals' => 'nullable|array',
+            'goals.*.label' => 'required_with:goals|string',
+            'goals.*.key' => 'required_with:goals|string',
+            'goals.*.target' => 'required_with:goals|numeric|min:0',
+            'goals.*.color' => 'nullable|string'
+        ]);
+
+        $goals = $data['goals'] ?? [];
+        // Persist as JSON string
+        set_setting('dashboard_goals', json_encode(array_values($goals)), 'json');
+
+        // Clear helper cache if needed (best-effort)
+        if (function_exists('cache')) {
+            try { cache()->forget('app_settings'); } catch (\Exception $e) { }
+        }
+
+        return redirect()->route('backoffice.pengaturan.goals')->with('success', 'Daftar goals berhasil disimpan.');
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
