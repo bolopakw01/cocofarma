@@ -100,6 +100,7 @@ class BahanBakuController extends Controller
                 'nama_bahan' => 'required|string|max:255',
                 'satuan' => 'required|string|max:50',
                 'harga_per_satuan' => 'required|numeric|min:0',
+                'stok_minimum' => 'nullable|numeric|min:0',
                 'deskripsi' => 'nullable|string',
                 'status' => 'nullable|string|in:aktif,nonaktif'
             ]);
@@ -109,6 +110,7 @@ class BahanBakuController extends Controller
                 'nama_bahan' => $request->nama_bahan,
                 'satuan' => $request->satuan,
                 'harga_per_satuan' => $request->harga_per_satuan,
+                'stok_minimum' => $request->stok_minimum,
                 'deskripsi' => $request->deskripsi,
                 'status' => $request->status ?? 'aktif'
             ]);
@@ -228,6 +230,7 @@ class BahanBakuController extends Controller
                 'nama_bahan' => 'required|string|max:255',
                 'satuan' => 'required|string|max:50',
                 'harga_per_satuan' => 'required|numeric|min:0',
+                'stok_minimum' => 'nullable|numeric|min:0',
                 'deskripsi' => 'nullable|string',
                 'status' => 'nullable|string|in:aktif,nonaktif'
             ]);
@@ -239,6 +242,7 @@ class BahanBakuController extends Controller
                 'nama_bahan' => $request->nama_bahan,
                 'satuan' => $request->satuan,
                 'harga_per_satuan' => $request->harga_per_satuan,
+                'stok_minimum' => $request->stok_minimum,
                 'deskripsi' => $request->deskripsi,
                 'status' => $request->status ?? 'aktif'
             ]);

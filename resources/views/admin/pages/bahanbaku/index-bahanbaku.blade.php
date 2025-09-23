@@ -920,7 +920,7 @@
                 <td>{{ $bahan->nama_bahan }}</td>
                 <td>{{ $bahan->masterBahan->nama_bahan ?? '-' }}</td>
                 <td>{{ $bahan->satuan }}</td>
-                <td>{{ number_format($bahan->stok, 2) }}</td>
+                <td>{{ $bahan->stok == floor($bahan->stok) ? number_format($bahan->stok, 0) : number_format($bahan->stok, 2) }}</td>
                 <td>
                     <span class="badge {{ $bahan->status === 'aktif' ? 'badge-success' : 'badge-danger' }}">
                         {{ $bahan->status === 'aktif' ? 'Aktif' : 'Nonaktif' }}
@@ -1230,7 +1230,7 @@
                 <div class="detail-row">
                     <div class="label"><i class="fas fa-cubes me-2"></i>Stok</div>
                     <div class="stok-highlight">
-                        ${parseInt(stok).toLocaleString('id-ID')} ${satuan}
+                        ${parseFloat(stok) === Math.floor(parseFloat(stok)) ? parseInt(stok).toLocaleString('id-ID') : parseFloat(stok).toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2})} ${satuan}
                     </div>
                 </div>
             </div>

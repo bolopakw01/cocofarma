@@ -56,6 +56,13 @@ class Produksi extends Model
         return $this->belongsTo(User::class, 'user_id');
     }
 
+    // Relasi dengan StokProduk
+    public function stokProduk()
+    {
+        return $this->hasOne(StokProduk::class, 'batch_produksi_id', 'batch_produksi_id')
+                    ->where('produk_id', $this->produk_id);
+    }
+
     // Accessor untuk status label
     public function getStatusLabelAttribute()
     {

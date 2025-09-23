@@ -5,7 +5,7 @@ use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\ProdukController;
 use App\Http\Controllers\Admin\BahanBakuController;
 use App\Http\Controllers\Admin\PesananController;
-use App\Http\Controllers\ProduksiController as MainProduksiController;
+use App\Http\Controllers\Admin\ProduksiController as MainProduksiController;
 use App\Http\Controllers\Admin\TransaksiController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\UserController;
@@ -58,6 +58,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
             Route::delete('/{produksi}', [MainProduksiController::class, 'destroy'])->name('destroy');
             Route::post('/{produksi}/start', [MainProduksiController::class, 'startProduction'])->name('start');
             Route::post('/{produksi}/complete', [MainProduksiController::class, 'completeProduction'])->name('complete');
+            // AJAX: get current stok for a list of bahan IDs
+            Route::post('/api/bahan-stok', [MainProduksiController::class, 'apiBahanStok'])->name('api.bahan-stok');
         });
 
         // Master produk routes (only accessible by super_admin)

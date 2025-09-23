@@ -11,19 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('bahan_bakus', function (Blueprint $table) {
+        Schema::create('bahan_baku', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('master_bahan_id')->constrained('master_bahan_baku')->onDelete('cascade');
             $table->string('kode_bahan')->unique();
             $table->string('nama_bahan');
-            $table->text('deskripsi')->nullable();
-            $table->string('kategori')->nullable();
-            $table->string('satuan'); // unit (kg, liter, dll)
-            $table->integer('stok')->default(0);
-            $table->integer('minimum_stok')->default(0);
-            $table->decimal('harga_beli_terakhir', 15, 2)->nullable();
-            $table->string('supplier')->nullable();
+            $table->string('satuan');
+            $table->decimal('harga_per_satuan', 15, 2);
+            $table->decimal('stok', 10, 4)->default(0);
+            $table->decimal('stok_minimum', 10, 4)->default(0);
+            $table->date('tanggal_masuk');
             $table->date('tanggal_kadaluarsa')->nullable();
-            $table->boolean('status')->default(true);
+            $table->string('status')->default('aktif');
             $table->timestamps();
         });
     }
@@ -33,6 +32,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('bahan_bakus');
+        Schema::dropIfExists('bahan_baku');
     }
 };

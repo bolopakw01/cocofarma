@@ -418,7 +418,7 @@
             </div>
             <div class="info-item">
                 <span class="info-label">Target Produksi</span>
-                <span class="info-value">{{ number_format($produksi->jumlah_target, 2) }} Unit</span>
+                <span class="info-value">{{ number_format($produksi->jumlah_target, 0) }} Unit</span>
             </div>
             <div class="info-item">
                 <span class="info-label">Status Saat Ini</span>
@@ -451,7 +451,7 @@
                 <div class="bahan-info">
                     <div class="bahan-nama">{{ $bahan->bahanBaku->nama_bahan ?? 'Bahan tidak ditemukan' }}</div>
                     <div class="bahan-detail">
-                        Jumlah: {{ number_format($bahan->jumlah_digunakan, 2) }} {{ $bahan->bahanBaku->satuan ?? '' }} |
+                        Jumlah: {{ $bahan->jumlah_digunakan == floor($bahan->jumlah_digunakan) ? number_format($bahan->jumlah_digunakan, 0) : number_format($bahan->jumlah_digunakan, 2) }} {{ $bahan->bahanBaku->satuan ?? '' }} |
                         Biaya: Rp {{ number_format($bahan->biaya_bahan, 0, ',', '.') }}
                     </div>
                 </div>
@@ -462,90 +462,116 @@
     @endif
 
     <!-- Form Edit -->
-    <form action="{{ route('produksi.update', $produksi->id) }}" method="POST" id="editProduksiForm">
+    <form action="{{ route('backoffice.produksi.update', $produksi->id) }}" method="POST" id="editProduksiForm">
         @csrf
         @method('PUT')
 
+        @if($errors->any())
+        <div class="alert alert-danger">
+            <h4><i class="fas fa-exclamation-triangle"></i> Terjadi Kesalahan:</h4>
+            <ul class="mb-0">
+                @foreach($errors->all() as $error)
+                <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+        @endif
+
+        @if(session('success'))
+        <div class="alert alert-success">
+            <i class="fas fa-check-circle"></i> {{ session('success') }}
+        </div>
+        @endif
+
         <div class="form-section">
-            <h3><i class="fas fa-edit"></i> Update Informasi Produksi</h3>
-
-            @if($produksi->status !== 'rencana')
-            <div class="alert alert-warning">
-                <i class="fas fa-exclamation-triangle"></i>
-                <strong>Perhatian:</strong> Produksi ini sudah diproses dan tidak dapat diedit.
-                Anda hanya dapat mengubah catatan.
-            </div>
-            @endif
+            <h3><i class="fas fa-edit"></i> Update Status dan Catatan Produksi</h3>
 
             <div class="form-row">
                 <div class="form-group">
-                    <label for="batch_produksi_id">Batch Produksi <span class="required">*</span></label>
-                    <select name="batch_produksi_id" id="batch_produksi_id" {{ $produksi->status !== 'rencana' ? 'disabled' : 'required' }}>
-                        <option value="">Pilih Batch Produksi</option>
-                        @foreach($batchProduksis as $batch)
-                        <option value="{{ $batch->id }}" {{ $produksi->batch_produksi_id == $batch->id ? 'selected' : '' }}>
-                            {{ $batch->nomor_batch }} - {{ $batch->tungku->nama_tungku ?? 'Tungku tidak ditemukan' }}
-                        </option>
-                        @endforeach
+                    <label for="status">Status Produksi <span class="required">*</span></label>
+                    <select name="status" id="status" required>
+                        <option value="rencana" {{ old('status', $produksi->status) == 'rencana' ? 'selected' : '' }}>Rencana</option>
+                        <option value="proses" {{ old('status', $produksi->status) == 'proses' ? 'selected' : '' }}>Proses</option>
+                        <option value="selesai" {{ old('status', $produksi->status) == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                        <option value="gagal" {{ old('status', $produksi->status) == 'gagal' ? 'selected' : '' }}>Gagal</option>
                     </select>
-                    @error('batch_produksi_id')
+                    @error('status')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
 
                 <div class="form-group">
-                    <label for="produk_id">Produk <span class="required">*</span></label>
-                    <select name="produk_id" id="produk_id" {{ $produksi->status !== 'rencana' ? 'disabled' : 'required' }}>
-                        <option value="">Pilih Produk</option>
-                        @foreach($produks as $produk)
-                        <option value="{{ $produk->id }}" {{ $produksi->produk_id == $produk->id ? 'selected' : '' }}>
-                            {{ $produk->nama_produk }} ({{ $produk->kode_produk }})
-                        </option>
-                        @endforeach
-                    </select>
-                    @error('produk_id')
+                    <label for="catatan">Catatan</label>
+                    <textarea name="catatan" id="catatan" placeholder="Update catatan produksi">{{ old('catatan', $produksi->catatan) }}</textarea>
+                    @error('catatan')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
             </div>
 
+            <!-- Field untuk update jumlah target dan bahan baku jika status belum selesai/gagal -->
+            @if($produksi->status !== 'selesai' && $produksi->status !== 'gagal')
             <div class="form-row">
-                <div class="form-group">
-                    <label for="tanggal_produksi">Tanggal Produksi <span class="required">*</span></label>
-                    <input type="date" name="tanggal_produksi" id="tanggal_produksi"
-                           value="{{ old('tanggal_produksi', $produksi->tanggal_produksi->format('Y-m-d')) }}"
-                           {{ $produksi->status !== 'rencana' ? 'disabled' : 'required' }}>
-                    @error('tanggal_produksi')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-
                 <div class="form-group">
                     <label for="jumlah_target">Target Produksi <span class="required">*</span></label>
                     <div class="input-group">
                         <input type="number" name="jumlah_target" id="jumlah_target"
                                value="{{ old('jumlah_target', $produksi->jumlah_target) }}"
-                               placeholder="0" min="0.01" step="0.01"
-                               {{ $produksi->status !== 'rencana' ? 'disabled' : 'required' }}>
+                               placeholder="0" min="0.01" step="0.01" required>
                         <span class="input-group-text">Unit</span>
                     </div>
                     @error('jumlah_target')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
+
+                <div class="form-group">
+                    <label for="estimasi_biaya">Estimasi Biaya</label>
+                    <input type="text" id="estimasi_biaya" name="estimasi_biaya" readonly placeholder="0" />
+                </div>
             </div>
 
             <div class="form-group">
-                <label for="catatan">Catatan</label>
-                <textarea name="catatan" id="catatan" placeholder="Update catatan produksi">{{ old('catatan', $produksi->catatan) }}</textarea>
-                @error('catatan')
+                <label for="catatan_produksi">Catatan Tambahan</label>
+                <textarea name="catatan_produksi" id="catatan_produksi" placeholder="Catatan tambahan untuk produksi">{{ old('catatan_produksi') }}</textarea>
+                @error('catatan_produksi')
                     <span class="error-message">{{ $message }}</span>
                 @enderror
             </div>
+            @endif
+
+            <!-- Field untuk jumlah hasil jika status selesai -->
+            <div class="form-row" id="jumlah-hasil-row" style="display: none;">
+                <div class="form-group">
+                    <label for="jumlah_hasil">Jumlah Hasil Produksi <span class="required">*</span></label>
+                    <div class="input-group">
+                        <input type="number" name="jumlah_hasil" id="jumlah_hasil"
+                               value="{{ old('jumlah_hasil', $produksi->jumlah_hasil) }}"
+                               placeholder="0" min="0" step="0.01">
+                        <span class="input-group-text">Unit</span>
+                    </div>
+                    @error('jumlah_hasil')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+
+                <div class="form-group">
+                    <label for="grade_kualitas">Grade Kualitas <span class="required">*</span></label>
+                    <select name="grade_kualitas" id="grade_kualitas">
+                        <option value="">Pilih Grade</option>
+                        <option value="A" {{ old('grade_kualitas', $produksi->grade_kualitas) == 'A' ? 'selected' : '' }}>A (Premium)</option>
+                        <option value="B" {{ old('grade_kualitas', $produksi->grade_kualitas) == 'B' ? 'selected' : '' }}>B (Standard)</option>
+                        <option value="C" {{ old('grade_kualitas', $produksi->grade_kualitas) == 'C' ? 'selected' : '' }}>C (Basic)</option>
+                    </select>
+                    @error('grade_kualitas')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
+                </div>
+            </div>
         </div>
 
-        <!-- Bahan Baku (hanya bisa edit jika status rencana) -->
-        @if($produksi->status === 'rencana')
+        <!-- Bahan Baku (hanya bisa edit jika status belum selesai/gagal) -->
+        @if($produksi->status !== 'selesai' && $produksi->status !== 'gagal')
         <div class="form-section">
             <h3><i class="fas fa-boxes"></i> Bahan Baku Yang Digunakan</h3>
 
@@ -554,14 +580,16 @@
                 <div class="bahan-baku-item" data-index="{{ $index }}">
                     <select name="bahan_digunakan[{{ $index }}][bahan_baku_id]" class="bahan-select" required>
                         <option value="">Pilih Bahan Baku</option>
+                        @if(isset($bahanBakus))
                         @foreach($bahanBakus as $bahanOption)
                         <option value="{{ $bahanOption->id }}"
                                 data-harga="{{ $bahanOption->harga_per_satuan }}"
                                 data-satuan="{{ $bahanOption->satuan }}"
                                 {{ $bahan->bahan_baku_id == $bahanOption->id ? 'selected' : '' }}>
-                            {{ $bahanOption->nama_bahan }} (Stok: {{ number_format($bahanOption->stok, 2) }} {{ $bahanOption->satuan }})
+                            {{ $bahanOption->nama_bahan }} (Stok: {{ $bahanOption->stok == floor($bahanOption->stok) ? number_format($bahanOption->stok, 0) : number_format($bahanOption->stok, 2) }} {{ $bahanOption->satuan }})
                         </option>
                         @endforeach
+                        @endif
                     </select>
                     <input type="number" name="bahan_digunakan[{{ $index }}][jumlah]" class="bahan-jumlah"
                            placeholder="Jumlah" min="0.01" step="0.01" value="{{ $bahan->jumlah_digunakan }}" required>
@@ -573,11 +601,13 @@
                 <div class="bahan-baku-item" data-index="0">
                     <select name="bahan_digunakan[0][bahan_baku_id]" class="bahan-select" required>
                         <option value="">Pilih Bahan Baku</option>
+                        @if(isset($bahanBakus))
                         @foreach($bahanBakus as $bahan)
                         <option value="{{ $bahan->id }}" data-harga="{{ $bahan->harga_per_satuan }}" data-satuan="{{ $bahan->satuan }}">
-                            {{ $bahan->nama_bahan }} (Stok: {{ number_format($bahan->stok, 2) }} {{ $bahan->satuan }})
+                            {{ $bahan->nama_bahan }} (Stok: {{ $bahan->stok == floor($bahan->stok) ? number_format($bahan->stok, 0) : number_format($bahan->stok, 2) }} {{ $bahan->satuan }})
                         </option>
                         @endforeach
+                        @endif
                     </select>
                     <input type="number" name="bahan_digunakan[0][jumlah]" class="bahan-jumlah" placeholder="Jumlah" min="0.01" step="0.01" required>
                     <button type="button" class="remove-bahan-btn" onclick="removeBahanItem(this)" style="display: none;">
@@ -595,7 +625,7 @@
 
         <!-- Form Actions -->
         <div class="form-actions">
-            <a href="{{ route('produksi.index') }}" class="btn btn-secondary">
+            <a href="{{ route('backoffice.produksi.index') }}" class="btn btn-secondary">
                 <i class="fas fa-times"></i> Batal
             </a>
             <button type="submit" class="btn btn-primary">
@@ -607,14 +637,25 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    let bahanIndex = {{ count($produksi->produksiBahans) ?: 1 }};
+    const statusSelect = document.getElementById('status');
+    const jumlahHasilRow = document.getElementById('jumlah-hasil-row');
+    const jumlahHasilInput = document.getElementById('jumlah_hasil');
+    const gradeKualitasSelect = document.getElementById('grade_kualitas');
 
-    // Initialize remove buttons
-    updateRemoveButtons();
+    // Initialize bahan baku index if container exists
+    let bahanIndex = document.getElementById('bahan-baku-container') ?
+        {{ count($produksi->produksiBahans) ?: 1 }} : 0;
+
+    // Initialize remove buttons if container exists
+    if (document.getElementById('bahan-baku-container')) {
+        updateRemoveButtons();
+    }
 
     // Function to add new bahan baku item
     window.addBahanItem = function() {
         const container = document.getElementById('bahan-baku-container');
+        if (!container) return;
+
         const newItem = document.createElement('div');
         newItem.className = 'bahan-baku-item';
         newItem.setAttribute('data-index', bahanIndex);
@@ -622,11 +663,13 @@ document.addEventListener('DOMContentLoaded', function() {
         newItem.innerHTML = `
             <select name="bahan_digunakan[${bahanIndex}][bahan_baku_id]" class="bahan-select" required>
                 <option value="">Pilih Bahan Baku</option>
+                @if(isset($bahanBakus))
                 @foreach($bahanBakus as $bahan)
                 <option value="{{ $bahan->id }}" data-harga="{{ $bahan->harga_per_satuan }}" data-satuan="{{ $bahan->satuan }}">
-                    {{ $bahan->nama_bahan }} (Stok: {{ number_format($bahan->stok, 2) }} {{ $bahan->satuan }})
+                    {{ $bahan->nama_bahan }} (Stok: {{ $bahan->stok == floor($bahan->stok) ? number_format($bahan->stok, 0) : number_format($bahan->stok, 2) }} {{ $bahan->satuan }})
                 </option>
                 @endforeach
+                @endif
             </select>
             <input type="number" name="bahan_digunakan[${bahanIndex}][jumlah]" class="bahan-jumlah"
                    placeholder="Jumlah" min="0.01" step="0.01" required>
@@ -644,6 +687,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.removeBahanItem = function(button) {
         const item = button.closest('.bahan-baku-item');
         const container = document.getElementById('bahan-baku-container');
+        if (!container) return;
 
         if (container.children.length > 1) {
             item.remove();
@@ -663,18 +707,97 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // Function to toggle jumlah hasil fields based on status
+    function toggleJumlahHasilFields() {
+        if (statusSelect.value === 'selesai') {
+            jumlahHasilRow.style.display = 'flex';
+            if (jumlahHasilInput) {
+                jumlahHasilInput.setAttribute('required', 'required');
+                jumlahHasilInput.removeAttribute('disabled');
+            }
+            if (gradeKualitasSelect) {
+                gradeKualitasSelect.setAttribute('required', 'required');
+                gradeKualitasSelect.removeAttribute('disabled');
+            }
+        } else {
+            jumlahHasilRow.style.display = 'none';
+            if (jumlahHasilInput) {
+                jumlahHasilInput.removeAttribute('required');
+                jumlahHasilInput.setAttribute('disabled', 'disabled');
+                jumlahHasilInput.value = ''; // Clear value when disabled
+            }
+            if (gradeKualitasSelect) {
+                gradeKualitasSelect.removeAttribute('required');
+                gradeKualitasSelect.setAttribute('disabled', 'disabled');
+                gradeKualitasSelect.value = ''; // Clear value when disabled
+            }
+        }
+    }
+
+    // Initial check
+    toggleJumlahHasilFields();
+
+    // Listen for status changes
+    statusSelect.addEventListener('change', toggleJumlahHasilFields);
+
     // Form validation
     document.getElementById('editProduksiForm').addEventListener('submit', function(e) {
-        const status = document.getElementById('status')?.value;
-        const jumlahHasilInput = document.getElementById('jumlah_hasil');
-
-        if (status === 'selesai' && jumlahHasilInput && (!jumlahHasilInput.value || parseFloat(jumlahHasilInput.value) <= 0)) {
-            e.preventDefault();
-            alert('Jumlah hasil produksi harus diisi ketika status diset ke "Selesai".');
-            jumlahHasilInput.focus();
-            return false;
+        if (statusSelect.value === 'selesai') {
+            if (!jumlahHasilInput.value || parseFloat(jumlahHasilInput.value) <= 0) {
+                e.preventDefault();
+                alert('Jumlah hasil produksi harus diisi ketika status diset ke "Selesai".');
+                jumlahHasilInput.focus();
+                return false;
+            }
+            if (!gradeKualitasSelect.value) {
+                e.preventDefault();
+                alert('Grade kualitas harus dipilih ketika status diset ke "Selesai".');
+                gradeKualitasSelect.focus();
+                return false;
+            }
         }
     });
+
+    // Function to calculate estimasi biaya
+    function calculateEstimasiBiaya() {
+        let totalBiaya = 0;
+
+        document.querySelectorAll('.bahan-baku-item').forEach(item => {
+            const select = item.querySelector('.bahan-select');
+            const jumlahInput = item.querySelector('.bahan-jumlah');
+
+            if (select && select.value && jumlahInput && jumlahInput.value) {
+                const harga = parseFloat(select.selectedOptions[0].getAttribute('data-harga')) || 0;
+                const jumlah = parseFloat(jumlahInput.value) || 0;
+                totalBiaya += harga * jumlah;
+            }
+        });
+
+        const estimEl = document.getElementById('estimasi_biaya');
+        if (estimEl) {
+            try {
+                estimEl.value = totalBiaya.toLocaleString('id-ID');
+            } catch (err) {
+                console.debug('Could not set estimasi_biaya value', err);
+            }
+        }
+    }
+
+    // Event listeners for biaya calculation
+    document.addEventListener('change', function(e) {
+        if (e.target.classList && (e.target.classList.contains('bahan-select') || e.target.classList.contains('bahan-jumlah'))) {
+            calculateEstimasiBiaya();
+        }
+    });
+
+    document.addEventListener('input', function(e) {
+        if (e.target.classList && e.target.classList.contains('bahan-jumlah')) {
+            calculateEstimasiBiaya();
+        }
+    });
+
+    // Calculate initial biaya
+    calculateEstimasiBiaya();
 });
 </script>
 @endsection

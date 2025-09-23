@@ -14,8 +14,8 @@ return new class extends Migration
         Schema::create('batch_produksis', function (Blueprint $table) {
             $table->id();
             $table->string('nomor_batch')->unique();
-            $table->unsignedInteger('produk_id'); // Changed to match produks.id type
-            $table->unsignedBigInteger('tungku_id')->nullable(); // Remove auto constraint to tungkus
+            $table->foreignId('produk_id')->constrained('produks')->onDelete('cascade');
+            $table->foreignId('tungku_id')->nullable()->constrained('tungkus')->onDelete('set null');
             $table->date('tanggal_produksi');
             $table->enum('status', ['rencana', 'proses', 'selesai', 'gagal'])->default('rencana');
             $table->datetime('waktu_mulai')->nullable();
@@ -25,10 +25,6 @@ return new class extends Migration
             $table->text('catatan')->nullable();
             $table->foreignId('user_id')->constrained('users')->onDelete('cascade');
             $table->timestamps();
-
-            // Add foreign key constraint manually to match produks.id type
-            $table->foreign('produk_id')->references('id')->on('produks')->onDelete('cascade');
-            // Foreign key to tungkus will be added after tungkus table is created
         });
     }
 

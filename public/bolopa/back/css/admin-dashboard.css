@@ -292,3 +292,18 @@ body{ background-color: #e2e7f5; }
   display: flex;
   flex-direction: column;
 }
+
+/* Custom styling for low stock warning */
+.table-danger {
+  background-color: #f8d7da !important;
+  border-color: #f5c6cb !important;
+}
+
+.table-danger td {
+  background-color: #f8d7da !important;
+  border-color: #f5c6cb !important;
+}
+
+.table-danger:hover td {
+  background-color: #f5c6cb !important;
+}

@@ -49,6 +49,12 @@ class Produk extends Model
         return $this->hasMany(Produksi::class, 'produk_id');
     }
 
+    // Relasi ke komposisi bahan (BOM)
+    public function produkBahans()
+    {
+        return $this->hasMany(ProdukBahan::class, 'produk_id');
+    }
+
     // Accessor untuk status produk
     public function getStatusLabelAttribute()
     {

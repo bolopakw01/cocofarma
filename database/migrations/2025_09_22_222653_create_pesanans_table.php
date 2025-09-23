@@ -13,17 +13,13 @@ return new class extends Migration
     {
         Schema::create('pesanans', function (Blueprint $table) {
             $table->id();
-            $table->string('nomor_pesanan')->unique();
-            $table->string('nama_pelanggan');
-            $table->string('email_pelanggan')->nullable();
-            $table->string('telepon_pelanggan')->nullable();
-            $table->text('alamat_pelanggan')->nullable();
+            $table->string('kode_pesanan')->unique();
             $table->date('tanggal_pesanan');
-            $table->date('tanggal_deadline');
+            $table->string('nama_pelanggan');
+            $table->text('alamat');
+            $table->string('no_telepon');
             $table->enum('status', ['pending', 'diproses', 'selesai', 'dibatalkan'])->default('pending');
-            $table->decimal('total_harga', 15, 2);
-            $table->text('catatan')->nullable();
-            $table->foreignId('user_id')->constrained()->onDelete('cascade'); // user yang buat pesanan
+            $table->decimal('total_harga', 15, 2)->default(0);
             $table->timestamps();
         });
     }

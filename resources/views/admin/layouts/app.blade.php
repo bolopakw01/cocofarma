@@ -232,6 +232,70 @@
                 }
             }
         });
+
+        // Global decimal input handler - allows both dot and comma
+        function normalizeDecimalInput(input) {
+            if (!input) return;
+
+            input.addEventListener('input', function(e) {
+                let value = e.target.value;
+
+                // Replace comma with dot for consistency
+                value = value.replace(/,/g, '.');
+
+                // Allow only numbers and single dot
+                value = value.replace(/[^0-9.]/g, '');
+                const parts = value.split('.');
+                if (parts.length > 2) {
+                    value = parts[0] + '.' + parts.slice(1).join('');
+                }
+
+                e.target.value = value;
+            });
+
+            input.addEventListener('blur', function(e) {
+                let value = e.target.value;
+                if (value) {
+                    // Ensure it's a valid number
+                    const num = parseFloat(value);
+                    if (!isNaN(num)) {
+                        e.target.value = num.toString();
+                    }
+                }
+            });
+        }
+
+        // Apply to all number inputs when DOM is ready
+        document.addEventListener('DOMContentLoaded', function() {
+            // Apply to all number inputs that might have decimals
+            document.querySelectorAll('input[type="number"]').forEach(input => {
+                normalizeDecimalInput(input);
+            });
+        });
+
+        // Also apply to dynamically added inputs (for forms that add rows dynamically)
+        const observer = new MutationObserver(function(mutations) {
+            mutations.forEach(function(mutation) {
+                mutation.addedNodes.forEach(function(node) {
+                    if (node.nodeType === 1) { // Element node
+                        const numberInputs = node.querySelectorAll ? node.querySelectorAll('input[type="number"]') : [];
+                        numberInputs.forEach(input => {
+                            normalizeDecimalInput(input);
+                        });
+
+                        // Also check if the node itself is a number input
+                        if (node.tagName === 'INPUT' && node.type === 'number') {
+                            normalizeDecimalInput(node);
+                        }
+                    }
+                });
+            });
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
     </script>
 
     @stack('scripts')

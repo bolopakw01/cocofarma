@@ -69,7 +69,7 @@ class ProdukController extends Controller
             'stok' => 0, // Default stok 0 untuk produk baru
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->status
+            'status' => $request->status == '1' ? 'aktif' : 'nonaktif'
         ];
 
         // Handle foto upload

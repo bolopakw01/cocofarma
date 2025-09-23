@@ -370,7 +370,7 @@
                         <option value="">Pilih Master Bahan</option>
                         @if(isset($masterBahans))
                             @foreach($masterBahans as $master)
-                                <option value="{{ $master->id }}" {{ old('master_bahan_id') == $master->id ? 'selected' : '' }}>
+                                <option value="{{ $master->id }}" data-harga="{{ $master->harga_per_satuan }}" data-satuan="{{ $master->satuan }}" {{ old('master_bahan_id') == $master->id ? 'selected' : '' }}>
                                     {{ $master->nama_bahan }} ({{ $master->satuan }})
                                 </option>
                             @endforeach
@@ -531,6 +531,38 @@ document.addEventListener('DOMContentLoaded', function() {
         } else {
             kodeInput.value = 'BB' + dateString;
         }
+    }
+});
+
+// Auto-fill satuan & harga when choosing master bahan
+document.getElementById('master_bahan_id').addEventListener('change', function() {
+    const opt = this.selectedOptions[0];
+    const harga = opt ? opt.getAttribute('data-harga') : '';
+    const satuan = opt ? opt.getAttribute('data-satuan') : '';
+
+    const hargaInput = document.getElementById('harga_per_satuan');
+    const satuanInput = document.getElementById('satuan');
+
+    if (satuanInput) {
+        // only auto-fill if empty on load; when user actively changes master we override
+        satuanInput.value = satuan ?? '';
+    }
+    if (hargaInput) {
+        hargaInput.value = harga ?? '';
+    }
+});
+
+// On page load, if a master is preselected and inputs are empty, fill them
+document.addEventListener('DOMContentLoaded', function() {
+    const masterSelect = document.getElementById('master_bahan_id');
+    if (masterSelect && masterSelect.value) {
+        const opt = masterSelect.selectedOptions[0];
+        const harga = opt ? opt.getAttribute('data-harga') : '';
+        const satuan = opt ? opt.getAttribute('data-satuan') : '';
+        const hargaInput = document.getElementById('harga_per_satuan');
+        const satuanInput = document.getElementById('satuan');
+        if (satuanInput && !satuanInput.value) satuanInput.value = satuan ?? '';
+        if (hargaInput && !hargaInput.value) hargaInput.value = harga ?? '';
     }
 });
 

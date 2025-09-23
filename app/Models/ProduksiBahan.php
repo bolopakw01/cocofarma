@@ -14,7 +14,8 @@ class ProduksiBahan extends Model
         'stok_bahan_baku_id',
         'jumlah_digunakan',
         'harga_satuan',
-        'total_biaya'
+        'total_biaya',
+        'harga_override'
     ];
 
     protected $casts = [
@@ -23,7 +24,8 @@ class ProduksiBahan extends Model
         'stok_bahan_baku_id' => 'integer',
         'jumlah_digunakan' => 'decimal:2',
         'harga_satuan' => 'decimal:2',
-        'total_biaya' => 'decimal:2'
+        'total_biaya' => 'decimal:2',
+        'harga_override' => 'decimal:4'
     ];
 
     // Relasi dengan Produksi

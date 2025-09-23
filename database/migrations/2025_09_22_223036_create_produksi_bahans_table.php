@@ -13,11 +13,13 @@ return new class extends Migration
     {
         Schema::create('produksi_bahans', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('produksi_id')->constrained()->onDelete('cascade');
-            $table->foreignId('bahan_baku_id')->constrained()->onDelete('cascade');
-            $table->decimal('jumlah_digunakan', 10, 3); // bisa desimal untuk kg/liter
-            $table->decimal('biaya_bahan', 15, 2);
-            $table->text('keterangan')->nullable();
+            $table->foreignId('produksi_id')->constrained('produksis')->onDelete('cascade');
+            $table->foreignId('bahan_baku_id')->constrained('bahan_baku')->onDelete('cascade');
+            $table->foreignId('stok_bahan_baku_id')->constrained('stok_bahan_baku')->onDelete('cascade');
+            $table->decimal('jumlah_digunakan', 10, 2);
+            $table->decimal('harga_satuan', 15, 2);
+            $table->decimal('total_biaya', 15, 2);
+            $table->decimal('harga_override', 15, 4)->nullable();
             $table->timestamps();
         });
     }

@@ -11,12 +11,14 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('pengaturans', function (Blueprint $table) {
+        Schema::create('master_bahan_baku', function (Blueprint $table) {
             $table->id();
-            $table->string('key')->unique(); // nama_usaha, logo, alamat, dll
-            $table->text('value'); // value dari setting
-            $table->string('type')->default('text'); // text, file, number, boolean
-            $table->text('description')->nullable();
+            $table->string('kode_bahan')->unique();
+            $table->string('nama_bahan');
+            $table->string('satuan');
+            $table->decimal('harga_per_satuan', 15, 2);
+            $table->text('deskripsi')->nullable();
+            $table->string('status')->default('aktif');
             $table->timestamps();
         });
     }
@@ -26,6 +28,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('pengaturans');
+        Schema::dropIfExists('master_bahan_baku');
     }
 };

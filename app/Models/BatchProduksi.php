@@ -13,6 +13,7 @@ class BatchProduksi extends Model
 
     protected $fillable = [
         'nomor_batch',
+        'produk_id',
         'tungku_id',
         'tanggal_produksi',
         'status',

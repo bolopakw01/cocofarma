@@ -38,11 +38,11 @@
                 $value = \App\Models\Produksi::whereDate('created_at', today())->count() ?? 0;
                 break;
             case 'packing':
-                // Asumsikan packing adalah bagian dari produksi atau model lain
-                $value = \App\Models\Produksi::where('status', 'packed')->whereDate('created_at', today())->count() ?? 0;
+                // Asumsikan packing adalah bagian dari produksi yang sudah selesai
+                $value = \App\Models\Produksi::where('status', 'selesai')->whereDate('created_at', today())->count() ?? 0;
                 break;
             case 'qc':
-                $value = \App\Models\Produksi::where('status', 'qc_passed')->whereDate('created_at', today())->count() ?? 0;
+                $value = \App\Models\Produksi::where('status', 'proses')->whereDate('created_at', today())->count() ?? 0;
                 break;
             // Tambahkan case lain jika perlu
         }
@@ -330,7 +330,7 @@
               </thead>
               <tbody>
                 @forelse($bahanBaku as $bahan)
-                <tr>
+                <tr class="{{ ($bahan->stok_minimum && $bahan->total_stok <= $bahan->stok_minimum) ? 'table-danger' : '' }}">
                   <td>
                     <div class="d-flex align-items-center">
                       <div class="avatar-sm bg-secondary text-white me-2" aria-hidden="true">{{ strtoupper(substr($bahan->nama_bahan,0,1)) }}</div>
@@ -344,10 +344,9 @@
                   </td>
                   <td>{{ $bahan->satuan }}</td>
                   <td>
-                    @php $lowThreshold = $bahan->minimum_stok ?? 10; @endphp
-                    <span class="fw-bold {{ ($bahan->total_stok <= $lowThreshold) ? 'text-danger' : 'text-dark' }}">{{ $bahan->total_stok }}</span>
-                    @if($bahan->total_stok <= $lowThreshold)
-                      <span class="badge bg-danger ms-2">Rendah</span>
+                    <span class="fw-bold {{ ($bahan->stok_minimum && $bahan->total_stok <= $bahan->stok_minimum) ? 'text-danger' : 'text-dark' }}">{{ $bahan->total_stok == floor($bahan->total_stok) ? number_format($bahan->total_stok, 0) : number_format($bahan->total_stok, 2) }}</span>
+                    @if($bahan->stok_minimum && $bahan->total_stok <= $bahan->stok_minimum)
+                      <span class="badge bg-danger ms-2">Stok Rendah</span>
                     @endif
                   </td>
                 </tr>

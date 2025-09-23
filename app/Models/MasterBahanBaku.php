@@ -14,11 +14,13 @@ class MasterBahanBaku extends Model
         'satuan',
         'harga_per_satuan',
         'deskripsi',
-        'status'
+        'status',
+        'stok_minimum'
     ];
 
     protected $casts = [
         'harga_per_satuan' => 'decimal:2',
+        'stok_minimum' => 'decimal:4',
         'status' => 'string'
     ];
 

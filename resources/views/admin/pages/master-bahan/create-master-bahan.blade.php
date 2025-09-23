@@ -370,6 +370,15 @@
 
         <div class="form-row">
             <div class="form-group">
+                <label for="stok_minimum">Stok Minimum</label>
+                <input type="number" id="stok_minimum" name="stok_minimum" value="{{ old('stok_minimum') }}" min="0" step="0.01" placeholder="Masukkan stok minimum (opsional)">
+                <small class="text-muted">Stok minimum untuk notifikasi ketika stok rendah</small>
+                @error('stok_minimum')
+                    <span class="text-danger" data-server-error="true">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="form-group">
                 <label for="status">Status <span style="color: var(--danger);">*</span></label>
                 <select id="status" name="status" required>
                     <option value="aktif" {{ old('status', 'aktif') == 'aktif' ? 'selected' : '' }}>Aktif</option>
@@ -378,10 +387,6 @@
                 @error('status')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
-            </div>
-
-            <div class="form-group">
-                <!-- Empty column for layout -->
             </div>
         </div>
 

@@ -24,8 +24,8 @@ class BahanBaku extends Model
     protected $casts = [
         'master_bahan_id' => 'integer',
         'harga_per_satuan' => 'decimal:2',
-        'stok' => 'decimal:2',
-        'stok_minimum' => 'decimal:2',
+        'stok' => 'decimal:4',
+        'stok_minimum' => 'decimal:4',
         'tanggal_masuk' => 'date',
         'tanggal_kadaluarsa' => 'date',
         'status' => 'string'
@@ -58,7 +58,8 @@ class BahanBaku extends Model
     // Accessor untuk total stok tersedia
     public function getTotalStokAttribute()
     {
-        return $this->stok;
+        // Hitung total stok dari detail stok bahan baku yang masih tersedia
+        return $this->stokBahanBaku()->where('sisa_stok', '>', 0)->sum('sisa_stok');
     }
 
     // Accessor untuk status stok

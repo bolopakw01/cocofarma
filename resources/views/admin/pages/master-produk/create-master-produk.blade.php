@@ -827,6 +827,17 @@ function createDatalist() {
 // Initialize datalist on load
 document.addEventListener('DOMContentLoaded', function() {
     createDatalist();
+    
+    // Check if product was successfully created and notify parent window
+    @if(session('success'))
+        if (window.opener) {
+            window.opener.postMessage({ type: 'produkCreated', message: 'Produk berhasil dibuat' }, '*');
+        }
+        // Also set localStorage for fallback
+        if (window.opener) {
+            window.opener.localStorage.setItem('refreshProdukSelect', 'true');
+        }
+    @endif
 });
 </script>
 @endsection
