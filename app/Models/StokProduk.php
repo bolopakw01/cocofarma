@@ -93,13 +93,7 @@ class StokProduk extends Model
     // Accessor untuk grade label
     public function getGradeLabelAttribute()
     {
-        $labels = [
-            'A' => 'Premium',
-            'B' => 'Standard',
-            'C' => 'Below Standard'
-        ];
-
-        return $labels[$this->grade_kualitas] ?? $this->grade_kualitas;
+        return \App\Models\Pengaturan::getGradeLabel($this->grade_kualitas);
     }
 
     // Accessor untuk total nilai stok
@@ -131,5 +125,34 @@ class StokProduk extends Model
     {
         return $query->where('tanggal_kadaluarsa', '<=', now()->addDays($days))
                     ->where('tanggal_kadaluarsa', '>=', now());
+    }
+
+    // Accessor untuk grade display (format lengkap: "Grade A (Premium Quality)")
+    public function getGradeDisplayAttribute()
+    {
+        if (!$this->grade_kualitas) {
+            return '-';
+        }
+
+        try {
+            $grades = \App\Models\Pengaturan::getProductGrades();
+            if (empty($grades)) {
+                // If no grades configured at all, return '-'
+                return '-';
+            }
+
+            // Find the grade by index (A=0, B=1, C=2, etc.)
+            $gradeIndex = ord($this->grade_kualitas) - 65; // Convert A to 0, B to 1, etc.
+            if (isset($grades[$gradeIndex])) {
+                $gradeName = $grades[$gradeIndex]['name'];
+                $gradeLabel = $grades[$gradeIndex]['label'];
+                return "{$gradeName} ({$gradeLabel})";
+            }
+
+            return $this->grade_kualitas;
+        } catch (\Exception $e) {
+            // Emergency fallback - return '-' instead of default grades
+            return '-';
+        }
     }
 }

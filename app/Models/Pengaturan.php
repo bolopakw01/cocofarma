@@ -43,6 +43,46 @@ class Pengaturan extends Model
         );
     }
 
+    /**
+     * Get all product grades from JSON setting
+     */
+    public static function getProductGrades()
+    {
+        $raw = static::where('nama_pengaturan', 'product_grades')->first();
+        if ($raw) {
+            $decoded = json_decode($raw->nilai, true);
+            if (is_array($decoded)) {
+                return $decoded;
+            }
+        }
+        return [];
+    }
+
+    /**
+     * Get grade label by grade key (A, B, C, etc.)
+     * For backward compatibility with existing A/B/C system
+     */
+    public static function getGradeLabel($gradeKey)
+    {
+        // First try to get from new dynamic grades system
+        $grades = static::getProductGrades();
+        foreach ($grades as $grade) {
+            // If grade name matches the key (e.g., "Grade A" matches "A")
+            if (strtolower($grade['name']) === 'grade ' . strtolower($gradeKey)) {
+                return $grade['label'];
+            }
+        }
+
+        // Fallback to old system for backward compatibility
+        $fallbackLabels = [
+            'A' => static::getValue('grade_a_label', 'Premium'),
+            'B' => static::getValue('grade_b_label', 'Standard'),
+            'C' => static::getValue('grade_c_label', 'Below Standard')
+        ];
+
+        return $fallbackLabels[$gradeKey] ?? $gradeKey;
+    }
+
     // Accessor untuk nilai berdasarkan tipe
     public function getNilaiParsedAttribute()
     {

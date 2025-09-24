@@ -163,6 +163,9 @@ if (!function_exists('generate_breadcrumb')) {
                             case 'edit':
                                 $breadcrumb[] = ['title' => 'Edit Pengaturan'];
                                 break;
+                            case 'grade':
+                                $breadcrumb[] = ['title' => 'Pengaturan Grade'];
+                                break;
                         }
                     }
                     break;

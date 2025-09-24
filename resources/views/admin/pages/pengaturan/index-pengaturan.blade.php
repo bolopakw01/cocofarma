@@ -2,6 +2,7 @@
 
 @php
     $pageTitle = 'Pengaturan';
+    use App\Models\Pengaturan;
 @endphp
 
 @section('title', 'Pengaturan Sistem - Cocofarma')
@@ -248,6 +249,23 @@
                 </p>
                 <a href="{{ route('backoffice.laporan.index') }}" class="btn btn-warning">
                     <i class="fas fa-chart-line"></i> Buat Laporan
+                </a>
+            </div>
+
+            <div class="setting-card">
+                <div class="setting-header">
+                    <div class="setting-icon">
+                        <i class="fas fa-star"></i>
+                    </div>
+                    <div>
+                        <h4 class="setting-title">Pengaturan Grade</h4>
+                    </div>
+                </div>
+                <p class="setting-description">
+                    Kelola label dan pengaturan grade produk. Atur nama grade A, B, dan C untuk klasifikasi produk.
+                </p>
+                <a href="{{ route('backoffice.pengaturan.grade') }}" class="btn btn-success">
+                    <i class="fas fa-cog"></i> Kelola Grade
                 </a>
             </div>
         </div>

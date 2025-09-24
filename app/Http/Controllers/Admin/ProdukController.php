@@ -7,6 +7,7 @@ use App\Models\Produk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Auth;
 
 class ProdukController extends Controller
 {
@@ -123,7 +124,8 @@ class ProdukController extends Controller
             'harga_jual' => $request->harga_jual,
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->status
+            // Normalize incoming status (same mapping as store)
+            'status' => $request->status == '1' ? 'aktif' : 'nonaktif'
         ];
 
         // Handle foto upload
@@ -156,11 +158,18 @@ class ProdukController extends Controller
      */
     public function destroy(Produk $produk)
     {
+        // Only super_admin can delete products
+        if (!(Auth::check() && Auth::user()->role === 'super_admin')) {
+            return redirect()->route('backoffice.master-produk.index')
+                        ->with('error', 'Hanya Super Admin yang dapat menghapus produk.');
+        }
+
         // Delete foto if exists
         if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
             Storage::disk('public')->delete($produk->foto);
         }
 
+        // Deleting product will cascade to produksis and stok_produks per DB foreign keys
         $produk->delete();
 
         return redirect()->route('backoffice.master-produk.index')
@@ -174,7 +183,7 @@ class ProdukController extends Controller
     {
         $kategori = $request->query('kategori');
         $produks = Produk::where('kategori', $kategori)
-                        ->where('status', true)
+                        ->where('status', 'aktif')
                         ->orderBy('nama_produk')
                         ->get();
 
@@ -186,9 +195,9 @@ class ProdukController extends Controller
      */
     public function checkStockStatus()
     {
-        $lowStockProducts = Produk::whereColumn('stok', '<=', 'minimum_stok')
-                                 ->where('status', true)
-                                 ->get();
+    $lowStockProducts = Produk::whereColumn('stok', '<=', 'minimum_stok')
+                 ->where('status', 'aktif')
+                 ->get();
 
         return response()->json([
             'low_stock_count' => $lowStockProducts->count(),

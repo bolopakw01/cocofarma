@@ -3,6 +3,8 @@
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\Admin\ProdukController;
+use App\Models\StokProduk;
+use App\Models\Produksi;
 use App\Http\Controllers\Admin\BahanBakuController;
 use App\Http\Controllers\Admin\PesananController;
 use App\Http\Controllers\Admin\ProduksiController as MainProduksiController;
@@ -62,6 +64,36 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
             Route::post('/api/bahan-stok', [MainProduksiController::class, 'apiBahanStok'])->name('api.bahan-stok');
         });
 
+        // Operational Produk page (simple index view)
+        Route::prefix('produk')->name('produk.')->group(function () {
+            // Operational Produk index: show produced items (stok_produks) as results of production
+            Route::get('/', function () {
+                // Fetch recent produced stock entries with relations
+                $stokProduks = StokProduk::with(['produk', 'batchProduksi'])
+                    ->orderByDesc('tanggal')
+                    ->orderByDesc('id')
+                    ->limit(50)
+                    ->get();
+
+                // Also fetch recent produksi records that have status 'selesai'
+                $produksis = Produksi::with(['produk', 'batchProduksi'])
+                    ->where('status', 'selesai')
+                    ->orderByDesc('tanggal_produksi')
+                    ->orderByDesc('id')
+                    ->limit(50)
+                    ->get();
+
+                return view('admin.pages.produk.index-produk', compact('stokProduks', 'produksis'));
+            })->name('index');
+
+            // Stok produk management (super_admin only)
+            Route::middleware('role:super_admin')->group(function () {
+                Route::get('/stok/{stok}/edit', [\App\Http\Controllers\Admin\StokProdukController::class, 'edit'])->name('stok.edit');
+                Route::put('/stok/{stok}', [\App\Http\Controllers\Admin\StokProdukController::class, 'update'])->name('stok.update');
+                Route::delete('/stok/{stok}', [\App\Http\Controllers\Admin\StokProdukController::class, 'destroy'])->name('stok.destroy');
+            });
+        });
+
         // Master produk routes (only accessible by super_admin)
         Route::middleware('role:super_admin')->prefix('master-produk')->name('master-produk.')->group(function () {
             Route::get('/', [ProdukController::class, 'index'])->name('index');
@@ -113,7 +145,13 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
                 Route::post('/save-dashboard-goal', [PengaturanController::class, 'saveDashboardGoal'])->name('save-dashboard-goal');
                 Route::get('/goals', [PengaturanController::class, 'goals'])->name('goals');
                 Route::post('/save-goals', [PengaturanController::class, 'saveGoalsList'])->name('save-goals');
+                Route::post('/save-grades', [PengaturanController::class, 'saveGradesList'])->name('save-grades');
                 Route::get('/alerts', [PengaturanController::class, 'alerts'])->name('alerts');
+                Route::post('/update-grade', [PengaturanController::class, 'updateGrade'])->name('update-grade');
+                Route::get('/grade', [PengaturanController::class, 'grade'])->name('grade');
+                Route::post('/grade/store', [PengaturanController::class, 'storeGrade'])->name('grade.store');
+                Route::put('/grade/update/{grade}', [PengaturanController::class, 'updateGradeSetting'])->name('grade.update');
+                Route::delete('/grade/delete/{grade}', [PengaturanController::class, 'deleteGradeSetting'])->name('grade.delete');
                 // Resource controller (last, so /goals etc aren't shadowed by /{pengaturan})
                 Route::resource('/', PengaturanController::class)->parameters(['' => 'pengaturan']);
         });

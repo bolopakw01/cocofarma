@@ -8,10 +8,12 @@ use App\Models\BatchProduksi;
 use App\Models\Produk;
 use App\Models\BahanBaku;
 use App\Models\ProduksiBahan;
+use App\Models\StokProduk;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Auth;
 
 class ProduksiController extends Controller
 {
@@ -131,7 +133,7 @@ class ProduksiController extends Controller
                     'produk_id' => $request->produk_id,
                     'tanggal_produksi' => $request->tanggal_produksi,
                     'status' => 'rencana',
-                    'user_id' => optional(auth()->user())->id,
+                    'user_id' => optional(Auth::user())->id,
                 ]);
                 
                 $batchProduksiId = $batchProduksi->id;
@@ -145,7 +147,7 @@ class ProduksiController extends Controller
                 'tanggal_produksi' => $request->tanggal_produksi,
                 'jumlah_target' => $request->jumlah_target,
                 'catatan' => $request->catatan,
-                'user_id' => optional(auth()->user())->id,
+                'user_id' => optional(Auth::user())->id,
             ]);
 
             // Calculate total cost and save bahan usage, decrementing locked rows
@@ -204,8 +206,13 @@ class ProduksiController extends Controller
         $produksi->load(['produksiBahans.bahanBaku']);
         $produks = Produk::where('status', 'aktif')->get();
         $bahanBakus = BahanBaku::where('status', 'aktif')->get();
-        
-    return view('admin.pages.produksi.edit-produksi', compact('produksi', 'produks', 'bahanBakus'));
+
+        // Load dynamic grades for the view
+        $grades = \App\Models\Pengaturan::getProductGrades();
+        // If no grades configured, don't show any grade options
+        // Only show fallback grades if grades array is completely empty (not configured yet)
+
+        return view('admin.pages.produksi.edit-produksi', compact('produksi', 'produks', 'bahanBakus', 'grades'));
     }
 
     /**
@@ -236,10 +243,46 @@ class ProduksiController extends Controller
             'bahan_baku' => 'nullable|array',
             'bahan_baku.*.id' => 'required_with:bahan_baku|exists:bahan_baku,id',
             'bahan_baku.*.jumlah' => 'required_with:bahan_baku|numeric|min:0.001',
+            'grade_kualitas' => [
+                function ($attribute, $value, $fail) {
+                    // Only validate grade if grades are configured
+                    $grades = \App\Models\Pengaturan::getProductGrades();
+                    if (!empty($grades)) {
+                        // If grades are configured, grade_kualitas is required
+                        if (empty($value)) {
+                            $fail('Grade kualitas harus dipilih.');
+                            return;
+                        }
+
+                        $maxGradeIndex = count($grades) - 1;
+                        $validGrades = [];
+                        for ($i = 0; $i <= $maxGradeIndex; $i++) {
+                            $validGrades[] = chr(65 + $i); // A, B, C, D, etc.
+                        }
+
+                        if (!in_array($value, $validGrades)) {
+                            $fail('Grade kualitas yang dipilih tidak valid.');
+                        }
+                    }
+                    // If no grades configured, allow empty/null values
+                },
+            ],
         ]);
 
         // Additional validation: jumlah_hasil is required when status is selesai
         if ($request->status === 'selesai' && (is_null($request->jumlah_hasil) || $request->jumlah_hasil === '')) {
+                        // Create operational stock entry
+                        StokProduk::create([
+                            'produk_id' => $produksi->produk_id,
+                            'batch_produksi_id' => $produksi->batch_produksi_id,
+                            'jumlah_masuk' => $request->jumlah_hasil,
+                            'jumlah_keluar' => 0,
+                            'sisa_stok' => $request->jumlah_hasil,
+                            'harga_satuan' => $produksi->produk->harga_jual ?? 0,
+                            'grade_kualitas' => $request->grade_kualitas,
+                            'tanggal' => $request->tanggal_produksi ?? now()->toDateString(),
+                            'keterangan' => 'Hasil produksi ' . $produksi->nomor_produksi
+                        ]);
             return redirect()->back()->withInput()->withErrors(['jumlah_hasil' => 'Jumlah hasil produksi harus diisi ketika status diset ke "Selesai".']);
         }
 
@@ -261,6 +304,12 @@ class ProduksiController extends Controller
                 }
                 if ($request->has('jumlah_target')) {
                     $updateData['jumlah_target'] = $request->jumlah_target;
+                }
+
+                // Only update grade_kualitas if grades are configured and grade_kualitas is provided
+                $grades = \App\Models\Pengaturan::getProductGrades();
+                if (!empty($grades) && $request->has('grade_kualitas')) {
+                    $updateData['grade_kualitas'] = $request->grade_kualitas;
                 }
 
                 $produksi->update($updateData);
@@ -386,9 +435,26 @@ class ProduksiController extends Controller
                     $produksi->update(['biaya_produksi' => $totalCost]);
                 }
 
-                // If production is completed, update product stock
+                // If production is completed, update product stock and create operational stock entry
                 if ($request->status === 'selesai' && $request->jumlah_hasil > 0) {
+                    // Update master product stock
                     $produksi->produk->increment('stok', $request->jumlah_hasil);
+
+                    // Calculate HPP (Harga Pokok Produksi) per unit
+                    $hppPerUnit = $totalCost / $request->jumlah_hasil;
+
+                    // Create operational stock entry (use master product selling price)
+                    StokProduk::create([
+                        'produk_id' => $produksi->produk_id,
+                        'batch_produksi_id' => $produksi->batch_produksi_id,
+                        'jumlah_masuk' => $request->jumlah_hasil,
+                        'jumlah_keluar' => 0,
+                        'sisa_stok' => $request->jumlah_hasil,
+                        'harga_satuan' => $produksi->produk->harga_jual ?? 0,
+                        'grade_kualitas' => $request->grade_kualitas,
+                        'tanggal' => $request->tanggal_produksi ?? now()->toDateString(),
+                        'keterangan' => 'Hasil produksi ' . $produksi->nomor_produksi
+                    ]);
                 }
             });
 
@@ -403,7 +469,33 @@ class ProduksiController extends Controller
      */
     public function destroy(Produksi $produksi)
     {
+        // Determine related operational stock for this production
+        $relatedStok = StokProduk::where('batch_produksi_id', $produksi->batch_produksi_id)
+            ->where('produk_id', $produksi->produk_id)
+            ->sum('sisa_stok');
+
+        // Super admin can always delete
+        if (Auth::check() && Auth::user()->role === 'super_admin') {
+            // allow
+        } elseif (Auth::check() && Auth::user()->role === 'admin') {
+            // Admin may delete only when operational stock is empty
+            if ((float) $relatedStok > 0) {
+                return back()->with('error', 'Produksi tidak dapat dihapus karena masih terdapat stok operasional terkait produksi ini (' . $relatedStok . '). Silakan kosongkan stok operasional terlebih dahulu.');
+            }
+        } else {
+            // Other roles are not permitted
+            return back()->with('error', 'Anda tidak memiliki izin untuk menghapus produksi.');
+        }
+
+        // If safe to delete, perform deletion within transaction
         DB::transaction(function() use ($produksi) {
+            // If production was completed, remove any zeroed operational stock records
+            if ($produksi->status === 'selesai' && $produksi->jumlah_hasil > 0) {
+                StokProduk::where('batch_produksi_id', $produksi->batch_produksi_id)
+                    ->where('produk_id', $produksi->produk_id)
+                    ->delete();
+            }
+
             // Restore bahan baku stock if production is cancelled
             if ($produksi->status !== 'selesai') {
                 foreach ($produksi->produksiBahans as $produksiBahan) {
@@ -412,9 +504,15 @@ class ProduksiController extends Controller
             }
 
             $produksi->delete();
+            // If deleter is super_admin, delete associated product as well
+            if (Auth::check() && Auth::user()->role === 'super_admin') {
+                if ($produksi->produk) {
+                    $produksi->produk->delete();
+                }
+            }
         });
 
-    return redirect()->route('backoffice.produksi.index')->with('success', 'Data produksi berhasil dihapus.');
+        return redirect()->route('backoffice.produksi.index')->with('success', 'Data produksi berhasil dihapus.');
     }
 
     /**
@@ -434,6 +532,66 @@ class ProduksiController extends Controller
         }
 
         return response()->json(['stok' => $map]);
+    }
+
+    /**
+     * Mark production as complete and create stock record for produced items.
+     */
+    public function completeProduction(Request $request, Produksi $produksi)
+    {
+        $request->validate([
+            'jumlah_hasil' => 'required|numeric|min:0',
+            'grade_kualitas' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $grades = \App\Models\Pengaturan::getProductGrades();
+                    $maxGradeIndex = count($grades) > 0 ? count($grades) - 1 : 2; // Default to C (index 2) if no grades
+                    $validGrades = [];
+                    for ($i = 0; $i <= $maxGradeIndex; $i++) {
+                        $validGrades[] = chr(65 + $i); // A, B, C, D, etc.
+                    }
+
+                    if (!in_array($value, $validGrades)) {
+                        $fail('Grade kualitas yang dipilih tidak valid.');
+                    }
+                },
+            ],
+        ]);
+
+        DB::beginTransaction();
+        try {
+            // Update produksi
+            $produksi->update([
+                'jumlah_hasil' => $request->jumlah_hasil,
+                'grade_kualitas' => $request->grade_kualitas,
+                'status' => 'selesai',
+            ]);
+
+            // Update master product stock
+            $produksi->produk->increment('stok', $request->jumlah_hasil);
+
+            // Create stok produk hasil produksi using master product selling price
+            StokProduk::create([
+                'produk_id' => $produksi->produk_id,
+                'batch_produksi_id' => $produksi->batch_produksi_id,
+                'jumlah_masuk' => $request->jumlah_masuk ?? $request->jumlah_hasil,
+                'sisa_stok' => $request->jumlah_hasil,
+                'harga_satuan' => $produksi->produk->harga_jual ?? 0,
+                'grade_kualitas' => $request->grade_kualitas,
+                'tanggal' => $produksi->tanggal_produksi,
+                'keterangan' => 'Hasil produksi ' . $produksi->nomor_produksi,
+            ]);
+
+            DB::commit();
+
+            return redirect()->route('backoffice.produksi.show', $produksi)
+                ->with('success', 'Produksi berhasil diselesaikan');
+
+        } catch (\Exception $e) {
+            DB::rollBack();
+            Log::error('completeProduction error: ' . $e->getMessage());
+            return redirect()->back()->withInput()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
+        }
     }
 
 }

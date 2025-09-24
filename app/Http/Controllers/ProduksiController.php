@@ -79,7 +79,8 @@ class ProduksiController extends Controller
 
     public function create()
     {
-        $produks = Produk::with('produkBahans.masterBahan')->get();
+    // Only allow produk that are active (set by super_admin in master produk)
+    $produks = Produk::where('status', 'aktif')->with('produkBahans.masterBahan')->get();
         $batchProduksis = BatchProduksi::where('status', 'aktif')->get();
         $tungkus = Tungku::aktif()->get();
         
@@ -280,6 +281,9 @@ class ProduksiController extends Controller
                 $updateData['jumlah_hasil'] = $request->jumlah_hasil;
                 $updateData['grade_kualitas'] = $request->grade_kualitas;
 
+                // Update master product stock
+                $produksi->produk->increment('stok', $request->jumlah_hasil);
+
                 // Buat stok produk hasil produksi jika belum ada
                 if (!$produksi->stokProduk) {
                     StokProduk::create([
@@ -287,7 +291,8 @@ class ProduksiController extends Controller
                         'batch_produksi_id' => $produksi->batch_produksi_id,
                         'jumlah_masuk' => $request->jumlah_hasil,
                         'sisa_stok' => $request->jumlah_hasil,
-                        'harga_satuan' => $produksi->biaya_produksi / $produksi->jumlah_target,
+                        // Use master product selling price for operational stock
+                        'harga_satuan' => $produksi->produk->harga_jual ?? 0,
                         'grade_kualitas' => $request->grade_kualitas,
                         'tanggal' => $produksi->tanggal_produksi,
                         'keterangan' => 'Hasil produksi ' . $produksi->nomor_produksi,
@@ -317,6 +322,22 @@ class ProduksiController extends Controller
             return back()->with('error', 'Produksi yang sudah diproses tidak dapat dihapus');
         }
 
+        // Related operational stock
+        $relatedStok = StokProduk::where('batch_produksi_id', $produksi->batch_produksi_id)
+            ->where('produk_id', $produksi->produk_id)
+            ->sum('sisa_stok');
+
+        // Super admin can bypass; admin may delete only when operational stock is empty
+        if (Auth::check() && Auth::user()->role === 'super_admin') {
+            // proceed
+        } elseif (Auth::check() && Auth::user()->role === 'admin') {
+            if ((float) $relatedStok > 0) {
+                return back()->with('error', 'Produksi tidak dapat dihapus karena masih terdapat stok operasional terkait produksi ini (' . $relatedStok . '). Silakan kosongkan stok operasional terlebih dahulu.');
+            }
+        } else {
+            return back()->with('error', 'Anda tidak memiliki izin untuk menghapus produksi.');
+        }
+
         DB::beginTransaction();
         try {
             // Kembalikan stok bahan baku sebelum menghapus
@@ -328,13 +349,20 @@ class ProduksiController extends Controller
             // Hapus produksi
             $produksi->delete();
 
+            // If deleter is super_admin, also delete associated product
+            if (Auth::check() && Auth::user()->role === 'super_admin') {
+                if ($produksi->produk) {
+                    $produksi->produk->delete();
+                }
+            }
+
             DB::commit();
 
             return redirect()->route('backoffice.produksi.index')
                 ->with('success', 'Produksi berhasil dihapus');
 
         } catch (\Exception $e) {
-            DB::rollback();
+            DB::rollBack();
             return back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
         }
     }
@@ -366,13 +394,13 @@ class ProduksiController extends Controller
                 'status' => 'selesai',
             ]);
 
-            // Buat stok produk hasil produksi
+            // Buat stok produk hasil produksi (gunakan harga jual dari master produk)
             StokProduk::create([
                 'produk_id' => $produksi->produk_id,
                 'batch_produksi_id' => $produksi->batch_produksi_id,
                 'jumlah_masuk' => $request->jumlah_hasil,
                 'sisa_stok' => $request->jumlah_hasil,
-                'harga_satuan' => $produksi->biaya_produksi / $produksi->jumlah_target,
+                'harga_satuan' => $produksi->produk->harga_jual ?? 0,
                 'grade_kualitas' => $request->grade_kualitas,
                 'tanggal' => $produksi->tanggal_produksi,
                 'keterangan' => 'Hasil produksi ' . $produksi->nomor_produksi,

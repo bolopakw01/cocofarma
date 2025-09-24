@@ -238,7 +238,7 @@
             @if($produksi->grade_kualitas)
             <div class="info-item">
                 <span class="info-label">Grade Kualitas</span>
-                <span class="info-value">{{ $produksi->grade_kualitas }}</span>
+                <span class="info-value">{{ $produksi->grade_kualitas }} - {{ $produksi->grade_label }}</span>
             </div>
             @endif
             <div class="info-item">

@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\BahanBaku;
 use App\Models\MasterBahanBaku;
+use App\Models\StokBahanBaku;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
@@ -105,7 +106,7 @@ class BahanBakuController extends Controller
                 'status' => 'nullable|string|in:aktif,nonaktif'
             ]);
 
-            MasterBahanBaku::create([
+            $master = MasterBahanBaku::create([
                 'kode_bahan' => $request->kode_bahan,
                 'nama_bahan' => $request->nama_bahan,
                 'satuan' => $request->satuan,
@@ -114,6 +115,22 @@ class BahanBakuController extends Controller
                 'deskripsi' => $request->deskripsi,
                 'status' => $request->status ?? 'aktif'
             ]);
+
+            // Propagate harga_per_satuan to any existing operational bahan and their stock entries
+            try {
+                $affectedBahanIds = $master->bahanBakus()->pluck('id')->toArray();
+                if (!empty($affectedBahanIds)) {
+                    // Update operational bahan prices
+                    BahanBaku::whereIn('id', $affectedBahanIds)->update(['harga_per_satuan' => $master->harga_per_satuan]);
+
+                    // Update active stok detail prices where there is remaining stock
+                    StokBahanBaku::whereIn('bahan_baku_id', $affectedBahanIds)
+                        ->where('sisa_stok', '>', 0)
+                        ->update(['harga_satuan' => $master->harga_per_satuan]);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to propagate master bahan harga to operasional: ' . $e->getMessage());
+            }
 
             return redirect()->route($routeName)->with('success', 'Master bahan baku berhasil dibuat.');
         } else {
@@ -246,6 +263,21 @@ class BahanBakuController extends Controller
                 'deskripsi' => $request->deskripsi,
                 'status' => $request->status ?? 'aktif'
             ]);
+
+            // Propagate updated price to operational bahan and stock details
+            try {
+                $affectedBahanIds = $bahanBaku->bahanBakus()->pluck('id')->toArray();
+                if (!empty($affectedBahanIds)) {
+                    BahanBaku::whereIn('id', $affectedBahanIds)
+                        ->update(['harga_per_satuan' => $bahanBaku->harga_per_satuan]);
+
+                    StokBahanBaku::whereIn('bahan_baku_id', $affectedBahanIds)
+                        ->where('sisa_stok', '>', 0)
+                        ->update(['harga_satuan' => $bahanBaku->harga_per_satuan]);
+                }
+            } catch (\Exception $e) {
+                Log::warning('Failed to propagate updated master bahan harga to operasional: ' . $e->getMessage());
+            }
 
             return redirect()->route($routeName)->with('success', 'Master bahan baku berhasil diperbarui.');
         } else {

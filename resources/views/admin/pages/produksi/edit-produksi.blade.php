@@ -555,18 +555,35 @@
                     @enderror
                 </div>
 
+                @if(!empty($grades))
                 <div class="form-group">
                     <label for="grade_kualitas">Grade Kualitas <span class="required">*</span></label>
                     <select name="grade_kualitas" id="grade_kualitas">
                         <option value="">Pilih Grade</option>
-                        <option value="A" {{ old('grade_kualitas', $produksi->grade_kualitas) == 'A' ? 'selected' : '' }}>A (Premium)</option>
-                        <option value="B" {{ old('grade_kualitas', $produksi->grade_kualitas) == 'B' ? 'selected' : '' }}>B (Standard)</option>
-                        <option value="C" {{ old('grade_kualitas', $produksi->grade_kualitas) == 'C' ? 'selected' : '' }}>C (Basic)</option>
+                        @foreach($grades as $index => $grade)
+                            @php
+                                // Map dynamic grades to A/B/C values for backward compatibility
+                                $gradeValue = chr(65 + $index); // A, B, C, etc.
+                            @endphp
+                            <option value="{{ $gradeValue }}" {{ old('grade_kualitas', $produksi->grade_kualitas) == $gradeValue ? 'selected' : '' }}>
+                                {{ $grade['name'] }} ({{ $grade['label'] }})
+                            </option>
+                        @endforeach
                     </select>
                     @error('grade_kualitas')
                         <span class="error-message">{{ $message }}</span>
                     @enderror
                 </div>
+                @else
+                <div class="form-group">
+                    <label for="grade_kualitas">Grade Kualitas</label>
+                    <div class="alert alert-warning" style="padding: 10px; margin: 0; border-radius: 5px; background-color: #fff3cd; border: 1px solid #ffeaa7; color: #856404;">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Grade belum dikonfigurasi. Silakan <a href="{{ route('backoffice.pengaturan.grade') }}" target="_blank" style="color: #856404; text-decoration: underline;">atur grade produk</a> terlebih dahulu.
+                    </div>
+                    <input type="hidden" name="grade_kualitas" value="{{ $produksi->grade_kualitas }}">
+                </div>
+                @endif
             </div>
         </div>
 

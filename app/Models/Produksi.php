@@ -76,10 +76,70 @@ class Produksi extends Model
         return $labels[$this->status] ?? ucfirst($this->status);
     }
 
-    // Accessor untuk total bahan digunakan
-    public function getTotalBahanDigunakanAttribute()
+    // Accessor untuk grade label
+    public function getGradeLabelAttribute()
     {
-        return $this->produksiBahans->sum('jumlah_digunakan');
+        if (!$this->grade_kualitas) {
+            return null;
+        }
+
+        try {
+            $grades = Pengaturan::getProductGrades();
+            if (empty($grades)) {
+                // Fallback to default grades
+                $defaultGrades = [
+                    'A' => 'Premium',
+                    'B' => 'Standard',
+                    'C' => 'Below Standard'
+                ];
+                return $defaultGrades[$this->grade_kualitas] ?? $this->grade_kualitas;
+            }
+
+            // Find the grade by index (A=0, B=1, C=2, etc.)
+            $gradeIndex = ord($this->grade_kualitas) - 65; // Convert A to 0, B to 1, etc.
+            if (isset($grades[$gradeIndex])) {
+                return $grades[$gradeIndex]['label'];
+            }
+
+            return $this->grade_kualitas;
+        } catch (\Exception $e) {
+            // Emergency fallback
+            $defaultGrades = [
+                'A' => 'Premium',
+                'B' => 'Standard',
+                'C' => 'Below Standard'
+            ];
+            return $defaultGrades[$this->grade_kualitas] ?? $this->grade_kualitas;
+        }
+    }
+
+    // Accessor untuk grade display (format lengkap: "Grade A (Premium Quality)")
+    public function getGradeDisplayAttribute()
+    {
+        if (!$this->grade_kualitas) {
+            return '-';
+        }
+
+        try {
+            $grades = Pengaturan::getProductGrades();
+            if (empty($grades)) {
+                // If no grades configured at all, return '-'
+                return '-';
+            }
+
+            // Find the grade by index (A=0, B=1, C=2, etc.)
+            $gradeIndex = ord($this->grade_kualitas) - 65; // Convert A to 0, B to 1, etc.
+            if (isset($grades[$gradeIndex])) {
+                $gradeName = $grades[$gradeIndex]['name'];
+                $gradeLabel = $grades[$gradeIndex]['label'];
+                return "{$gradeName} ({$gradeLabel})";
+            }
+
+            return $this->grade_kualitas;
+        } catch (\Exception $e) {
+            // Emergency fallback - return '-' instead of default grades
+            return '-';
+        }
     }
 
     // Scope untuk produksi aktif

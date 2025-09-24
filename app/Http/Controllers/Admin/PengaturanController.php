@@ -327,6 +327,199 @@ class PengaturanController extends Controller
     }
 
     /**
+     * Save the whole list of product grades (JSON payload)
+     */
+    public function saveGradesList(Request $request)
+    {
+        $data = $request->validate([
+            'grades' => 'nullable|array',
+            'grades.*.name' => 'required_with:grades|string',
+            'grades.*.label' => 'required_with:grades|string'
+        ]);
+
+        $newGrades = $data['grades'] ?? [];
+
+        // Get current grades to check for deletions
+        $currentGrades = Pengaturan::getProductGrades();
+
+        // Check if any grades are being deleted and if they're still in use
+        if (!empty($currentGrades)) {
+            $currentGradeNames = array_column($currentGrades, 'name');
+            $newGradeNames = array_column($newGrades, 'name');
+
+            // Find deleted grades
+            $deletedGrades = array_diff($currentGradeNames, $newGradeNames);
+
+            if (!empty($deletedGrades)) {
+                // Check if any deleted grades are still used in production
+                foreach ($deletedGrades as $deletedGradeName) {
+                    // Find the index of this grade in current grades (A=0, B=1, C=2, etc.)
+                    $gradeIndex = array_search($deletedGradeName, $currentGradeNames);
+                    if ($gradeIndex !== false) {
+                        $gradeValue = chr(65 + $gradeIndex); // Convert to A, B, C, etc.
+
+                        // Check if this grade is used in any production records
+                        $productionsUsingGrade = \App\Models\Produksi::where('grade_kualitas', $gradeValue)->count();
+                        $stockUsingGrade = \App\Models\StokProduk::where('grade_kualitas', $gradeValue)->count();
+
+                        if ($productionsUsingGrade > 0 || $stockUsingGrade > 0) {
+                            return response()->json([
+                                'success' => false,
+                                'message' => "Grade '{$deletedGradeName}' tidak dapat dihapus karena masih digunakan oleh {$productionsUsingGrade} data produksi dan {$stockUsingGrade} data stok produk."
+                            ], 400);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Persist as JSON string
+        set_setting('product_grades', json_encode(array_values($newGrades)), 'json');
+
+        // Clear helper cache if needed (best-effort)
+        if (function_exists('cache')) {
+            try { cache()->forget('app_settings'); } catch (\Exception $e) { }
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Daftar grade berhasil disimpan.'
+        ]);
+    }
+
+    /**
+     * Update grade label settings
+     */
+    public function updateGrade(Request $request)
+    {
+        $request->validate([
+            'setting_name' => 'required|string|in:grade_a_label,grade_b_label,grade_c_label',
+            'value' => 'required|string|max:50'
+        ]);
+
+        try {
+            Pengaturan::setValue($request->setting_name, $request->value, 'string');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Label grade berhasil diperbarui.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui label grade: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Display grade management page
+     */
+    public function grade()
+    {
+        // Stored as JSON in 'product_grades'
+        $raw = Pengaturan::where('nama_pengaturan', 'product_grades')->first();
+        $grades = [];
+        if ($raw) {
+            $decoded = json_decode($raw->nilai, true);
+            if (is_array($decoded)) $grades = $decoded;
+        }
+
+        return view('admin.pages.pengaturan.grade', compact('grades'));
+    }
+
+    /**
+     * Store a new grade setting
+     */
+    public function storeGrade(Request $request)
+    {
+        $request->validate([
+            'grade_type' => 'required|string|in:grade_a_label,grade_b_label,grade_c_label',
+            'label' => 'required|string|max:50'
+        ]);
+
+        try {
+            Pengaturan::setValue($request->grade_type, $request->label, 'string');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Grade berhasil ditambahkan.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal menambahkan grade: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Update grade setting
+     */
+    public function updateGradeSetting(Request $request, $grade)
+    {
+        $request->validate([
+            'label' => 'required|string|max:50'
+        ]);
+
+        $validGrades = ['grade_a_label', 'grade_b_label', 'grade_c_label'];
+        if (!in_array($grade, $validGrades)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Grade tidak valid.'
+            ], 400);
+        }
+
+        try {
+            Pengaturan::setValue($grade, $request->label, 'string');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Grade berhasil diperbarui.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal memperbarui grade: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Delete grade setting (reset to default)
+     */
+    public function deleteGradeSetting($grade)
+    {
+        $validGrades = ['grade_a_label', 'grade_b_label', 'grade_c_label'];
+        $defaults = [
+            'grade_a_label' => 'Grade A',
+            'grade_b_label' => 'Grade B',
+            'grade_c_label' => 'Grade C'
+        ];
+
+        if (!in_array($grade, $validGrades)) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Grade tidak valid.'
+            ], 400);
+        }
+
+        try {
+            Pengaturan::setValue($grade, $defaults[$grade], 'string');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Grade berhasil direset ke default.'
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Gagal mereset grade: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Remove the specified resource from storage.
      */
     public function destroy(string $id)
