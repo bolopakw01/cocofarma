@@ -7,6 +7,8 @@ use App\Models\Pesanan;
 use App\Models\PesananItem;
 use App\Models\Produk;
 use App\Models\StokProduk;
+use App\Models\Transaksi;
+use App\Models\TransaksiItem;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
@@ -450,6 +452,11 @@ class PesananController extends Controller
                     $this->updateStockLevels($pesanan, $oldStatus, $newStatus);
                 }
 
+                // Create sales transaction if status changed to 'selesai'
+                if ($newStatus === 'selesai' && $oldStatus !== 'selesai') {
+                    $this->createSalesTransaction($pesanan);
+                }
+
                 // Update status pesanan
                 $pesanan->update(['status' => $newStatus]);
             });
@@ -608,5 +615,55 @@ class PesananController extends Controller
                 }
             }
         }
+    }
+
+    /**
+     * Create sales transaction when order status changes to 'selesai'
+     */
+    private function createSalesTransaction($pesanan): void
+    {
+        // Check if transaction already exists for this order
+        $existingTransaction = Transaksi::where('keterangan', 'like', '%Penjualan dari pesanan ' . $pesanan->kode_pesanan . '%')->first();
+        if ($existingTransaction) {
+            Log::info('Sales transaction already exists for order', [
+                'pesanan_id' => $pesanan->id,
+                'existing_transaksi_id' => $existingTransaction->id
+            ]);
+            return;
+        }
+
+        // Generate unique transaction code
+        $tanggal = date('ymd', strtotime($pesanan->tanggal_pesanan));
+        $timestamp = date('His') . substr(microtime(), 2, 3);
+        $random = rand(10, 99);
+        $kode_transaksi = 'TRX' . $tanggal . $timestamp . $random;
+
+        // Create transaction
+        $transaksi = Transaksi::create([
+            'kode_transaksi' => $kode_transaksi,
+            'tanggal_transaksi' => now(),
+            'jenis_transaksi' => 'penjualan',
+            'total' => $pesanan->total_harga,
+            'keterangan' => 'Penjualan dari pesanan ' . $pesanan->kode_pesanan . ' - ' . $pesanan->nama_pelanggan,
+            'status' => 'selesai'
+        ]);
+
+        // Create transaction items
+        foreach ($pesanan->pesananItems as $item) {
+            TransaksiItem::create([
+                'transaksi_id' => $transaksi->id,
+                'produk_id' => $item->produk_id,
+                'jumlah' => $item->jumlah,
+                'harga_satuan' => $item->harga_satuan,
+                'subtotal' => $item->subtotal
+            ]);
+        }
+
+        Log::info('Sales transaction created', [
+            'transaksi_id' => $transaksi->id,
+            'kode_transaksi' => $kode_transaksi,
+            'pesanan_id' => $pesanan->id,
+            'total' => $pesanan->total_harga
+        ]);
     }
 }
