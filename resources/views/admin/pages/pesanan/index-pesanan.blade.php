@@ -202,6 +202,26 @@
         transform: translateY(-1px);
     }
 
+    .btn-pending {
+        background: #f59e0b;
+        color: white;
+    }
+
+    .btn-pending:hover {
+        background: #d97706;
+        transform: translateY(-1px);
+    }
+
+    .btn-selesai {
+        background: #10b981;
+        color: white;
+    }
+
+    .btn-selesai:hover {
+        background: #059669;
+        transform: translateY(-1px);
+    }
+
     table {
         width: 100%;
         border-collapse: separate;
@@ -379,102 +399,190 @@
         cursor: not-allowed;
     }
 
-    .modal {
-        display: none;
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.5);
-        justify-content: center;
+    /* Improved Status Update Modal - SweetAlert style */
+    #statusModal .modal-dialog {
+        display: flex;
         align-items: center;
-        z-index: 1000;
-        backdrop-filter: blur(3px);
+        min-height: calc(100vh - 1rem);
+        margin: 0.5rem auto;
     }
 
-    .modal-content {
+    #statusModal .modal-content {
         background: white;
-        padding: 28px;
-        border-radius: var(--border-radius);
-        width: 500px;
-        max-width: 90%;
-        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-        transform: scale(0.95);
+        border-radius: 16px;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+        border: none;
+        max-width: 420px;
+        width: 100%;
+        margin: 0 auto;
+        transform: scale(0.9) translateY(-20px);
         opacity: 0;
-        transition: all 0.3s ease;
+        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        position: relative;
     }
 
-    .modal.show .modal-content {
-        transform: scale(1);
+    #statusModal.show .modal-content,
+    #statusModal.fade.show .modal-content {
+        transform: scale(1) translateY(0);
         opacity: 1;
     }
 
-    .modal-header {
+    #statusModal .modal-header {
+        padding: 24px 24px 16px;
+        border-bottom: 1px solid #e9ecef;
+        border-radius: 16px 16px 0 0;
+        color: white;
+        transition: background 0.3s ease;
+    }
+
+    #statusModal .modal-title {
+        font-size: 1.1rem;
+        font-weight: 600;
+        color: white;
+        margin: 0;
         display: flex;
-        justify-content: space-between;
         align-items: center;
-        margin-bottom: 20px;
-        padding-bottom: 15px;
-        border-bottom: 1px solid var(--light-gray);
+        gap: 8px;
     }
 
-    .modal-header h2 {
-        font-size: 1.4rem;
-        color: var(--dark);
+    #statusModal .modal-title i {
+        font-size: 1.2rem;
+        transition: color 0.3s ease;
     }
 
-    .close {
-        font-size: 1.5rem;
+    #statusModal .btn-close {
+        background: none;
+        border: none;
+        font-size: 1.2rem;
+        color: #6c757d;
         cursor: pointer;
-        color: var(--gray);
-        transition: var(--transition);
+        padding: 8px;
+        border-radius: 50%;
+        transition: all 0.2s ease;
+        margin: 0;
     }
 
-    .close:hover {
-        color: var(--dark);
+    #statusModal .btn-close:hover {
+        background: #f8f9fa;
+        color: #495057;
         transform: rotate(90deg);
     }
 
-    .form-group {
-        margin-bottom: 16px;
+    #statusModal .modal-body {
+        padding: 20px 24px;
     }
 
-    .form-group label {
-        display: block;
-        margin-bottom: 6px;
-        font-weight: 500;
-        color: var(--dark);
+    #statusModal .form-label {
+        font-weight: 600;
+        color: #495057;
+        margin-bottom: 8px;
         font-size: 0.9rem;
     }
 
-    .form-group input, .form-group select, .form-group textarea {
-        width: 100%;
-        padding: 10px 12px;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        font-size: 0.9rem;
-        transition: var(--transition);
+    #statusModal .form-select {
+        padding: 10px 14px;
+        border: 2px solid #e9ecef;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        transition: all 0.2s ease;
+        background: white;
     }
 
-    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
-        outline: none;
+    #statusModal .form-select:focus {
         border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
+        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+        outline: none;
     }
 
-    .form-group textarea {
-        min-height: 100px;
-        resize: vertical;
+    #statusModal .alert {
+        padding: 12px 16px;
+        border-radius: 8px;
+        border: none;
+        margin-top: 16px;
+        font-size: 0.85rem;
+        transition: all 0.3s ease;
     }
 
-    .modal-footer {
+    #statusModal .alert i {
+        margin-right: 6px;
+        transition: color 0.3s ease;
+    }
+
+    #statusModal .modal-footer {
+        padding: 16px 24px 24px;
+        border-top: 1px solid #e9ecef;
+        border-radius: 0 0 16px 16px;
+        background: #f8f9fa;
         display: flex;
         justify-content: flex-end;
-        gap: 10px;
-        margin-top: 20px;
-        padding-top: 15px;
-        border-top: 1px solid var(--light-gray);
+        gap: 12px;
+    }
+
+    #statusModal .modal-footer .btn {
+        padding: 10px 20px;
+        border-radius: 8px;
+        font-weight: 500;
+        font-size: 0.9rem;
+        transition: all 0.2s ease;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+    }
+
+    #statusModal .modal-footer .btn-secondary {
+        background: #6c757d;
+        color: white;
+    }
+
+    #statusModal .modal-footer .btn-secondary:hover {
+        background: #5a6268;
+        transform: translateY(-1px);
+    }
+
+    #statusModal .modal-footer .btn-primary {
+        transition: all 0.3s ease;
+    }
+
+    #statusModal .badge {
+        font-weight: 500;
+        padding: 6px 12px;
+        border-radius: 20px;
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+
+    /* Override Bootstrap badge backgrounds with transparent versions */
+    #statusModal .badge.bg-warning {
+        background-color: rgba(255, 193, 7, 0.143) !important;
+        color: #000000 !important;
+    }
+
+    #statusModal .badge.bg-info {
+        background-color: rgba(13, 110, 253, 0.143) !important;
+        color: #000000 !important;
+    }
+
+    #statusModal .badge.bg-success {
+        background-color: rgba(25, 135, 84, 0.143) !important;
+        color: #000000 !important;
+    }
+
+    #statusModal .badge.bg-danger {
+        background-color: rgba(220, 53, 69, 0.143) !important;
+        color: #000000 !important;
+    }
+
+        #statusModal .badge.bg-secondary {
+        background-color: rgba(108, 117, 125, 0.3) !important;
+        color: #343a40 !important;
+    }
+
+    /* Current status info icon styling */
+    .current-status-info .fa-info-circle {
+        transition: color 0.3s ease;
+        font-size: 1rem;
     }
 
     @media (max-width: 768px) {
@@ -665,24 +773,26 @@
         box-shadow: 0 0 6px rgba(220, 53, 69, 0.4);
     }
 
-    /* Toast notification */
+    /* Toast notification - positioned lower */
     .toast {
         position: fixed;
-        top: 20px;
+        top: 80px; /* Moved down from 20px to 80px */
         right: 20px;
-        padding: 12px 20px;
+        padding: 14px 24px;
         background: #28a745;
         color: white;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        border-radius: 8px;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
         opacity: 0;
         transform: translateY(-20px);
-        transition: all 0.3s ease;
+        transition: all 0.4s ease;
         z-index: 9999;
-        max-width: 400px;
+        max-width: 420px;
         word-wrap: break-word;
         font-size: 14px;
-        line-height: 1.4;
+        line-height: 1.5;
+        font-weight: 500;
+        border-left: 4px solid rgba(255, 255, 255, 0.3);
     }
 
     .toast.show {
@@ -692,6 +802,18 @@
 
     .toast.error {
         background: #dc3545;
+        border-left-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .toast.info {
+        background: #17a2b8;
+        border-left-color: rgba(255, 255, 255, 0.3);
+    }
+
+    .toast.warning {
+        background: #ffc107;
+        color: #212529;
+        border-left-color: rgba(0, 0, 0, 0.1);
     }
 
     .table-responsive {
@@ -1216,6 +1338,94 @@
         // Set modal title
         document.getElementById('statusModalLabel').innerHTML = `<i class="fas fa-exchange-alt me-2"></i>Update Status Pesanan - ${kodePesanan}`;
 
+        // Set current status badge and description
+        const statusBadge = document.getElementById('currentStatusBadge');
+        const statusDescription = document.getElementById('statusDescription');
+
+        let badgeClass = 'bg-secondary';
+        let statusText = '';
+        let description = '';
+        let headerGradient = '';
+        let iconColor = '';
+        let infoIconColor = '';
+        let alertClass = '';
+        let buttonClass = '';
+
+        switch(currentStatus) {
+            case 'pending':
+                badgeClass = 'bg-warning text-dark';
+                statusText = '⏳ Pending';
+                description = 'Pesanan telah diterima dan menunggu konfirmasi dari admin.';
+                headerGradient = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
+                iconColor = '#ffffff';
+                infoIconColor = '#f59e0b';
+                alertClass = 'alert-warning';
+                buttonClass = 'btn-pending';
+                break;
+            case 'diproses':
+                badgeClass = 'bg-info';
+                statusText = '⚙️ Diproses';
+                description = 'Pesanan sedang dalam proses produksi atau persiapan.';
+                headerGradient = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
+                iconColor = '#ffffff';
+                infoIconColor = '#3b82f6';
+                alertClass = 'alert-primary';
+                buttonClass = 'btn-primary';
+                break;
+            case 'selesai':
+                badgeClass = 'bg-success';
+                statusText = '✅ Selesai';
+                description = 'Pesanan telah selesai diproses dan siap untuk diambil/pengiriman.';
+                headerGradient = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
+                iconColor = '#ffffff';
+                infoIconColor = '#10b981';
+                alertClass = 'alert-success';
+                buttonClass = 'btn-selesai';
+                break;
+            case 'dibatalkan':
+                badgeClass = 'bg-danger';
+                statusText = '❌ Dibatalkan';
+                description = 'Pesanan telah dibatalkan dan tidak akan diproses lebih lanjut.';
+                headerGradient = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
+                iconColor = '#ffffff';
+                infoIconColor = '#ef4444';
+                alertClass = 'alert-danger';
+                buttonClass = 'btn-danger';
+                break;
+            default:
+                statusText = currentStatus;
+                description = 'Status pesanan tidak diketahui.';
+                headerGradient = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
+                iconColor = '#ffffff';
+                infoIconColor = '#6b7280';
+                alertClass = 'alert-secondary';
+                buttonClass = 'btn-secondary';
+        }
+
+        // Apply dynamic colors to modal elements
+        const modalHeader = document.querySelector('#statusModal .modal-header');
+        const modalTitleIcon = document.querySelector('#statusModal .modal-title i');
+        const infoIcon = document.querySelector('.current-status-info i');
+        const currentStatusInfoIcon = document.querySelector('.current-status-info .fa-info-circle');
+        const saveButton = document.querySelector('#statusForm button[type="submit"]');
+        const alertElement = document.querySelector('#statusModal .alert');
+
+        if (modalHeader) modalHeader.style.background = headerGradient;
+        if (modalTitleIcon) modalTitleIcon.style.color = iconColor;
+        if (infoIcon) infoIcon.style.color = infoIconColor;
+        if (currentStatusInfoIcon) currentStatusInfoIcon.style.color = infoIconColor;
+        if (saveButton) {
+            saveButton.className = `btn ${buttonClass}`;
+        }
+        if (alertElement) {
+            // Remove all alert classes and add the new one
+            alertElement.className = `alert ${alertClass}`;
+        }
+
+        statusBadge.className = `badge ${badgeClass}`;
+        statusBadge.textContent = statusText;
+        statusDescription.textContent = description;
+
         // Set form action with correct relative URL for subdirectory compatibility
         const currentPath = window.location.pathname;
         const basePath = currentPath.substring(0, currentPath.indexOf('/backoffice'));
@@ -1336,37 +1546,51 @@
     });
 </script>
 
-<!-- Status Update Modal -->
+<!-- Status Update Modal - Improved Design -->
 <div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
                 <h5 class="modal-title" id="statusModalLabel">
-                    <i class="fas fa-exchange-alt me-2"></i>Update Status Pesanan
+                    <i class="fas fa-exchange-alt"></i>Update Status Pesanan
                 </h5>
                 <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="current-status-info" style="padding: 16px 24px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
+                <div class="d-flex align-items-center gap-2">
+                    <i class="fas fa-info-circle"></i>
+                    <strong>Status Saat Ini:</strong>
+                    <span id="currentStatusBadge" class="badge bg-secondary">Loading...</span>
+                </div>
+                <div id="statusDescription" class="mt-2 text-muted small">
+                    Memuat informasi status...
+                </div>
             </div>
             <form id="statusForm" method="POST">
                 @csrf
                 <div class="modal-body">
                     <div class="mb-3">
-                        <label for="modalStatus" class="form-label fw-bold">Status Pesanan</label>
+                        <label for="modalStatus" class="form-label">
+                            <i class="fas fa-tasks me-1"></i>Status Pesanan
+                        </label>
                         <select class="form-select" id="modalStatus" name="status" required>
-                            <option value="pending">Pending</option>
-                            <option value="diproses">Diproses</option>
-                            <option value="selesai">Selesai</option>
-                            <option value="dibatalkan">Dibatalkan</option>
+                            <option value="pending">⏳ Pending</option>
+                            <option value="diproses">⚙️ Diproses</option>
+                            <option value="selesai">✅ Selesai</option>
+                            <option value="dibatalkan">❌ Dibatalkan</option>
                         </select>
                     </div>
                     <div class="alert alert-info">
-                        <i class="fas fa-info-circle me-2"></i>
-                        Pilih status baru untuk pesanan ini.
+                        <i class="fas fa-info-circle"></i>
+                        <strong>Informasi:</strong> Perubahan status akan mempengaruhi stok produk dan tidak dapat dibatalkan.
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                        <i class="fas fa-times"></i>Batal
+                    </button>
                     <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save me-2"></i>Update Status
+                        <i class="fas fa-save"></i>Update Status
                     </button>
                 </div>
             </form>
