@@ -925,6 +925,106 @@
     const thElements = document.querySelectorAll('th[data-sort]');
     const toast = document.getElementById('toast');
 
+    // Override default session message handling to use toast instead of SweetAlert
+    // Run immediately to prevent layout SweetAlert from executing
+    (function() {
+        // Store original Swal for allowed dialogs
+        let originalSwal = null;
+        if (typeof Swal !== 'undefined') {
+            originalSwal = window.Swal;
+        }
+
+        // Define allowed dialogs
+        const allowedTitles = ['Detail Pesanan', 'Hapus Pesanan'];
+
+        // Create showDetail function that uses original Swal
+        window.showDetail = function(id, kode, nama, tanggal, status, total, alamat, telepon) {
+            if (originalSwal) {
+                originalSwal.fire({
+                    title: 'Detail Pesanan',
+                    html: `
+                        <div class="detail-box">
+                            <div class="detail-header">
+                                <div class="icon-wrapper">
+                                    <i class="fas fa-shopping-cart"></i>
+                                </div>
+                                <div>
+                                    <div class="detail-title">${kode}</div>
+                                    <div class="detail-sub">${nama} - ${tanggal}</div>
+                                </div>
+                            </div>
+                            <div class="detail-content">
+                                <div class="detail-item">
+                                    <div class="detail-label">Status</div>
+                                    <div class="detail-value">${status}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Total Harga</div>
+                                    <div class="detail-value">Rp ${total.toLocaleString('id-ID')}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Alamat</div>
+                                    <div class="detail-value">${alamat}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">Telepon</div>
+                                    <div class="detail-value">${telepon}</div>
+                                </div>
+                            </div>
+                        </div>
+                    `,
+                    showConfirmButton: false,
+                    showCloseButton: true,
+                    customClass: {
+                        popup: 'swal-detail-popup'
+                    }
+                });
+            }
+        };
+
+        // Create confirmDelete function that uses original Swal
+        window.confirmDelete = function(id, kode, url, buttonElement) {
+            if (originalSwal) {
+                originalSwal.fire({
+                    title: 'Hapus Pesanan',
+                    html: `Apakah Anda yakin ingin menghapus pesanan <strong>${kode}</strong>?<br><small style="color: #6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#e63946',
+                    cancelButtonColor: '#4361ee',
+                    confirmButtonText: 'Ya, Hapus',
+                    cancelButtonText: 'Batal',
+                    customClass: {
+                        popup: 'swal-delete-popup'
+                    }
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        submitDeleteForm(url);
+                    }
+                });
+            }
+        };
+
+        // Completely disable SweetAlert for everything else
+        window.Swal = null;
+        delete window.Swal;
+
+        // Handle success messages with toast instead of SweetAlert
+        @if (session('success'))
+            showToast('{{ session('success') }}', 'success');
+        @endif
+
+        // Handle error messages with toast instead of SweetAlert
+        @if (session('error'))
+            showToast('{{ session('error') }}', 'error');
+        @endif
+
+        // Handle info messages with toast instead of SweetAlert
+        @if (session('info'))
+            showToast('{{ session('info') }}', 'info');
+        @endif
+    })();
+
     // Data untuk sorting
     let currentSort = {
         column: null,
@@ -1078,68 +1178,6 @@
         showToast('Fitur print akan segera hadir!', 'info');
     }
 
-    function showDetail(id, kode, nama, tanggal, status, total, alamat, telepon) {
-        Swal.fire({
-            title: 'Detail Pesanan',
-            html: `
-                <div class="detail-box">
-                    <div class="detail-header">
-                        <div class="icon-wrapper">
-                            <i class="fas fa-shopping-cart"></i>
-                        </div>
-                        <div>
-                            <div class="detail-title">${kode}</div>
-                            <div class="detail-sub">${nama} - ${tanggal}</div>
-                        </div>
-                    </div>
-                    <div class="detail-content">
-                        <div class="detail-item">
-                            <div class="detail-label">Status</div>
-                            <div class="detail-value">${status}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Total Harga</div>
-                            <div class="detail-value">Rp ${total.toLocaleString('id-ID')}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Alamat</div>
-                            <div class="detail-value">${alamat}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Telepon</div>
-                            <div class="detail-value">${telepon}</div>
-                        </div>
-                    </div>
-                </div>
-            `,
-            showConfirmButton: false,
-            showCloseButton: true,
-            customClass: {
-                popup: 'swal-detail-popup'
-            }
-        });
-    }
-
-    function confirmDelete(id, kode, url, buttonElement) {
-        Swal.fire({
-            title: 'Hapus Pesanan',
-            html: `Apakah Anda yakin ingin menghapus pesanan <strong>${kode}</strong>?<br><small style="color: #6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e63946',
-            cancelButtonColor: '#4361ee',
-            confirmButtonText: 'Ya, Hapus',
-            cancelButtonText: 'Batal',
-            customClass: {
-                popup: 'swal-delete-popup'
-            }
-        }).then((result) => {
-            if (result.isConfirmed) {
-                submitDeleteForm(url);
-            }
-        });
-    }
-
     function submitDeleteForm(url) {
         const form = document.createElement('form');
         form.method = 'POST';
@@ -1178,9 +1216,11 @@
         // Set modal title
         document.getElementById('statusModalLabel').innerHTML = `<i class="fas fa-exchange-alt me-2"></i>Update Status Pesanan - ${kodePesanan}`;
 
-        // Set form action with relative URL
+        // Set form action with correct relative URL for subdirectory compatibility
+        const currentPath = window.location.pathname;
+        const basePath = currentPath.substring(0, currentPath.indexOf('/backoffice'));
         const form = document.getElementById('statusForm');
-        form.action = `/backoffice/pesanan/${pesananId}/status`;
+        form.action = `${basePath}/backoffice/pesanan/${pesananId}/status`;
 
         // Set current status in select
         const statusSelect = document.getElementById('modalStatus');
