@@ -26,10 +26,10 @@
     }
 
     * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: inherit;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: inherit;
     }
 
     html, body {
@@ -298,17 +298,6 @@
         margin-bottom: 10px;
     }
 
-    .order-code {
-        background: var(--primary);
-        color: white;
-        padding: 4px 8px;
-        border-radius: var(--border-radius);
-        font-size: 0.8rem;
-        font-weight: 600;
-        margin-bottom: 10px;
-        display: inline-block;
-    }
-
     /* Animation */
     @keyframes fadeInUp {
         from {
@@ -370,7 +359,7 @@
 
 <div class="container">
     <div class="page-header">
-        <h1><i class="fas fa-edit"></i> Edit Pesanan</h1>
+        <h1><i class="fas fa-edit"></i> Edit Pesanan - {{ $pesanan->kode_pesanan }}</h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('backoffice.dashboard') }}">Dashboard</a></li>
@@ -379,8 +368,6 @@
             </ol>
         </nav>
     </div>
-
-    <div class="order-code">{{ $pesanan->kode_pesanan }}</div>
 
     <div class="form-container">
         <form action="{{ route('backoffice.pesanan.update', $pesanan->id) }}" method="POST" id="orderForm">
@@ -418,21 +405,6 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="status">Status Pesanan <span style="color: var(--danger);">*</span></label>
-                        <select id="status" name="status" required>
-                            <option value="pending" {{ old('status', $pesanan->status) == 'pending' ? 'selected' : '' }}>Menunggu</option>
-                            <option value="diproses" {{ old('status', $pesanan->status) == 'diproses' ? 'selected' : '' }}>Diproses</option>
-                            <option value="selesai" {{ old('status', $pesanan->status) == 'selesai' ? 'selected' : '' }}>Selesai</option>
-                            <option value="dibatalkan" {{ old('status', $pesanan->status) == 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
-                        </select>
-                        @error('status')
-                            <span class="error-message">{{ $message }}</span>
-                        @enderror
-                    </div>
-                </div>
-
-                <div class="form-row">
-                    <div class="form-group full-width">
                         <label for="alamat">Alamat <span style="color: var(--danger);">*</span></label>
                         <textarea id="alamat" name="alamat" required>{{ old('alamat', $pesanan->alamat) }}</textarea>
                         @error('alamat')
@@ -474,13 +446,13 @@
                                 </select>
                             </td>
                             <td>
-                                <input type="number" name="items[{{ $index }}][jumlah]" class="quantity-input" value="{{ old('items.' . $index . '.jumlah', $item->jumlah) }}" min="0.01" step="0.01" required>
+                                <input type="number" name="items[{{ $index }}][jumlah]" class="quantity-input" min="0.01" step="0.01" value="{{ $item->jumlah }}" required>
                             </td>
                             <td>
-                                <input type="number" name="items[{{ $index }}][harga_satuan]" class="price-input" value="{{ old('items.' . $index . '.harga_satuan', $item->harga_satuan) }}" min="0" step="0.01" required>
+                                <input type="number" name="items[{{ $index }}][harga_satuan]" class="price-input" min="0" step="0.01" value="{{ $item->harga_satuan }}" readonly>
                             </td>
                             <td>
-                                <span class="subtotal">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
+                                <span class="subtotal">Rp {{ number_format($item->jumlah * $item->harga_satuan, 0, ',', '.') }}</span>
                             </td>
                             <td>
                                 <button type="button" class="btn btn-danger btn-sm remove-item">
@@ -510,68 +482,138 @@
     </div>
 </div>
 
-<!-- Template for order item row -->
-<template id="itemRowTemplate">
-    <tr class="item-row">
-        <td>
-            <select name="items[INDEX][produk_id]" class="product-select" required>
-                <option value="">Pilih Produk</option>
-                @foreach($produks as $produk)
-                <option value="{{ $produk->id }}" data-price="{{ $produk->harga_jual }}">
-                    {{ $produk->nama_produk }} ({{ $produk->satuan }})
-                </option>
-                @endforeach
-            </select>
-        </td>
-        <td>
-            <input type="number" name="items[INDEX][jumlah]" class="quantity-input" min="0.01" step="0.01" required>
-        </td>
-        <td>
-            <input type="number" name="items[INDEX][harga_satuan]" class="price-input" min="0" step="0.01" required>
-        </td>
-        <td>
-            <span class="subtotal">Rp 0</span>
-        </td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm remove-item">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    </tr>
-</template>
+<!-- Template for order item row - REMOVED: Now using JavaScript to create rows -->
 
 <script>
     let itemIndex = {{ count($pesanan->pesananItems) }};
 
-    document.addEventListener('DOMContentLoaded', function() {
-        // Calculate initial total
-        calculateTotal();
+    // Store products data for JavaScript
+    const productsData = @json($produks);
 
+    document.addEventListener('DOMContentLoaded', function() {
         // Event listeners
         document.getElementById('addItemBtn').addEventListener('click', addItem);
         document.getElementById('itemsBody').addEventListener('change', handleItemChange);
         document.getElementById('itemsBody').addEventListener('click', handleRemoveItem);
         document.getElementById('orderForm').addEventListener('submit', validateForm);
 
-        // Calculate subtotals for existing items
-        document.querySelectorAll('.item-row').forEach(row => {
-            calculateSubtotal(row);
-        });
+        // Initialize existing items
+        initializeExistingItems();
+
+        // Calculate initial total
+        calculateTotal();
     });
 
     function addItem() {
-        const template = document.getElementById('itemRowTemplate');
         const tbody = document.getElementById('itemsBody');
-        const row = template.content.cloneNode(true);
-
-        // Replace INDEX with actual index
-        const html = row.innerHTML.replace(/INDEX/g, itemIndex);
         const tr = document.createElement('tr');
-        tr.innerHTML = html;
         tr.classList.add('item-row');
+
+        // Create product select
+        const productSelect = document.createElement('select');
+        productSelect.name = `items[${itemIndex}][produk_id]`;
+        productSelect.className = 'product-select';
+        productSelect.required = true;
+
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Pilih Produk';
+        productSelect.appendChild(defaultOption);
+
+        // Add product options from JavaScript data
+        productsData.forEach(produk => {
+            const option = document.createElement('option');
+            option.value = produk.id;
+            option.setAttribute('data-price', produk.harga_jual);
+            option.setAttribute('data-stok', produk.stok_tersedia);
+            option.textContent = `${produk.nama_produk} (${produk.satuan}) - Stok: ${produk.stok_tersedia}`;
+            productSelect.appendChild(option);
+        });
+
+        // Create quantity input
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.name = `items[${itemIndex}][jumlah]`;
+        quantityInput.className = 'quantity-input';
+        quantityInput.min = '0.01';
+        quantityInput.step = '0.01';
+        quantityInput.required = true;
+
+        // Create price input
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.name = `items[${itemIndex}][harga_satuan]`;
+        priceInput.className = 'price-input';
+        priceInput.min = '0';
+        priceInput.step = '0.01';
+        priceInput.readOnly = true; // Make it readonly
+
+        // Create subtotal span
+        const subtotalSpan = document.createElement('span');
+        subtotalSpan.className = 'subtotal';
+        subtotalSpan.textContent = 'Rp 0';
+
+        // Create remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger btn-sm remove-item';
+        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+
+        // Create table cells
+        const productCell = document.createElement('td');
+        productCell.appendChild(productSelect);
+
+        const quantityCell = document.createElement('td');
+        quantityCell.appendChild(quantityInput);
+
+        const priceCell = document.createElement('td');
+        priceCell.appendChild(priceInput);
+
+        const subtotalCell = document.createElement('td');
+        subtotalCell.appendChild(subtotalSpan);
+
+        const actionCell = document.createElement('td');
+        actionCell.appendChild(removeBtn);
+
+        // Add cells to row
+        tr.appendChild(productCell);
+        tr.appendChild(quantityCell);
+        tr.appendChild(priceCell);
+        tr.appendChild(subtotalCell);
+        tr.appendChild(actionCell);
 
         tbody.appendChild(tr);
         itemIndex++;
+    }
+
+    function initializeExistingItems() {
+        const existingRows = document.querySelectorAll('.item-row');
+        existingRows.forEach(row => {
+            const productSelect = row.querySelector('.product-select');
+            if (productSelect && productSelect.value) {
+                // Find the selected product data
+                const selectedProduct = productsData.find(p => p.id == productSelect.value);
+                if (selectedProduct) {
+                    // Update data-price attribute
+                    const selectedOption = productSelect.querySelector('option[value="' + productSelect.value + '"]');
+                    if (selectedOption) {
+                        selectedOption.setAttribute('data-price', selectedProduct.harga_jual);
+                        selectedOption.setAttribute('data-stok', selectedProduct.stok_tersedia);
+                    }
+                    // Set price input value
+                    const priceInput = row.querySelector('.price-input');
+                    if (priceInput) {
+                        priceInput.value = Math.round(selectedProduct.harga_jual); // Display as integer
+                    }
+                    // Set max quantity
+                    const quantityInput = row.querySelector('.quantity-input');
+                    if (quantityInput) {
+                        quantityInput.max = selectedProduct.stok_tersedia;
+                    }
+                }
+            }
+        });
     }
 
     function handleItemChange(e) {
@@ -588,10 +630,13 @@
     function handleProductChange(select) {
         const selectedOption = select.options[select.selectedIndex];
         const price = selectedOption.getAttribute('data-price') || 0;
+        const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
         const row = select.closest('.item-row');
         const priceInput = row.querySelector('.price-input');
+        const quantityInput = row.querySelector('.quantity-input');
 
-        priceInput.value = price;
+        priceInput.value = Math.round(price); // Display as integer
+        quantityInput.max = stokTersedia; // Set max quantity
         calculateSubtotal(row);
         calculateTotal();
     }
@@ -655,8 +700,18 @@
                 isValid = false;
             }
 
+            // Check stock availability
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
+            const jumlahDiminta = parseFloat(quantityInput.value) || 0;
+
+            if (jumlahDiminta > stokTersedia) {
+                alert(`Item ${index + 1}: Jumlah melebihi stok tersedia (${stokTersedia})!`);
+                isValid = false;
+            }
+
             if (!priceInput.value || priceInput.value < 0) {
-                alert(`Item ${index + 1}: Masukkan harga yang valid!`);
+                alert(`Item ${index + 1}: Harga produk tidak valid!`);
                 isValid = false;
             }
         });

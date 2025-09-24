@@ -78,7 +78,9 @@ class BahanBakuController extends Controller
             return view($viewPath, compact('masterBahans'));
         }
 
-        return view($viewPath);
+        // For master create, provide a preview based on optional 'nama_bahan' query
+        $preview = $this->generateUniqueKodeMaster(null, request()->query('nama_bahan'));
+        return view($viewPath, compact('preview'));
     }
 
     /**
@@ -97,7 +99,7 @@ class BahanBakuController extends Controller
 
             // Validation untuk master bahan
             $request->validate([
-                'kode_bahan' => 'required|string|max:50|unique:master_bahan_baku,kode_bahan',
+                'kode_bahan' => 'nullable|string|max:50|unique:master_bahan_baku,kode_bahan',
                 'nama_bahan' => 'required|string|max:255',
                 'satuan' => 'required|string|max:50',
                 'harga_per_satuan' => 'required|numeric|min:0',
@@ -164,32 +166,66 @@ class BahanBakuController extends Controller
     }
 
     /**
+     * AJAX/preview endpoint for master bahan kode
+     */
+    public function previewKode(Request $request)
+    {
+        $kode = $this->generateUniqueKodeMaster($request->input('kode_bahan'), $request->input('nama_bahan'));
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['kode' => $kode]);
+        }
+
+        return $kode;
+    }
+
+    /**
      * Generate a unique kode for MasterBahanBaku.
-     * If a kode is provided it will be used as base; otherwise generated from name + date.
-     * Appends -001, -002 ... if collisions occur.
+     * Always auto-generate based on name, ignore requested kode.
+     * Format: BB + YYMMDD + first 3 letters of name (uppercased, padded with X) + 3-digit sequence (001, 002...)
+     * Example: BB250924KOP001
      */
     private function generateUniqueKodeMaster(?string $requestedKode, ?string $nama)
     {
-        // Use submitted kode if present (clean), otherwise build from name and date
-        if ($requestedKode && trim($requestedKode) !== '') {
-            $base = strtoupper(preg_replace('/[^A-Z0-9]/', '', $requestedKode));
-        } else {
-            $today = now();
-            $dateString = $today->format('ymd'); // YYMMDD
-            $cleanName = $nama ? strtoupper(preg_replace('/[^A-Z0-9]/', '', $nama)) : '';
-            $cleanName = substr($cleanName, 0, 4);
-            $base = 'MB' . $dateString . ($cleanName ?: '');
+        // Always generate based on name, ignore requestedKode
+        $today = now();
+        $dateString = $today->format('ymd'); // YYMMDD
+
+        // Clean name to letters only and take first 3 characters (pad with X if needed)
+        $cleanName = $nama ? strtoupper(preg_replace('/[^A-Z]/', '', $nama)) : '';
+        $prefixName = substr($cleanName, 0, 3);
+        $prefixName = str_pad($prefixName, 3, 'X');
+
+        $base = 'BB' . $dateString . $prefixName; // e.g. BB250924KOP
+
+        // Find existing codes that start with this base and extract the numeric suffix
+        $existing = \App\Models\MasterBahanBaku::where('kode_bahan', 'like', $base . '%')->pluck('kode_bahan')->toArray();
+
+        $max = 0;
+        foreach ($existing as $code) {
+            if (preg_match('/(\d{3})$/', $code, $m)) {
+                $num = intval($m[1]);
+                if ($num > $max) $max = $num;
+            }
         }
 
-        $candidate = $base;
-        $suffix = 1;
+        $next = $max + 1;
+        if ($next > 999) {
+            // safety if sequence grows beyond 999, use 4 digits
+            $suffix = str_pad($next, 4, '0', STR_PAD_LEFT);
+        } else {
+            $suffix = str_pad($next, 3, '0', STR_PAD_LEFT);
+        }
 
-        // Ensure uniqueness by appending a numeric suffix if needed
+        $candidate = $base . $suffix; // e.g. BB250924KOP001
+
+        // Final uniqueness check (loop just in case)
+        $safety = 0;
         while (\App\Models\MasterBahanBaku::where('kode_bahan', $candidate)->exists()) {
-            $candidate = $base . '-' . str_pad($suffix, 3, '0', STR_PAD_LEFT);
-            $suffix++;
-            // safety: avoid infinite loop
-            if ($suffix > 9999) break;
+            $next++;
+            $suffix = $next > 999 ? str_pad($next, 4, '0', STR_PAD_LEFT) : str_pad($next, 3, '0', STR_PAD_LEFT);
+            $candidate = $base . $suffix;
+            $safety++;
+            if ($safety > 10000) break; // avoid infinite loop
         }
 
         return $candidate;

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TransaksiItem extends Model
 {
+    use SoftDeletes;
     protected $table = 'transaksi_items';
 
     protected $fillable = [
@@ -25,6 +27,8 @@ class TransaksiItem extends Model
         'harga_satuan' => 'decimal:2',
         'subtotal' => 'decimal:2'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan Transaksi
     public function transaksi()

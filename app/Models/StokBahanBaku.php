@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StokBahanBaku extends Model
 {
+    use SoftDeletes;
     protected $table = 'stok_bahan_baku';
 
     protected $fillable = [
@@ -28,6 +30,8 @@ class StokBahanBaku extends Model
         'tanggal' => 'date',
         'tanggal_kadaluarsa' => 'date'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relationship dengan bahan baku
     public function bahanBaku()

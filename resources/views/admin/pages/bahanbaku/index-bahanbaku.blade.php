@@ -266,7 +266,7 @@
     
     th, td {
         padding: 8px 10px;
-        text-align: left;
+        text-align: center;
         border-bottom: 1px solid var(--light-gray);
         word-wrap: break-word;
         overflow-wrap: break-word;
@@ -903,6 +903,12 @@
                         <i class="fas fa-sort-down sort-down"></i>
                     </span>
                 </th>
+                <th data-sort="harga" style="width: 12%;">Harga
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
                 <th data-sort="status" style="width: 10%;">Status
                     <span class="sort-icons">
                         <i class="fas fa-sort-up sort-up"></i>
@@ -921,6 +927,7 @@
                 <td>{{ $bahan->masterBahan->nama_bahan ?? '-' }}</td>
                 <td>{{ $bahan->satuan }}</td>
                 <td>{{ $bahan->stok == floor($bahan->stok) ? number_format($bahan->stok, 0) : number_format($bahan->stok, 2) }}</td>
+                <td>{{ isset($bahan->harga_per_satuan) ? 'Rp ' . number_format($bahan->harga_per_satuan, 0, ',', '.') : '-' }}</td>
                 <td>
                     <span class="badge {{ $bahan->status === 'aktif' ? 'badge-success' : 'badge-danger' }}">
                         {{ $bahan->status === 'aktif' ? 'Aktif' : 'Nonaktif' }}
@@ -939,7 +946,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="8" style="text-align: center; padding: 40px; color: #6c757d;">
+                <td colspan="9" style="text-align: center; padding: 40px; color: #6c757d;">
                     <i class="fas fa-cubes" style="font-size:3rem; margin-bottom:10px; display:block;"></i>
                     Belum ada data bahan baku
                 </td>
@@ -1066,6 +1073,7 @@
         for (let i = 0; i < rows.length; i++) {
             if (rows[i].cells.length < 8) continue; // Skip if not data row
             
+            if (rows[i].cells.length < 9) continue; // Skip if not data row
             const kode = rows[i].cells[1].textContent.toLowerCase();
             const nama = rows[i].cells[2].textContent.toLowerCase();
             const masterBahan = rows[i].cells[3].textContent.toLowerCase();
@@ -1153,6 +1161,7 @@
         rows.sort((a, b) => {
             if (a.cells.length < 8 || b.cells.length < 8) return 0;
             
+            if (a.cells.length < 9 || b.cells.length < 9) return 0;
             let aValue, bValue;
             const colIndex = getColumnIndex(column);
             
@@ -1161,7 +1170,12 @@
                 bValue = parseInt(b.cells[colIndex].textContent);
             } else if (column === 'stok') {
                 aValue = parseInt(a.cells[colIndex].textContent);
-                bValue = parseInt(b.cells[colIndex].textContent);
+                aValue = parseInt(a.cells[colIndex].textContent) || 0;
+                bValue = parseInt(b.cells[colIndex].textContent) || 0;
+            } else if (column === 'harga') {
+                // normalize numeric values (remove non-digits)
+                aValue = parseInt(a.cells[colIndex].textContent.replace(/[^0-9\-]/g, '')) || 0;
+                bValue = parseInt(b.cells[colIndex].textContent.replace(/[^0-9\-]/g, '')) || 0;
             } else {
                 aValue = a.cells[colIndex].textContent.toLowerCase();
                 bValue = b.cells[colIndex].textContent.toLowerCase();
@@ -1205,7 +1219,8 @@
         const masterBahan = cells[3].textContent;
         const satuan = cells[4].textContent;
         const stok = cells[5].textContent.replace(/,/g, '');
-        const status = cells[6].textContent;
+    const harga = cells[6].textContent.replace(/[^0-9\,\.]/g, '');
+    const status = cells[7].textContent;
 
         const html = `
             <div class="detail-box">

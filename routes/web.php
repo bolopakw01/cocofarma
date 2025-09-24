@@ -43,11 +43,24 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
     // Operasional routes (accessible by both super_admin and admin)
     Route::middleware('role:super_admin,admin')->group(function () {
         Route::prefix('pesanan')->name('pesanan.')->group(function () {
-            Route::resource('/', PesananController::class)->parameters(['' => 'pesanan']);
+            Route::get('/', [PesananController::class, 'index'])->name('index');
+            Route::get('/create', [PesananController::class, 'create'])->name('create');
+            Route::post('/', [PesananController::class, 'store'])->name('store');
+            Route::get('/{pesanan}', [PesananController::class, 'show'])->name('show');
+            Route::get('/{pesanan}/edit', [PesananController::class, 'edit'])->name('edit');
+            Route::put('/{pesanan}', [PesananController::class, 'update'])->name('update');
+            Route::post('/{pesanan}/status', [PesananController::class, 'updateStatus'])->name('update-status');
+            Route::delete('/{pesanan}', [PesananController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('bahanbaku')->name('bahanbaku.')->group(function () {
-            Route::resource('/', BahanBakuController::class)->parameters(['' => 'bahanbaku']);
+            Route::get('/', [BahanBakuController::class, 'index'])->name('index');
+            Route::get('/create', [BahanBakuController::class, 'create'])->name('create');
+            Route::post('/', [BahanBakuController::class, 'store'])->name('store');
+            Route::get('/{bahanbaku}', [BahanBakuController::class, 'show'])->name('show');
+            Route::get('/{bahanbaku}/edit', [BahanBakuController::class, 'edit'])->name('edit');
+            Route::put('/{bahanbaku}', [BahanBakuController::class, 'update'])->name('update');
+            Route::delete('/{bahanbaku}', [BahanBakuController::class, 'destroy'])->name('destroy');
         });
 
         Route::prefix('produksi')->name('produksi.')->group(function () {
@@ -98,6 +111,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
         Route::middleware('role:super_admin')->prefix('master-produk')->name('master-produk.')->group(function () {
             Route::get('/', [ProdukController::class, 'index'])->name('index');
             Route::get('/create', [ProdukController::class, 'create'])->name('create');
+            // Preview kode endpoint (AJAX) - no side effects
+            Route::get('/preview-kode', [ProdukController::class, 'previewKode'])->name('preview-kode');
             Route::post('/', [ProdukController::class, 'store'])->name('store');
             Route::get('/{produk}', [ProdukController::class, 'show'])->name('show');
             Route::get('/{produk}/edit', [ProdukController::class, 'edit'])->name('edit');
@@ -132,6 +147,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
     // Master routes (only accessible by super_admin)
     Route::middleware('role:super_admin')->group(function () {
         Route::prefix('master-bahan')->name('master-bahan.')->group(function () {
+            // Add preview route for AJAX preview of kode
+            Route::get('/preview-kode', [BahanBakuController::class, 'previewKode'])->name('preview-kode');
             Route::resource('/', BahanBakuController::class)->parameters(['' => 'bahanbaku']);
         });
 

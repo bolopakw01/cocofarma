@@ -169,9 +169,26 @@
   <!-- Breadcrumb -->
   <div class="breadcrumb">
     <span>🏠</span>
-    @php
-      $breadcrumbData = isset($breadcrumb) && is_array($breadcrumb) ? $breadcrumb : generate_breadcrumb();
-    @endphp
+      @php
+        $breadcrumbData = isset($breadcrumb) && is_array($breadcrumb) ? $breadcrumb : generate_breadcrumb();
+        // Compute first name and initial for user display
+        $fullName = trim(auth()->user()->name ?? 'Admin');
+        $parts = preg_split('/\s+/', $fullName);
+        $firstName = $parts[0] ?? $fullName;
+        $firstInitial = strtoupper(substr($firstName, 0, 1) ?: 'A');
+
+        // Map role values to nicer display labels
+        $rawRole = auth()->user()->role ?? 'admin';
+        $roleKey = strtolower(trim($rawRole));
+        if ($roleKey === 'admin' || $roleKey === 'administrator') {
+          $displayRole = 'Administrator';
+        } elseif (in_array($roleKey, ['super admin', 'super_admin', 'superadmin', 'super-admin'], true)) {
+          $displayRole = 'Super Admin';
+        } else {
+          // Fallback: make it readable (replace underscores/dashes and title-case)
+          $displayRole = ucwords(str_replace(['_', '-'], ' ', $roleKey));
+        }
+      @endphp
     @foreach($breadcrumbData as $item)
       @if($loop->first)
         <span><a href="{{ $item['url'] ?? '#' }}" style="text-decoration: none; color: inherit;">{{ $item['title'] }}</a></span>
@@ -202,10 +219,10 @@
       Online
     </div>
     <div class="user" id="userMenu">
-      <div class="user-avatar">{{ strtoupper(substr(auth()->user()->name ?? 'A', 0, 1)) }}</div>
+      <div class="user-avatar">{{ $firstInitial }}</div>
       <div class="user-info">
-        <span>{{ auth()->user()->name ?? 'Admin' }}</span>
-        <span class="role">{{ auth()->user()->role ?? 'admin' }}</span>
+        <span>{{ $firstName }}</span>
+  <span class="role">{{ $displayRole }}</span>
       </div>
 
       <!-- Dropdown -->

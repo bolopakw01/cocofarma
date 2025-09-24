@@ -668,22 +668,30 @@
     /* Toast notification */
     .toast {
         position: fixed;
-        bottom: 20px;
+        top: 20px;
         right: 20px;
         padding: 12px 20px;
-        background: var(--dark);
+        background: #28a745;
         color: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow);
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         opacity: 0;
-        transform: translateY(20px);
+        transform: translateY(-20px);
         transition: all 0.3s ease;
-        z-index: 1100;
+        z-index: 9999;
+        max-width: 400px;
+        word-wrap: break-word;
+        font-size: 14px;
+        line-height: 1.4;
     }
 
     .toast.show {
         opacity: 1;
         transform: translateY(0);
+    }
+
+    .toast.error {
+        background: #dc3545;
     }
 
     .table-responsive {
@@ -722,6 +730,35 @@
     .order-date {
         font-size: 0.85rem;
         color: var(--gray);
+    }
+
+    /* Toast notifications */
+    .toast {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 12px 20px;
+        border-radius: 4px;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        z-index: 9999;
+        opacity: 0;
+        transform: translateY(-20px);
+        transition: all 0.3s ease;
+        max-width: 400px;
+        word-wrap: break-word;
+        font-size: 14px;
+        line-height: 1.4;
+    }
+
+    .toast.error {
+        background: #dc3545;
+    }
+
+    .toast.show {
+        opacity: 1;
+        transform: translateY(0);
     }
 </style>
 
@@ -800,13 +837,16 @@
                     </span>
                 </td>
                 <td class="actions">
-                    <button class="btn btn-info btn-action" onclick="showDetail({{ $pesanan->id }}, '{{ $pesanan->kode_pesanan }}', '{{ $pesanan->nama_pelanggan }}', '{{ $pesanan->tanggal_pesanan->format('d/m/Y') }}', '{{ $pesanan->status_label }}', {{ $pesanan->total_harga }}, '{{ $pesanan->alamat }}', '{{ $pesanan->no_telepon }}')">
+                    <a href="{{ route('backoffice.pesanan.show', $pesanan->id) }}" class="btn btn-info btn-action" title="Lihat Detail">
                         <i class="fas fa-eye"></i>
+                    </a>
+                    <button class="btn btn-success btn-action" onclick="openStatusModal({{ $pesanan->id }}, '{{ $pesanan->status }}', '{{ $pesanan->kode_pesanan }}')" title="Update Status">
+                        <i class="fas fa-exchange-alt"></i>
                     </button>
-                    <a href="{{ route('backoffice.pesanan.edit', $pesanan->id) }}" class="btn btn-warning btn-action">
+                    <a href="{{ route('backoffice.pesanan.edit', $pesanan->id) }}" class="btn btn-warning btn-action" title="Edit Pesanan">
                         <i class="fas fa-edit"></i>
                     </a>
-                    <button class="btn btn-danger btn-action" onclick="confirmDelete({{ $pesanan->id }}, '{{ $pesanan->kode_pesanan }}', '{{ route('backoffice.pesanan.destroy', $pesanan->id) }}', this)">
+                    <button class="btn btn-danger btn-action" onclick="confirmDelete({{ $pesanan->id }}, '{{ $pesanan->kode_pesanan }}', '{{ route('backoffice.pesanan.destroy', $pesanan->id) }}', this)" title="Hapus Pesanan">
                         <i class="fas fa-trash"></i>
                     </button>
                 </td>
@@ -1132,6 +1172,167 @@
         url.searchParams.delete('page');
         window.history.replaceState({}, '', url);
     }
+
+    // Modal functions
+    function openStatusModal(pesananId, currentStatus, kodePesanan) {
+        // Set modal title
+        document.getElementById('statusModalLabel').innerHTML = `<i class="fas fa-exchange-alt me-2"></i>Update Status Pesanan - ${kodePesanan}`;
+
+        // Set form action with relative URL
+        const form = document.getElementById('statusForm');
+        form.action = `/backoffice/pesanan/${pesananId}/status`;
+
+        // Set current status in select
+        const statusSelect = document.getElementById('modalStatus');
+        statusSelect.value = currentStatus;
+
+        // Disable current status option
+        const options = statusSelect.querySelectorAll('option');
+        options.forEach(option => {
+            option.disabled = false;
+            if (option.value === currentStatus) {
+                option.disabled = true;
+                option.textContent = option.textContent + ' (Status Saat Ini)';
+            } else {
+                option.textContent = option.textContent.replace(' (Status Saat Ini)', '');
+            }
+        });
+
+        // Show modal using Bootstrap 5
+        const modal = new bootstrap.Modal(document.getElementById('statusModal'), {
+            backdrop: false
+        });
+        modal.show();
+    }
+
+    // Handle status form submission - moved to DOM ready
+    document.addEventListener('DOMContentLoaded', function() {
+        const statusForm = document.getElementById('statusForm');
+        if (statusForm) {
+            statusForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+
+                const formData = new FormData(this);
+                const selectedStatus = formData.get('status');
+
+                // Debug: Log all form data entries
+                console.log('Form data entries:');
+                for (let [key, value] of formData.entries()) {
+                    console.log(key, value);
+                }
+
+                // Debug: Check form elements directly
+                const statusSelect = this.querySelector('select[name="status"]');
+                console.log('Status select element:', statusSelect);
+                console.log('Status select value:', statusSelect ? statusSelect.value : 'NOT FOUND');
+
+                // Show loading
+                const submitBtn = this.querySelector('button[type="submit"]');
+                const originalText = submitBtn.innerHTML;
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+
+                console.log('Submitting form to:', this.action);
+                console.log('Form data object:', formData);
+                console.log('CSRF token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+
+                fetch(this.action, {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json',
+                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+                    }
+                })
+                .then(response => {
+                    console.log('Response status:', response.status);
+                    console.log('Response headers:', response.headers);
+
+                    if (!response.ok) {
+                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                    }
+
+                    return response.json();
+                })
+                .then(data => {
+                    console.log('Response data:', data);
+
+                    if (data.success) {
+                        // Close modal using Bootstrap 5
+                        const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
+                        modal.hide();
+
+                        // Show success message
+                        showToast(data.message || 'Status berhasil diupdate', 'success');
+
+                        // Reload page after delay
+                        setTimeout(() => {
+                            window.location.reload();
+                        }, 1500);
+                    } else {
+                        showToast(data.message || 'Terjadi kesalahan', 'error');
+                    }
+                })
+                .catch(error => {
+                    console.error('Fetch error:', error);
+
+                    // Close modal
+                    const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
+                    if (modal) {
+                        modal.hide();
+                    }
+
+                    // Show error message
+                    showToast('Terjadi kesalahan saat mengupdate status: ' + error.message, 'error');
+                })
+                .finally(() => {
+                    // Reset button
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = originalText;
+                });
+            });
+        }
+    });
 </script>
+
+<!-- Status Update Modal -->
+<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="statusModalLabel">
+                    <i class="fas fa-exchange-alt me-2"></i>Update Status Pesanan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="statusForm" method="POST">
+                @csrf
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="modalStatus" class="form-label fw-bold">Status Pesanan</label>
+                        <select class="form-select" id="modalStatus" name="status" required>
+                            <option value="pending">Pending</option>
+                            <option value="diproses">Diproses</option>
+                            <option value="selesai">Selesai</option>
+                            <option value="dibatalkan">Dibatalkan</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Pilih status baru untuk pesanan ini.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save me-2"></i>Update Status
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection
 

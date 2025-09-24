@@ -866,19 +866,25 @@
                         <i class="fas fa-sort-down sort-down"></i>
                     </span>
                 </th>
-                <th data-sort="nama" style="width: 25%;">Nama Bahan
+                <th data-sort="kode" style="width: 15%;">Kode
                     <span class="sort-icons">
                         <i class="fas fa-sort-up sort-up"></i>
                         <i class="fas fa-sort-down sort-down"></i>
                     </span>
                 </th>
-                <th data-sort="satuan" style="width: 15%;">Satuan
+                <th data-sort="nama" style="width: 20%;">Nama Bahan
                     <span class="sort-icons">
                         <i class="fas fa-sort-up sort-up"></i>
                         <i class="fas fa-sort-down sort-down"></i>
                     </span>
                 </th>
-                <th data-sort="harga" style="width: 20%;">Harga per Unit
+                <th data-sort="satuan" style="width: 10%;">Satuan
+                    <span class="sort-icons">
+                        <i class="fas fa-sort-up sort-up"></i>
+                        <i class="fas fa-sort-down sort-down"></i>
+                    </span>
+                </th>
+                <th data-sort="harga" style="width: 15%;">Harga per Unit
                     <span class="sort-icons">
                         <i class="fas fa-sort-up sort-up"></i>
                         <i class="fas fa-sort-down sort-down"></i>
@@ -897,6 +903,7 @@
             @forelse($bahanBakus ?? [] as $index => $bahan)
             <tr>
                 <td>{{ ($bahanBakus->currentPage() - 1) * $bahanBakus->perPage() + $index + 1 }}</td>
+                <td>{{ $bahan->kode_bahan }}</td>
                 <td>{{ $bahan->nama_bahan }}</td>
                 <td>{{ $bahan->satuan }}</td>
                 <td>Rp {{ number_format($bahan->harga_per_satuan, 0, ',', '.') }}</td>
@@ -919,7 +926,7 @@
             </tr>
             @empty
             <tr>
-                <td colspan="6" style="text-align: center; padding: 40px;">
+                <td colspan="7" style="text-align: center; padding: 40px;">
                     <i class="fas fa-cubes" style="font-size: 3rem; color: #6c757d; margin-bottom: 10px;"></i>
                     <br>
                     Tidak ada data master bahan baku

@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Pesanan extends Model
 {
+    use SoftDeletes;
     protected $table = 'pesanans';
 
     protected $fillable = [
@@ -23,6 +25,8 @@ class Pesanan extends Model
         'total_harga' => 'decimal:2',
         'status' => 'string'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan PesananItem
     public function pesananItems()

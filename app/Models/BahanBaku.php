@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Models\CodeCounter;
 
 class BahanBaku extends Model
 {
+    use SoftDeletes;
     protected $table = 'bahan_baku';
 
     protected $fillable = [
@@ -30,6 +35,8 @@ class BahanBaku extends Model
         'tanggal_kadaluarsa' => 'date',
         'status' => 'string'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relationship dengan master bahan baku
     public function masterBahan()
@@ -101,6 +108,42 @@ class BahanBaku extends Model
         return $query->where(function($q) {
             $q->whereNull('tanggal_kadaluarsa')
               ->orWhere('tanggal_kadaluarsa', '>=', now()->toDateString());
+        });
+    }
+
+    /**
+     * Generate kode_bahan automatically when creating new BahanBaku.
+     * Format: B-(tanggal Ymd)+(3 huruf nama)+(sequence 3 digits, starting 001)
+     * Example: B-20250924ABC001
+     */
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->kode_bahan)) {
+                $prefix = 'B-';
+                $date = now()->format('Ymd');
+                $name = $model->nama_bahan ?? $model->nama ?? '';
+                $abbr = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 3));
+                if ($abbr === '') {
+                    $abbr = 'XXX';
+                }
+                $base = $prefix . $date . $abbr; // key for counter
+
+                DB::transaction(function () use ($base, $model) {
+                    $counter = CodeCounter::where('key', $base)->lockForUpdate()->first();
+                    if (! $counter) {
+                        $counter = CodeCounter::create(['key' => $base, 'counter' => 1]);
+                        $num = 1;
+                    } else {
+                        $counter->counter = $counter->counter + 1;
+                        $counter->save();
+                        $num = $counter->counter;
+                    }
+
+                    $nextNumber = $num > 999 ? str_pad((string) $num, 4, '0', STR_PAD_LEFT) : str_pad((string) $num, 3, '0', STR_PAD_LEFT);
+                    $model->kode_bahan = $base . $nextNumber;
+                });
+            }
         });
     }
 }

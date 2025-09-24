@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class BatchProduksi extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'batch_produksis';
 
@@ -33,6 +34,8 @@ class BatchProduksi extends Model
         'total_biaya_operasional' => 'decimal:2',
         'status' => 'string'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan Tungku
     public function tungku()

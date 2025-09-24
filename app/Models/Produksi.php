@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Produksi extends Model
 {
+    use SoftDeletes;
     protected $table = 'produksis';
 
     protected $fillable = [
@@ -31,6 +33,8 @@ class Produksi extends Model
         'biaya_produksi' => 'decimal:2',
         'status' => 'string'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan Produk
     public function produk()

@@ -41,7 +41,9 @@ class ProdukController extends Controller
      */
     public function create()
     {
-        return view('admin.pages.master-produk.create-master-produk');
+        // Allow optional preview via query param 'nama_produk'
+        $preview = $this->generatePreviewKode(null, request()->query('nama_produk'));
+        return view('admin.pages.master-produk.create-master-produk', compact('preview'));
     }
 
     /**
@@ -49,8 +51,8 @@ class ProdukController extends Controller
      */
     public function store(Request $request)
     {
+        // Kode produk akan di-generate otomatis di model, tidak perlu merge atau validate unique
         $request->validate([
-            'kode_produk' => 'required|string|max:50|unique:produks,kode_produk',
             'nama_produk' => 'required|string|max:255',
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
@@ -62,7 +64,6 @@ class ProdukController extends Controller
         ]);
 
         $data = [
-            'kode_produk' => $request->kode_produk,
             'nama_produk' => $request->nama_produk,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
@@ -82,7 +83,46 @@ class ProdukController extends Controller
         Produk::create($data);
 
         return redirect()->route('backoffice.master-produk.index')
-                        ->with('success', 'Produk berhasil dibuat dengan kode: ' . $request->kode_produk);
+                        ->with('success', 'Produk berhasil dibuat.');
+    }
+
+    /**
+     * Preview/generate a candidate kode_produk without reserving/incrementing the counter.
+     * Returns JSON when used as AJAX, or raw code when called internally.
+     */
+    public function previewKode(Request $request)
+    {
+        $kode = $this->generatePreviewKode($request->input('kode_produk'), $request->input('nama_produk'));
+        if ($request->wantsJson() || $request->ajax()) {
+            return response()->json(['kode' => $kode]);
+        }
+
+        return $kode;
+    }
+
+    /**
+     * Generate a preview code for produk based on name only (always auto-generate).
+     * Format: MP + DDMMYY + 3 letters from name + global sequence per day
+     * Example: MP240925BOL001
+     */
+    private function generatePreviewKode(?string $requestedKode, ?string $nama)
+    {
+        // Always generate based on name
+        $date = now()->format('dmy'); // DDMMYY
+        $base = 'MP' . $date; // key for counter
+
+        $name = $nama ?? '';
+        $abbr = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 3));
+        if ($abbr === '') {
+            $abbr = 'XXX';
+        }
+
+        // Inspect CodeCounter to compute next number but do not modify it
+        $current = \App\Models\CodeCounter::where('key', $base)->value('counter');
+        $next = ($current ? intval($current) : 0) + 1;
+        $nextNumber = str_pad((string) $next, 3, '0', STR_PAD_LEFT);
+
+        return $base . $abbr . $nextNumber;
     }
 
     /**

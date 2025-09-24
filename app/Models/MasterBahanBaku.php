@@ -3,9 +3,14 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
+use Illuminate\Support\Str;
+use Illuminate\Support\Facades\DB;
+use App\Models\CodeCounter;
 
 class MasterBahanBaku extends Model
 {
+    use SoftDeletes;
     protected $table = 'master_bahan_baku';
 
     protected $fillable = [
@@ -23,6 +28,8 @@ class MasterBahanBaku extends Model
         'stok_minimum' => 'decimal:4',
         'status' => 'string'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relationship dengan bahan baku operasional
     public function bahanBakus()
@@ -57,6 +64,55 @@ class MasterBahanBaku extends Model
     public function scopeAktif($query)
     {
         return $query->where('status', 'aktif');
+    }
+
+    /**
+     * Auto-generate kode_bahan for master bahan when creating.
+     * Format: MB + DDMMYY + 3 letters + global sequence per hari (001, 002...)
+     * Example: MB240925GUL001
+     * If collision, add random 2 digits to ensure uniqueness (including soft-deleted).
+     */
+    protected static function booted()
+    {
+        static::creating(function ($model) {
+            if (empty($model->kode_bahan)) {
+                $date = now()->format('dmy'); // DDMMYY
+                $base = 'MB' . $date; // key for counter, per day
+
+                $name = $model->nama_bahan ?? '';
+                $abbr = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 3));
+                if ($abbr === '') {
+                    $abbr = 'XXX';
+                }
+
+                DB::transaction(function () use ($base, $abbr, $model) {
+                    $maxTries = 1000;
+                    $num = 1;
+                    $counter = CodeCounter::where('key', $base)->lockForUpdate()->first();
+                    if ($counter) {
+                        $num = $counter->counter + 1;
+                    }
+                    $found = false;
+                    for ($i = 0; $i < $maxTries; $i++) {
+                        $nextNumber = $num > 999 ? str_pad((string) $num, 4, '0', STR_PAD_LEFT) : str_pad((string) $num, 3, '0', STR_PAD_LEFT);
+                        $kode = $base . $abbr . $nextNumber;
+                        if (!MasterBahanBaku::withTrashed()->where('kode_bahan', $kode)->exists()) {
+                            // Update counter in DB for each attempt
+                            if (! $counter) {
+                                CodeCounter::create(['key' => $base, 'counter' => $num]);
+                            } else {
+                                $counter->counter = $num;
+                                $counter->save();
+                            }
+                            $found = true;
+                            break;
+                        }
+                        $num++;
+                    }
+                    $model->kode_bahan = $kode;
+                });
+            }
+        });
     }
 
     // Method untuk mendapatkan bahan baku dengan stok terbanyak

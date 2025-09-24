@@ -111,6 +111,7 @@
         display: grid;
         grid-template-columns: 1fr 1fr;
         gap: 20px;
+        margin-bottom: 20px;
     }
 
     .detail-item {
@@ -119,81 +120,54 @@
 
     .detail-label {
         font-weight: 600;
-        color: var(--gray);
-        font-size: 0.85rem;
+        color: var(--dark);
+        font-size: 0.9rem;
         margin-bottom: 5px;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
     .detail-value {
-        color: var(--dark);
+        color: var(--gray);
         font-size: 0.95rem;
-        font-weight: 500;
     }
 
     .status-badge {
         display: inline-block;
-        padding: 6px 12px;
+        padding: 4px 12px;
         border-radius: 20px;
         font-size: 0.8rem;
         font-weight: 600;
         text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
     .status-pending {
-        background: rgba(247, 37, 133, 0.1);
-        color: var(--warning);
+        background: #fff3cd;
+        color: #856404;
     }
 
     .status-diproses {
-        background: rgba(72, 149, 239, 0.1);
-        color: var(--info);
+        background: #cce5ff;
+        color: #004085;
     }
 
     .status-selesai {
-        background: rgba(76, 201, 240, 0.1);
-        color: var(--success);
+        background: #d4edda;
+        color: #155724;
     }
 
     .status-dibatalkan {
-        background: rgba(230, 57, 70, 0.1);
-        color: var(--danger);
+        background: #f8d7da;
+        color: #721c24;
     }
 
-    .order-code {
-        background: var(--primary);
-        color: white;
-        padding: 8px 16px;
-        border-radius: var(--border-radius);
-        font-size: 1rem;
-        font-weight: 600;
-        margin-bottom: 20px;
-        display: inline-block;
-    }
-
-    .order-date {
-        background: var(--secondary);
-        color: white;
-        padding: 6px 12px;
-        border-radius: var(--border-radius);
-        font-size: 0.85rem;
-        font-weight: 500;
-        display: inline-block;
-        margin-bottom: 20px;
-    }
-
-    /* Items Table */
     .items-table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
+        margin-bottom: 20px;
     }
 
     .items-table th,
     .items-table td {
-        padding: 15px 12px;
+        padding: 12px;
         text-align: left;
         border: 1px solid var(--light-gray);
     }
@@ -202,68 +176,33 @@
         background: var(--light);
         font-weight: 600;
         color: var(--dark);
-        font-size: 0.9rem;
-        text-transform: uppercase;
-        letter-spacing: 0.5px;
     }
 
-    .items-table tbody tr:nth-child(even) {
-        background: rgba(248, 249, 250, 0.5);
-    }
-
-    .items-table tbody tr:hover {
-        background: rgba(67, 97, 238, 0.05);
-    }
-
-    .product-name {
-        font-weight: 600;
-        color: var(--dark);
-    }
-
-    .product-unit {
-        color: var(--gray);
-        font-size: 0.85rem;
-        margin-left: 8px;
-    }
-
-    .quantity {
-        font-weight: 600;
-        color: var(--primary);
-    }
-
-    .price {
+    .items-table .subtotal {
         font-weight: 600;
         color: var(--success);
-    }
-
-    .subtotal {
-        font-weight: 700;
-        color: var(--success);
-        font-size: 1.1rem;
+        text-align: right;
     }
 
     .total-section {
-        background: var(--primary);
-        color: white;
-        padding: 25px;
+        background: var(--light);
+        padding: 20px;
         border-radius: var(--border-radius);
-        margin-top: 30px;
-        text-align: center;
+        margin-top: 20px;
+        text-align: right;
     }
 
     .total-amount {
-        font-size: 2rem;
+        font-size: 1.5rem;
         font-weight: 700;
+        color: var(--success);
         margin: 0;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
     .total-label {
         font-size: 0.9rem;
-        opacity: 0.9;
+        color: var(--gray);
         margin-bottom: 10px;
-        text-transform: uppercase;
-        letter-spacing: 1px;
     }
 
     .btn {
@@ -306,7 +245,17 @@
     }
 
     .btn-warning:hover {
-        background: #d61c68;
+        background: #d63384;
+        transform: translateY(-1px);
+    }
+
+    .btn-danger {
+        background: var(--danger);
+        color: white;
+    }
+
+    .btn-danger:hover {
+        background: #c22c38;
         transform: translateY(-1px);
     }
 
@@ -367,18 +316,14 @@
 
         .items-table th,
         .items-table td {
-            padding: 10px 8px;
-        }
-
-        .total-amount {
-            font-size: 1.5rem;
+            padding: 8px;
         }
     }
 </style>
 
 <div class="container">
     <div class="page-header">
-        <h1><i class="fas fa-eye"></i> Detail Pesanan</h1>
+        <h1><i class="fas fa-eye"></i> Detail Pesanan - {{ $pesanan->kode_pesanan }}</h1>
         <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item"><a href="{{ route('backoffice.dashboard') }}">Dashboard</a></li>
@@ -388,10 +333,52 @@
         </nav>
     </div>
 
-    <div class="order-code">{{ $pesanan->kode_pesanan }}</div>
-    <div class="order-date">{{ $pesanan->tanggal_pesanan->format('d M Y') }}</div>
-
     <div class="detail-container">
+        <div class="detail-section">
+            <h3><i class="fas fa-user"></i> Informasi Pesanan</h3>
+
+            <div class="detail-grid">
+                <div class="detail-item">
+                    <div class="detail-label">Kode Pesanan</div>
+                    <div class="detail-value">{{ $pesanan->kode_pesanan }}</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Tanggal Pesanan</div>
+                    <div class="detail-value">{{ $pesanan->tanggal_pesanan->format('d/m/Y') }}</div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Status</div>
+                    <div class="detail-value">
+                        <span class="status-badge status-{{ $pesanan->status }}">
+                            @switch($pesanan->status)
+                                @case('pending')
+                                    Pending
+                                    @break
+                                @case('diproses')
+                                    Diproses
+                                    @break
+                                @case('selesai')
+                                    Selesai
+                                    @break
+                                @case('dibatalkan')
+                                    Dibatalkan
+                                    @break
+                                @default
+                                    Unknown
+                            @endswitch
+                        </span>
+                    </div>
+                </div>
+
+                <div class="detail-item">
+                    <div class="detail-label">Total Harga</div>
+                    <div class="detail-value">Rp {{ number_format($pesanan->total_harga, 0, ',', '.') }}</div>
+                </div>
+            </div>
+        </div>
+
         <div class="detail-section">
             <h3><i class="fas fa-user"></i> Informasi Pelanggan</h3>
 
@@ -404,33 +391,6 @@
                 <div class="detail-item">
                     <div class="detail-label">No. Telepon</div>
                     <div class="detail-value">{{ $pesanan->no_telepon }}</div>
-                </div>
-
-                <div class="detail-item">
-                    <div class="detail-label">Status Pesanan</div>
-                    <div class="detail-value">
-                        <span class="status-badge status-{{ $pesanan->status }}">
-                            @switch($pesanan->status)
-                                @case('pending')
-                                    Menunggu
-                                    @break
-                                @case('diproses')
-                                    Diproses
-                                    @break
-                                @case('selesai')
-                                    Selesai
-                                    @break
-                                @case('dibatalkan')
-                                    Dibatalkan
-                                    @break
-                            @endswitch
-                        </span>
-                    </div>
-                </div>
-
-                <div class="detail-item">
-                    <div class="detail-label">Tanggal Dibuat</div>
-                    <div class="detail-value">{{ $pesanan->created_at->format('d M Y H:i') }}</div>
                 </div>
 
                 <div class="detail-item" style="grid-column: 1 / -1;">
@@ -446,30 +406,21 @@
             <table class="items-table">
                 <thead>
                     <tr>
-                        <th style="width: 5%;">#</th>
-                        <th style="width: 35%;">Produk</th>
+                        <th style="width: 5%;">No</th>
+                        <th style="width: 40%;">Produk</th>
                         <th style="width: 15%;">Jumlah</th>
                         <th style="width: 20%;">Harga Satuan</th>
-                        <th style="width: 25%;">Subtotal</th>
+                        <th style="width: 20%;">Subtotal</th>
                     </tr>
                 </thead>
                 <tbody>
                     @foreach($pesanan->pesananItems as $index => $item)
                     <tr>
                         <td>{{ $index + 1 }}</td>
-                        <td>
-                            <div class="product-name">{{ $item->produk->nama_produk }}</div>
-                            <div class="product-unit">({{ $item->produk->satuan }})</div>
-                        </td>
-                        <td>
-                            <span class="quantity">{{ number_format($item->jumlah, 2, ',', '.') }}</span>
-                        </td>
-                        <td>
-                            <span class="price">Rp {{ number_format($item->harga_satuan, 0, ',', '.') }}</span>
-                        </td>
-                        <td>
-                            <span class="subtotal">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</span>
-                        </td>
+                        <td>{{ $item->produk->nama_produk }} ({{ $item->produk->satuan }})</td>
+                        <td>{{ $item->jumlah }}</td>
+                        <td>Rp {{ number_format($item->harga_satuan, 0, ',', '.') }}</td>
+                        <td class="subtotal">Rp {{ number_format($item->subtotal, 0, ',', '.') }}</td>
                     </tr>
                     @endforeach
                 </tbody>
@@ -483,8 +434,11 @@
 
         <div class="form-actions">
             <a href="{{ route('backoffice.pesanan.index') }}" class="btn btn-secondary">
-                <i class="fas fa-arrow-left"></i> Kembali ke Daftar
+                <i class="fas fa-arrow-left"></i> Kembali
             </a>
+            <button type="button" class="btn btn-info" data-bs-toggle="modal" data-bs-target="#updateStatusModal">
+                <i class="fas fa-exchange-alt"></i> Update Status
+            </button>
             <a href="{{ route('backoffice.pesanan.edit', $pesanan->id) }}" class="btn btn-warning">
                 <i class="fas fa-edit"></i> Edit Pesanan
             </a>
@@ -499,10 +453,44 @@
     </div>
 </div>
 
-<script>
-    // Add any interactive features if needed
-    document.addEventListener('DOMContentLoaded', function() {
-        // You can add print functionality or other interactive features here
-    });
-</script>
+<!-- Update Status Modal -->
+<div class="modal fade" id="updateStatusModal" tabindex="-1" aria-labelledby="updateStatusModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="updateStatusModalLabel">
+                    <i class="fas fa-exchange-alt"></i> Update Status Pesanan
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ route('backoffice.pesanan.update-status', $pesanan->id) }}" method="POST">
+                @csrf
+                @method('PATCH')
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status Pesanan</label>
+                        <select name="status" id="status" class="form-select" required>
+                            <option value="pending" {{ $pesanan->status == 'pending' ? 'selected' : '' }}>Pending</option>
+                            <option value="diproses" {{ $pesanan->status == 'diproses' ? 'selected' : '' }}>Diproses</option>
+                            <option value="selesai" {{ $pesanan->status == 'selesai' ? 'selected' : '' }}>Selesai</option>
+                            <option value="dibatalkan" {{ $pesanan->status == 'dibatalkan' ? 'selected' : '' }}>Dibatalkan</option>
+                        </select>
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        <strong>Informasi Pengelolaan Stok:</strong><br>
+                        • <strong>Diproses:</strong> Stok akan dikurangi dan ditahan<br>
+                        • <strong>Selesai:</strong> Stok berkurang permanen<br>
+                        • <strong>Dibatalkan:</strong> Stok akan dikembalikan
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Batal</button>
+                    <button type="submit" class="btn btn-primary">Update Status</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
 @endsection

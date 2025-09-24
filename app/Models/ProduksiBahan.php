@@ -3,9 +3,11 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class ProduksiBahan extends Model
 {
+    use SoftDeletes;
     protected $table = 'produksi_bahans';
 
     protected $fillable = [
@@ -27,6 +29,8 @@ class ProduksiBahan extends Model
         'total_biaya' => 'decimal:2',
         'harga_override' => 'decimal:4'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan Produksi
     public function produksi()

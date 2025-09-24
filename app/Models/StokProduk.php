@@ -4,10 +4,12 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class StokProduk extends Model
 {
     use HasFactory;
+    use SoftDeletes;
 
     protected $table = 'stok_produks';
 
@@ -34,6 +36,8 @@ class StokProduk extends Model
         'tanggal' => 'date',
         'tanggal_kadaluarsa' => 'date'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan Produk
     public function produk()

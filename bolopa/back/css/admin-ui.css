@@ -1,0 +1,19 @@
+/* Central admin UI CSS: font + basic variables */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@200;300;400;500;600;700&display=swap');
+
+:root{
+  --font-family: 'Poppins', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', 'Liberation Sans', sans-serif;
+  --bg: #e4e9f7;
+}
+
+/* Force global font for admin area */
+html, body {
+  font-family: var(--font-family) !important;
+  background: var(--bg);
+}
+
+/* Optional base resets useful for admin */
+*{ box-sizing: border-box; }
+
+/* small helpers */
+.container-fluid { padding-left: 16px; padding-right: 16px; }

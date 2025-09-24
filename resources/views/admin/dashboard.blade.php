@@ -98,10 +98,10 @@
     }
 
     // Data untuk last orders
-    $lastOrders = \App\Models\Pesanan::with('user')->latest()->take(10)->get()->map(function($order) {
+    $lastOrders = \App\Models\Pesanan::latest()->take(10)->get()->map(function($order) {
         return [
             'id' => $order->kode_pesanan ?? '#ORD-' . $order->id,
-            'amount' => 'Rp ' . number_format($order->total ?? 0, 0, ',', '.'),
+            'amount' => 'Rp ' . number_format($order->total_harga ?? 0, 0, ',', '.'),
             'time' => $order->created_at->diffForHumans(),
             'status' => $order->status
         ];

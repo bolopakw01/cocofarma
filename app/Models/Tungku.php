@@ -4,10 +4,11 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Tungku extends Model
 {
-    use HasFactory;
+    use HasFactory, SoftDeletes;
 
     protected $table = 'tungkus';
 
@@ -29,6 +30,8 @@ class Tungku extends Model
         'tanggal_installasi' => 'date',
         'status' => 'string'
     ];
+
+    protected $dates = ['deleted_at'];
 
     // Relasi dengan BatchProduksi
     public function batchProduksis()

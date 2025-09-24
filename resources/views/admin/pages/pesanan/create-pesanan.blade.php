@@ -26,10 +26,10 @@
     }
 
     * {
-    box-sizing: border-box;
-    margin: 0;
-    padding: 0;
-    font-family: inherit;
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family: inherit;
     }
 
     html, body {
@@ -454,38 +454,13 @@
     </div>
 </div>
 
-<!-- Template for order item row -->
-<template id="itemRowTemplate">
-    <tr class="item-row">
-        <td>
-            <select name="items[INDEX][produk_id]" class="product-select" required>
-                <option value="">Pilih Produk</option>
-                @foreach($produks as $produk)
-                <option value="{{ $produk->id }}" data-price="{{ $produk->harga_jual }}">
-                    {{ $produk->nama_produk }} ({{ $produk->satuan }})
-                </option>
-                @endforeach
-            </select>
-        </td>
-        <td>
-            <input type="number" name="items[INDEX][jumlah]" class="quantity-input" min="0.01" step="0.01" required>
-        </td>
-        <td>
-            <input type="number" name="items[INDEX][harga_satuan]" class="price-input" min="0" step="0.01" required>
-        </td>
-        <td>
-            <span class="subtotal">Rp 0</span>
-        </td>
-        <td>
-            <button type="button" class="btn btn-danger btn-sm remove-item">
-                <i class="fas fa-trash"></i>
-            </button>
-        </td>
-    </tr>
-</template>
+<!-- Template for order item row - REMOVED: Now using JavaScript to create rows -->
 
 <script>
     let itemIndex = 0;
+
+    // Store products data for JavaScript
+    const productsData = @json($produks);
 
     document.addEventListener('DOMContentLoaded', function() {
         // Add first item by default
@@ -499,15 +474,83 @@
     });
 
     function addItem() {
-        const template = document.getElementById('itemRowTemplate');
         const tbody = document.getElementById('itemsBody');
-        const row = template.content.cloneNode(true);
-
-        // Replace INDEX with actual index
-        const html = row.innerHTML.replace(/INDEX/g, itemIndex);
         const tr = document.createElement('tr');
-        tr.innerHTML = html;
         tr.classList.add('item-row');
+
+        // Create product select
+        const productSelect = document.createElement('select');
+        productSelect.name = `items[${itemIndex}][produk_id]`;
+        productSelect.className = 'product-select';
+        productSelect.required = true;
+
+        // Add default option
+        const defaultOption = document.createElement('option');
+        defaultOption.value = '';
+        defaultOption.textContent = 'Pilih Produk';
+        productSelect.appendChild(defaultOption);
+
+        // Add product options from JavaScript data
+        productsData.forEach(produk => {
+            const option = document.createElement('option');
+            option.value = produk.id;
+            option.setAttribute('data-price', produk.harga_jual);
+            option.setAttribute('data-stok', produk.stok_tersedia);
+            option.textContent = `${produk.nama_produk} (${produk.satuan}) - Stok: ${produk.stok_tersedia}`;
+            productSelect.appendChild(option);
+        });
+
+        // Create quantity input
+        const quantityInput = document.createElement('input');
+        quantityInput.type = 'number';
+        quantityInput.name = `items[${itemIndex}][jumlah]`;
+        quantityInput.className = 'quantity-input';
+        quantityInput.min = '0.01';
+        quantityInput.step = '0.01';
+        quantityInput.required = true;
+
+        // Create price input
+        const priceInput = document.createElement('input');
+        priceInput.type = 'number';
+        priceInput.name = `items[${itemIndex}][harga_satuan]`;
+        priceInput.className = 'price-input';
+        priceInput.min = '0';
+        priceInput.step = '0.01';
+        priceInput.readOnly = true; // Make it readonly
+
+        // Create subtotal span
+        const subtotalSpan = document.createElement('span');
+        subtotalSpan.className = 'subtotal';
+        subtotalSpan.textContent = 'Rp 0';
+
+        // Create remove button
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn btn-danger btn-sm remove-item';
+        removeBtn.innerHTML = '<i class="fas fa-trash"></i>';
+
+        // Create table cells
+        const productCell = document.createElement('td');
+        productCell.appendChild(productSelect);
+
+        const quantityCell = document.createElement('td');
+        quantityCell.appendChild(quantityInput);
+
+        const priceCell = document.createElement('td');
+        priceCell.appendChild(priceInput);
+
+        const subtotalCell = document.createElement('td');
+        subtotalCell.appendChild(subtotalSpan);
+
+        const actionCell = document.createElement('td');
+        actionCell.appendChild(removeBtn);
+
+        // Add cells to row
+        tr.appendChild(productCell);
+        tr.appendChild(quantityCell);
+        tr.appendChild(priceCell);
+        tr.appendChild(subtotalCell);
+        tr.appendChild(actionCell);
 
         tbody.appendChild(tr);
         itemIndex++;
@@ -527,10 +570,13 @@
     function handleProductChange(select) {
         const selectedOption = select.options[select.selectedIndex];
         const price = selectedOption.getAttribute('data-price') || 0;
+        const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
         const row = select.closest('.item-row');
         const priceInput = row.querySelector('.price-input');
+        const quantityInput = row.querySelector('.quantity-input');
 
-        priceInput.value = price;
+        priceInput.value = Math.round(price); // Display as integer
+        quantityInput.max = stokTersedia; // Set max quantity
         calculateSubtotal(row);
         calculateTotal();
     }
@@ -594,8 +640,18 @@
                 isValid = false;
             }
 
+            // Check stock availability
+            const selectedOption = productSelect.options[productSelect.selectedIndex];
+            const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
+            const jumlahDiminta = parseFloat(quantityInput.value) || 0;
+
+            if (jumlahDiminta > stokTersedia) {
+                alert(`Item ${index + 1}: Jumlah melebihi stok tersedia (${stokTersedia})!`);
+                isValid = false;
+            }
+
             if (!priceInput.value || priceInput.value < 0) {
-                alert(`Item ${index + 1}: Masukkan harga yang valid!`);
+                alert(`Item ${index + 1}: Harga produk tidak valid!`);
                 isValid = false;
             }
         });
