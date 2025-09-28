@@ -20,6 +20,24 @@
         $goals = []; // Kosongkan agar tampil placeholder
     }
 
+    // Helper function untuk mapping hex color ke CSS class
+    function mapColorToClass($hexColor) {
+        $colorMap = [
+            '#007bff' => 'blue',
+            '#ff0000' => 'red',
+            '#dc3545' => 'red',
+            '#28a745' => 'green',
+            '#2ecc71' => 'green',
+            '#ffc107' => 'yellow',
+            '#f39c12' => 'yellow',
+            '#9b59b6' => 'purple',
+            '#8e44ad' => 'purple',
+            '#e67e22' => 'orange',
+            '#d35400' => 'orange',
+        ];
+        return $colorMap[$hexColor] ?? 'blue'; // Default ke blue jika tidak ditemukan
+    }
+
     // Hitung value untuk setiap goal
     foreach ($goals as &$goal) {
         $key = $goal['key'] ?? '';
@@ -29,13 +47,32 @@
                 $value = \App\Models\Produk::count() ?? 0;
                 break;
             case 'penjualan':
-                $value = \App\Models\Transaksi::sum('total') ?? 0;
+                // Total penjualan bulan ini
+                $value = \App\Models\Transaksi::whereYear('tanggal_transaksi', now()->year)
+                    ->whereMonth('tanggal_transaksi', now()->month)
+                    ->where('jenis_transaksi', 'penjualan')
+                    ->where('status', 'selesai')
+                    ->sum('total') ?? 0;
                 break;
             case 'bahan_baku':
                 $value = \App\Models\MasterBahanBaku::count() ?? 0;
                 break;
             case 'produksi':
-                $value = \App\Models\Produksi::whereDate('created_at', today())->count() ?? 0;
+                // Total produksi bulan ini
+                $value = \App\Models\Produksi::whereYear('tanggal_produksi', now()->year)
+                    ->whereMonth('tanggal_produksi', now()->month)
+                    ->where('status', 'selesai')
+                    ->sum('jumlah_hasil') ?? 0;
+                break;
+            case 'pesanan':
+                // Total pesanan baru bulan ini
+                $value = \App\Models\Pesanan::whereYear('tanggal_pesanan', now()->year)
+                    ->whereMonth('tanggal_pesanan', now()->month)
+                    ->count() ?? 0;
+                break;
+            case 'user':
+                // Total user terdaftar
+                $value = \App\Models\User::count() ?? 0;
                 break;
             case 'packing':
                 // Asumsikan packing adalah bagian dari produksi yang sudah selesai
@@ -278,14 +315,35 @@
               </div>
               @else
               @foreach($goals as $goal)
-              <div class="bolopa-goal-item mb-3">
+              @php
+                $pct = $goal['pct'] ?? 0;
+                $goalClass = '';
+                if ($pct >= 100) {
+                  $goalClass = 'at-target';
+                } elseif ($pct >= 80) {
+                  $goalClass = 'nearing-target';
+                }
+                $colorClass = mapColorToClass($goal['color'] ?? '#007bff');
+              @endphp
+              <div class="bolopa-goal-item mb-3 {{ $goalClass }}">
                 <div class="d-flex justify-content-between">
                   <div class="small">{{ $goal['label'] }}</div>
                   <div class="fw-bold">{{ $goal['value'] ?? 0 }} / {{ $goal['target'] }}</div>
                 </div>
                 <div class="progress mt-2">
-                  <div class="bolopa-goal-bar bolopa-bar-{{ $goal['color'] ?? 'green' }}" role="progressbar" data-value="{{ $goal['value'] ?? 0 }}" data-target="{{ $goal['target'] }}" data-pct="{{ $goal['pct'] ?? 0 }}" style="width:{{ $goal['pct'] ?? 0 }}%"></div>
+                  <div class="bolopa-goal-bar bolopa-bar-{{ $colorClass }}" role="progressbar" data-value="{{ $goal['value'] ?? 0 }}" data-target="{{ $goal['target'] }}" data-pct="{{ $pct }}" style="width:{{ $pct }}%"></div>
                 </div>
+                @if($pct >= 80)
+                <div class="mt-1 text-center">
+                  <small class="text-warning fw-bold">
+                    @if($pct >= 100)
+                      <i class="fas fa-trophy text-success"></i> Target Tercapai!
+                    @else
+                      <i class="fas fa-exclamation-triangle"></i> Hampir Tercapai!
+                    @endif
+                  </small>
+                </div>
+                @endif
               </div>
               @endforeach
               @endif

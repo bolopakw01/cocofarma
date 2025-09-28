@@ -121,6 +121,35 @@ body{ background-color: #e2e7f5; }
   .goal-bar.bar-red, .bolopa-bar-red{ background: linear-gradient(90deg,#e74c3c,#c0392b); }
   .goal-bar.bar-green, .bolopa-bar-green{ background: linear-gradient(90deg,#2ecc71,#27ae60); }
   .goal-bar.bar-yellow, .bolopa-bar-yellow{ background: linear-gradient(90deg,#f1c40f,#f39c12); }
+  .goal-bar.bar-purple, .bolopa-bar-purple{ background: linear-gradient(90deg,#9b59b6,#8e44ad); }
+  .goal-bar.bar-orange, .bolopa-bar-orange{ background: linear-gradient(90deg,#e67e22,#d35400); }
+
+  /* Progress bar nearing target (80-99%) */
+  .bolopa-goal-item.nearing-target .bolopa-goal-bar {
+    background: linear-gradient(90deg, #f39c12, #e74c3c) !important;
+    box-shadow: 0 0 10px rgba(231, 76, 60, 0.3);
+    animation: pulse-warning 2s infinite;
+  }
+
+  /* Progress bar at target (100%+) */
+  .bolopa-goal-item.at-target .bolopa-goal-bar {
+    background: linear-gradient(90deg, #27ae60, #2ecc71) !important;
+    box-shadow: 0 0 15px rgba(39, 174, 96, 0.4);
+    animation: pulse-success 2s infinite;
+  }
+
+  /* Pulse animations */
+  @keyframes pulse-warning {
+    0% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
+    50% { box-shadow: 0 0 20px rgba(231, 76, 60, 0.6); }
+    100% { box-shadow: 0 0 10px rgba(231, 76, 60, 0.3); }
+  }
+
+  @keyframes pulse-success {
+    0% { box-shadow: 0 0 15px rgba(39, 174, 96, 0.4); }
+    50% { box-shadow: 0 0 25px rgba(39, 174, 96, 0.7); }
+    100% { box-shadow: 0 0 15px rgba(39, 174, 96, 0.4); }
+  }
   .last-orders-table td, .last-orders-table th{ padding: 0.35rem 0.25rem; border-top:none; }
   .last-orders-table .text-muted{ color: rgba(255,255,255,0.6); }
 

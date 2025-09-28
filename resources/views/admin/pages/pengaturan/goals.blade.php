@@ -244,6 +244,7 @@
                     <option value="bahan_baku">Bahan Baku</option>
                     <option value="produksi">Produksi</option>
                     <option value="stok">Stok</option>
+                    <option value="user">User</option>
                 </select>
             </div>
 
@@ -322,6 +323,7 @@
                     <option value="bahan_baku">Bahan Baku</option>
                     <option value="produksi">Produksi</option>
                     <option value="stok">Stok</option>
+                    <option value="user">User</option>
                 </select>
             </div>
 
