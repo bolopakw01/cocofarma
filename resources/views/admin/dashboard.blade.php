@@ -138,9 +138,11 @@
     $lastOrders = \App\Models\Pesanan::latest()->take(10)->get()->map(function($order) {
         return [
             'id' => $order->kode_pesanan ?? '#ORD-' . $order->id,
+            'customer' => $order->nama_pelanggan ?? 'N/A',
             'amount' => 'Rp ' . number_format($order->total_harga ?? 0, 0, ',', '.'),
             'time' => $order->created_at->diffForHumans(),
-            'status' => $order->status
+            'status' => $order->status,
+            'status_label' => $order->status_label
         ];
     });
 
@@ -353,9 +355,9 @@
               <h6 class="mb-3">Pesanan Terakhir</h6>
               <div class="bolopa-last-orders-wrapper">
                 <div id="last-orders-list" class="bolopa-last-orders-list" aria-live="polite" role="list"></div>
-                <div id="more-orders-wrap" class="text-center d-none mt-2 bolopa-more-orders-wrap">
+                <div id="more-orders-wrap" class="text-center mt-2 bolopa-more-orders-wrap">
                   <button id="load-more-orders" class="btn btn-sm btn-outline-light" type="button">
-                    <i class="fas fa-plus-circle me-1"></i>Muat lebih banyak
+                    <i class="fas fa-external-link-alt me-1"></i>Lihat Semua Pesanan
                   </button>
                 </div>
               </div>
@@ -754,39 +756,40 @@
         var o = allOrders[j];
           var row = document.createElement('div');
           // use bolopa-prefixed role when inside bolopa-last-orders-list, but keep generic class for styling compatibility
-          row.className = 'order-row';
-        // avatar initial
-        var initial = o.id.replace(/[^A-Z]/g,'').charAt(0) || 'O';
-        row.innerHTML = '<div style="display:flex;align-items:center;">'
-          + '<div class="avatar-sm bg-secondary text-white">'+ initial +'</div>'
-          + '<div>'
-            + '<a class="order-link" href="' + '{{ route("backoffice.pesanan.index") }}' + '">' + o.id + '</a>'
-            + '<div class="meta">'+ o.time +'</div>'
+          var rowClass = 'order-row';
+          // Add alternating colors
+          if (j % 2 === 0) {
+            rowClass += ' order-row-even';
+          } else {
+            rowClass += ' order-row-odd';
+          }
+          row.className = rowClass;
+        // avatar initial from customer name
+        var initial = (o.customer && o.customer.length > 0) ? o.customer.charAt(0).toUpperCase() : 'O';
+        // status badge color
+        var statusClass = 'badge-secondary';
+        if(o.status === 'selesai') statusClass = 'badge-success';
+        else if(o.status === 'diproses') statusClass = 'badge-warning';
+        else if(o.status === 'dibatalkan') statusClass = 'badge-danger';
+
+        row.innerHTML = '<div class="order-compact">'
+          + '<div class="order-number">' + (j + 1) + '</div>'
+          + '<div class="order-name">' + o.id + '</div>'
+          + '<div class="order-details">'
+            + '<span class="order-date">' + o.time + '</span>'
+            + '<span class="order-price">' + o.amount + '</span>'
           + '</div>'
-        + '</div>'
-        + '<div class="amount">'+ o.amount +'</div>';
+        + '</div>';
   listEl.appendChild(row);
       }
       rendered = end;
-      checkMoreVisibility();
+      // Always show the "View All Orders" button
     }
 
-    function checkMoreVisibility(){
-      if(rendered < allOrders.length){
-        moreWrap.classList.remove('d-none');
-      } else {
-        moreWrap.classList.add('d-none');
-      }
-    }
-
-    // show More when scrolled to bottom of list
-    listEl.addEventListener('scroll', function(){
-      if(listEl.scrollTop + listEl.clientHeight >= listEl.scrollHeight - 8){
-        moreWrap.classList.remove('d-none');
-      }
+    loadMoreBtn.addEventListener('click', function(){
+      // Redirect to orders page instead of loading more
+      window.location.href = '{{ route("backoffice.pesanan.index") }}';
     });
-
-    loadMoreBtn.addEventListener('click', function(){ renderNext(); listEl.scrollTop = listEl.scrollHeight; });
 
     // initial render
     renderNext();

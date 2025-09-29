@@ -155,17 +155,96 @@ body{ background-color: #e2e7f5; }
 
   /* Scrollable last orders list */
   .last-orders-wrapper, .bolopa-last-orders-wrapper{ display:flex; flex-direction:column; }
-  .last-orders-list, .bolopa-last-orders-list{ max-height:260px; overflow:auto; padding-right:6px; }
+  .last-orders-list, .bolopa-last-orders-list{ max-height:180px; overflow:auto; padding-right:6px; }
   .last-orders-table thead th{ background: #f7f7f7; color:#333; position: sticky; top: 0; z-index:2; }
   .last-orders-table thead th:first-child{ border-top-left-radius:6px; }
   .last-orders-table thead th:last-child{ border-top-right-radius:6px; }
-  .last-orders-list .order-row, .bolopa-last-orders-list .order-row{ padding:0.55rem 0.5rem; border-bottom: 1px solid rgba(0,0,0,0.06); display:flex; justify-content:space-between; align-items:center; }
-  .last-orders-list .order-row .meta, .bolopa-last-orders-list .order-row .meta{ color: rgba(255,255,255,0.6); font-size:0.85rem; }
-  .last-orders-list .order-row .amount, .bolopa-last-orders-list .order-row .amount{ font-weight:700; color: #fff; }
-  .last-orders-list .order-row:hover, .bolopa-last-orders-list .order-row:hover{ background: rgba(0,0,0,0.02); }
-  .last-orders-list::-webkit-scrollbar{ width:8px; }
-  .last-orders-list::-webkit-scrollbar-thumb{ background: rgba(255,255,255,0.06); border-radius:8px; }
-  .last-orders-list::-webkit-scrollbar-track{ background: transparent; }
+  .last-orders-list .order-row, .bolopa-last-orders-list .order-row{
+    padding: 0.4rem 0.5rem;
+    border-bottom: 1px solid rgba(0,0,0,0.06);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: background-color 0.2s ease;
+  }
+  .last-orders-list .order-row:hover, .bolopa-last-orders-list .order-row:hover{
+    background: rgba(0,0,0,0.04);
+  }
+
+  /* Alternating row colors - more visible */
+  .last-orders-list .order-row-even, .bolopa-last-orders-list .order-row-even{
+    background: linear-gradient(90deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%);
+    border-left: 3px solid rgba(39, 174, 96, 0.6);
+  }
+  .last-orders-list .order-row-odd, .bolopa-last-orders-list .order-row-odd{
+    background: linear-gradient(90deg, rgba(39, 174, 96, 0.12) 0%, rgba(39, 174, 96, 0.06) 100%);
+    border-left: 3px solid rgba(39, 174, 96, 0.8);
+  }
+
+  /* Compact order layout */
+  .last-orders-list .order-row .order-compact, .bolopa-last-orders-list .order-row .order-compact{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+  }
+
+  .last-orders-list .order-row .order-number, .bolopa-last-orders-list .order-row .order-number{
+    width: 24px;
+    height: 24px;
+    background: rgba(45, 55, 72, 0.9);
+    color: #fff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 600;
+    margin-right: 0.5rem;
+    flex-shrink: 0;
+  }
+
+  .last-orders-list .order-row .order-name, .bolopa-last-orders-list .order-row .order-name{
+    font-weight: 600;
+    color: #2d3748;
+    font-size: 0.85rem;
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .last-orders-list .order-row .order-details, .bolopa-last-orders-list .order-row .order-details{
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-shrink: 0;
+  }
+
+  .last-orders-list .order-row .order-date, .bolopa-last-orders-list .order-row .order-date{
+    color: #4a5568;
+    font-size: 0.75rem;
+    white-space: nowrap;
+  }
+
+  .last-orders-list .order-row .order-price, .bolopa-last-orders-list .order-row .order-price{
+    font-weight: 700;
+    color: #2d3748;
+    font-size: 0.8rem;
+    white-space: nowrap;
+  }
+
+  /* Scrollbar styling */
+  .last-orders-list::-webkit-scrollbar, .bolopa-last-orders-list::-webkit-scrollbar{
+    width: 6px;
+  }
+  .last-orders-list::-webkit-scrollbar-thumb, .bolopa-last-orders-list::-webkit-scrollbar-thumb{
+    background: rgba(255,255,255,0.2);
+    border-radius: 3px;
+  }
+  .last-orders-list::-webkit-scrollbar-track, .bolopa-last-orders-list::-webkit-scrollbar-track{
+    background: transparent;
+  }
 
   .last-orders-wrapper .btn{ font-size:0.85rem; }
 
