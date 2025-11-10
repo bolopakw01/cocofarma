@@ -1,1311 +1,276 @@
 @extends('admin.layouts.app')
 
-@php
-    $pageTitle = 'Pesanan';
-@endphp
-
-@section('title', 'Pesanan - Cocofarma')
+@section('title', 'Pesanan')
 
 @section('content')
-<style>
-    :root {
-        --primary: #4361ee;
-        --secondary: #3f37c9;
-        --primary-hover: #3a4fd8;
-        --success: #4cc9f0;
-        --info: #4895ef;
-        --warning: #f72585;
-        --danger: #e63946;
-        --light: #f8f9fa;
-        --dark: #212529;
-        --gray: #6c757d;
-        --light-gray: #e9ecef;
-        --border-radius: 8px;
-        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        --transition: all 0.3s ease;
-    }
-
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        font-family: inherit;
-    }
-
-    html, body {
-        height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow);
-        padding: 20px;
-        overflow: hidden;
-        margin-top: 20px;
-    }
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--light-gray);
-    }
-
-    .page-header h1 {
-        color: var(--dark);
-        font-size: 1.6rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .controls {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 20px;
-        padding: 16px;
-        background: var(--light);
-        border-radius: var(--border-radius);
-    }
-
-    .left-controls {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .right-controls {
-        display: flex;
-        gap: 10px;
-    }
-
-    .search-box {
-        position: relative;
-    }
-
-    .search-box input {
-        padding: 10px 15px 10px 40px;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        font-size: 0.9rem;
-        width: 250px;
-        transition: var(--transition);
-    }
-
-    .search-box input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
-        width: 280px;
-    }
-
-    .search-box i {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray);
-    }
-
-    .entries-select {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-    }
-
-    .entries-select select {
-        padding: 8px 12px;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        background: white;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-
-    .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: var(--border-radius);
-        cursor: pointer;
-        font-weight: 500;
-        transition: var(--transition);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .btn-primary {
-        background: var(--primary);
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: var(--secondary);
-        transform: translateY(-1px);
-    }
-
-    .btn-success {
-        background: var(--success);
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: #3aafd9;
-        transform: translateY(-1px);
-    }
-
-    .btn-danger {
-        background: var(--danger);
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: #c22c38;
-        transform: translateY(-1px);
-    }
-
-    .btn-action {
-        padding: 5px 10px;
-        font-size: 0.8rem;
-        margin: 0 2px;
-    }
-
-    .btn-info {
-        background: var(--info);
-        color: white;
-    }
-
-    .btn-info:hover {
-        background: #3a7fd8;
-        transform: translateY(-1px);
-    }
-
-    .btn-warning {
-        background: var(--warning);
-        color: white;
-    }
-
-    .btn-warning:hover {
-        background: #d61c6a;
-        transform: translateY(-1px);
-    }
-
-    .btn-pending {
-        background: #f59e0b;
-        color: white;
-    }
-
-    .btn-pending:hover {
-        background: #d97706;
-        transform: translateY(-1px);
-    }
-
-    .btn-selesai {
-        background: #10b981;
-        color: white;
-    }
-
-    .btn-selesai:hover {
-        background: #059669;
-        transform: translateY(-1px);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        margin-bottom: 20px;
-        position: relative;
-        table-layout: fixed;
-        min-width: 100%;
-        max-width: none;
-    }
-
-    th, td {
-        padding: 8px 10px;
-        text-align: left;
-        border-bottom: 1px solid var(--light-gray);
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        max-width: 0;
-    }
-
-    th {
-        background-color: var(--light);
-        font-weight: 600;
-        color: var(--dark);
-        position: sticky;
-        top: 0;
-        z-index: 5;
-        cursor: pointer;
-        user-select: none;
-        font-size: 0.9rem;
-        white-space: nowrap;
-    }
-
-    th:hover {
-        background-color: #e9ecef;
-    }
-
-    th i {
-        margin-left: 5px;
-        font-size: 0.8rem;
-        opacity: 0.6;
-    }
-
-    th.active i {
-        opacity: 1;
-    }
-
-    /* Sort icons style (stacked up/down arrows) - match operational pages */
-    .table th i.sort-up,
-    .table th i.sort-down {
-        color: rgba(0,0,0,0.35);
-        font-size: 0.65rem;
-        margin-left: 6px;
-    }
-
-    .sort-icons {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin-left: 8px;
-        vertical-align: middle;
-        line-height: 1;
-    }
-
-    .table th .sort-icons i { margin: 0; padding: 0; height: 12px; }
-    .table th .sort-icons i.sort-up { margin-bottom: -5px; }
-    .table th .sort-icons i.sort-down { margin-top: -5px; }
-
-    .table th.active i.sort-up.active-up,
-    .table th.active i.sort-down.active-down {
-        color: #000 !important;
-        font-size: 0.75rem;
-    }
-
-    tr {
-        transition: var(--transition);
-    }
-
-    tr:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    .badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .badge-success {
-        background: #d4edda;
-        color: #155724;
-    }
-
-    .badge-warning {
-        background: #fff3cd;
-        color: #856404;
-    }
-
-    .badge-info {
-        background: #d1ecf1;
-        color: #0c5460;
-    }
-
-    .badge-danger {
-        background: #f8d7da;
-        color: #721c24;
-    }
-
-    .actions {
-        display: flex;
-        justify-content: center;
-        gap: 5px;
-        min-width: 120px;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .pagination-info {
-        color: var(--gray);
-        font-size: 0.9rem;
-        flex-shrink: 0;
-        white-space: nowrap;
-        max-width: 30%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .pagination-buttons {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        flex-shrink: 0;
-        max-width: 70%;
-    }
-
-    .pagination-buttons button {
-        padding: 6px 10px;
-        border: 1px solid var(--light-gray);
-        background: white;
-        border-radius: var(--border-radius);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 34px;
-        height: 34px;
-        font-size: 0.9rem;
-        transition: var(--transition);
-    }
-
-    .pagination-buttons button:hover {
-        background: var(--light);
-    }
-
-    .pagination-buttons button.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
-
-    .pagination-buttons button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    /* Improved Status Update Modal - SweetAlert style */
-    #statusModal .modal-dialog {
-        display: flex;
-        align-items: center;
-        min-height: calc(100vh - 1rem);
-        margin: 0.5rem auto;
-    }
-
-    #statusModal .modal-content {
-        background: white;
-        border-radius: 16px;
-        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-        border: none;
-        max-width: 420px;
-        width: 100%;
-        margin: 0 auto;
-        transform: scale(0.9) translateY(-20px);
-        opacity: 0;
-        transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-        position: relative;
-    }
-
-    #statusModal.show .modal-content,
-    #statusModal.fade.show .modal-content {
-        transform: scale(1) translateY(0);
-        opacity: 1;
-    }
-
-    #statusModal .modal-header {
-        padding: 24px 24px 16px;
-        border-bottom: 1px solid #e9ecef;
-        border-radius: 16px 16px 0 0;
-        color: white;
-        transition: background 0.3s ease;
-    }
-
-    #statusModal .modal-title {
-        font-size: 1.1rem;
-        font-weight: 600;
-        color: white;
-        margin: 0;
-        display: flex;
-        align-items: center;
-        gap: 8px;
-    }
-
-    #statusModal .modal-title i {
-        font-size: 1.2rem;
-        transition: color 0.3s ease;
-    }
-
-    #statusModal .btn-close {
-        background: none;
-        border: none;
-        font-size: 1.2rem;
-        color: #6c757d;
-        cursor: pointer;
-        padding: 8px;
-        border-radius: 50%;
-        transition: all 0.2s ease;
-        margin: 0;
-    }
-
-    #statusModal .btn-close:hover {
-        background: #f8f9fa;
-        color: #495057;
-        transform: rotate(90deg);
-    }
-
-    #statusModal .modal-body {
-        padding: 20px 24px;
-    }
-
-    #statusModal .form-label {
-        font-weight: 600;
-        color: #495057;
-        margin-bottom: 8px;
-        font-size: 0.9rem;
-    }
-
-    #statusModal .form-select {
-        padding: 10px 14px;
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
-        font-size: 0.95rem;
-        transition: all 0.2s ease;
-        background: white;
-    }
-
-    #statusModal .form-select:focus {
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
-        outline: none;
-    }
-
-    #statusModal .alert {
-        padding: 12px 16px;
-        border-radius: 8px;
-        border: none;
-        margin-top: 16px;
-        font-size: 0.85rem;
-        transition: all 0.3s ease;
-    }
-
-    #statusModal .alert i {
-        margin-right: 6px;
-        transition: color 0.3s ease;
-    }
-
-    #statusModal .modal-footer {
-        padding: 16px 24px 24px;
-        border-top: 1px solid #e9ecef;
-        border-radius: 0 0 16px 16px;
-        background: #f8f9fa;
-        display: flex;
-        justify-content: flex-end;
-        gap: 12px;
-    }
-
-    #statusModal .modal-footer .btn {
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 0.9rem;
-        transition: all 0.2s ease;
-        border: none;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    #statusModal .modal-footer .btn-secondary {
-        background: #6c757d;
-        color: white;
-    }
-
-    #statusModal .modal-footer .btn-secondary:hover {
-        background: #5a6268;
-        transform: translateY(-1px);
-    }
-
-    #statusModal .modal-footer .btn-primary {
-        transition: all 0.3s ease;
-    }
-
-    #statusModal .badge {
-        font-weight: 500;
-        padding: 6px 12px;
-        border-radius: 20px;
-        backdrop-filter: blur(4px);
-        border: 1px solid rgba(255, 255, 255, 0.2);
-    }
-
-    /* Override Bootstrap badge backgrounds with transparent versions */
-    #statusModal .badge.bg-warning {
-        background-color: rgba(255, 193, 7, 0.143) !important;
-        color: #000000 !important;
-    }
-
-    #statusModal .badge.bg-info {
-        background-color: rgba(13, 110, 253, 0.143) !important;
-        color: #000000 !important;
-    }
-
-    #statusModal .badge.bg-success {
-        background-color: rgba(25, 135, 84, 0.143) !important;
-        color: #000000 !important;
-    }
-
-    #statusModal .badge.bg-danger {
-        background-color: rgba(220, 53, 69, 0.143) !important;
-        color: #000000 !important;
-    }
-
-        #statusModal .badge.bg-secondary {
-        background-color: rgba(108, 117, 125, 0.3) !important;
-        color: #343a40 !important;
-    }
-
-    /* Current status info icon styling */
-    .current-status-info .fa-info-circle {
-        transition: color 0.3s ease;
-        font-size: 1rem;
-    }
-
-    @media (max-width: 768px) {
-        body {
-            padding: 10px;
-        }
-
-        .container {
-            margin: 10px;
-            padding: 15px;
-        }
-
-        header {
-            flex-direction: column;
-            align-items: flex-start;
-            gap: 15px;
-        }
-
-        .controls {
-            flex-direction: column;
-            align-items: stretch;
-        }
-
-        .left-controls, .right-controls {
-            justify-content: center;
-        }
-
-        .search-box input {
-            width: 200px;
-        }
-
-        .search-box input:focus {
-            width: 220px;
-        }
-
-        th, td {
-            padding: 6px 8px;
-            font-size: 0.85rem;
-        }
-
-        .table-responsive {
-            overflow-x: auto;
-            -webkit-overflow-scrolling: touch;
-        }
-
-        table {
-            min-width: 600px;
-        }
-
-        .btn-action {
-            padding: 4px 8px;
-            font-size: 0.75rem;
-        }
-
-        .actions {
-            gap: 3px;
-        }
-
-        .pagination {
-            flex-direction: column;
-            align-items: center;
-            gap: 15px;
-        }
-
-        .pagination-info {
-            max-width: 100%;
-            text-align: center;
-        }
-
-        .pagination-buttons {
-            max-width: 100%;
-            justify-content: center;
-        }
-
-        .pagination-buttons button {
-            min-width: 30px;
-            height: 30px;
-            font-size: 0.8rem;
-        }
-    }
-
-    @media (min-width: 1200px) {
-        table {
-            table-layout: auto;
-        }
-
-        .table-responsive {
-            overflow-x: visible;
-        }
-
-        .btn-action {
-            padding: 6px 12px;
-            font-size: 0.85rem;
-        }
-
-        .actions {
-            gap: 8px;
-        }
-
-        .pagination {
-            justify-content: space-between;
-        }
-
-        .pagination-info {
-            max-width: 30%;
-        }
-
-        .pagination-buttons {
-            max-width: 70%;
-        }
-
-        .pagination-buttons button {
-            min-width: 36px;
-            height: 36px;
-            font-size: 0.95rem;
-        }
-    }
-
-    @media (min-width: 769px) and (max-width: 1199px) {
-        .pagination-info {
-            max-width: 40%;
-        }
-
-        .pagination-buttons {
-            max-width: 60%;
-        }
-
-        .pagination-buttons button {
-            min-width: 32px;
-            height: 32px;
-        }
-
-        .search-box input {
-            width: 220px;
-        }
-
-        .search-box input:focus {
-            width: 240px;
-        }
-    }
-
-    /* Animation for table rows */
-    @keyframes fadeIn {
-        from {
-            opacity: 0;
-            transform: translateY(10px);
-        }
-        to {
-            opacity: 1;
-            transform: translateY(0);
-        }
-    }
-
-    tbody tr {
-        animation: fadeIn 0.3s ease-out;
-    }
-
-    tbody tr:nth-child(odd) {
-        animation-delay: 0.1s;
-    }
-
-    /* Status indicator */
-    .status-indicator {
-        display: inline-block;
-        width: 8px;
-        height: 8px;
-        border-radius: 50%;
-        margin-right: 8px;
-    }
-
-    .status-pending {
-        background: #ffc107;
-        box-shadow: 0 0 6px rgba(255, 193, 7, 0.4);
-    }
-
-    .status-diproses {
-        background: #17a2b8;
-        box-shadow: 0 0 6px rgba(23, 162, 184, 0.4);
-    }
-
-    .status-selesai {
-        background: #28a745;
-        box-shadow: 0 0 6px rgba(40, 167, 69, 0.4);
-    }
-
-    .status-dibatalkan {
-        background: #dc3545;
-        box-shadow: 0 0 6px rgba(220, 53, 69, 0.4);
-    }
-
-    /* Toast notification - positioned lower */
-    .toast {
-        position: fixed;
-        top: 80px; /* Moved down from 20px to 80px */
-        right: 20px;
-        padding: 14px 24px;
-        background: #28a745;
-        color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
-        opacity: 0;
-        transform: translateY(-20px);
-        transition: all 0.4s ease;
-        z-index: 9999;
-        max-width: 420px;
-        word-wrap: break-word;
-        font-size: 14px;
-        line-height: 1.5;
-        font-weight: 500;
-        border-left: 4px solid rgba(255, 255, 255, 0.3);
-    }
-
-    .toast.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-
-    .toast.error {
-        background: #dc3545;
-        border-left-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .toast.info {
-        background: #17a2b8;
-        border-left-color: rgba(255, 255, 255, 0.3);
-    }
-
-    .toast.warning {
-        background: #ffc107;
-        color: #212529;
-        border-left-color: rgba(0, 0, 0, 0.1);
-    }
-
-    .table-responsive {
-        position: relative;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        width: 100%;
-    }
-
-    .order-code {
-        font-weight: 600;
-        color: var(--primary);
-    }
-
-    .customer-info {
-        max-width: 200px;
-    }
-
-    .customer-info .name {
-        font-weight: 600;
-        color: var(--dark);
-    }
-
-    .customer-info .phone {
-        font-size: 0.8rem;
-        color: var(--gray);
-    }
-
-    .order-total {
-        font-weight: 600;
-        color: var(--success);
-    }
-
-    .order-date {
-        font-size: 0.85rem;
-        color: var(--gray);
-    }
-
-    /* Toast notifications */
-    .toast {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        background: #28a745;
-        color: white;
-        padding: 12px 20px;
-        border-radius: 4px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
-        z-index: 9999;
-        opacity: 0;
-        transform: translateY(-20px);
-        transition: all 0.3s ease;
-        max-width: 400px;
-        word-wrap: break-word;
-        font-size: 14px;
-        line-height: 1.4;
-    }
-
-    .toast.error {
-        background: #dc3545;
-    }
-
-    .toast.show {
-        opacity: 1;
-        transform: translateY(0);
-    }
-</style>
-
-<div class="container">
-    <div class="page-header">
-        <h1><i class="fas fa-shopping-cart"></i> Pesanan</h1>
-        <a href="{{ route('backoffice.pesanan.create') }}" class="btn btn-primary"><i class="fas fa-plus"></i> Tambah Pesanan</a>
-    </div>
-
-    <div class="controls">
-        <div class="left-controls">
-            <div class="entries-select">
+<x-admin.data-table>
+    <x-slot name="header">
+        <div class="bolopa-tabel-header-title">
+            <x-admin.icon name="cart" alt="Pesanan" size="28" />
+            <span>Pesanan</span>
+        </div>
+        <div class="bolopa-tabel-header-actions">
+            <a href="{{ route('backoffice.pesanan.create') }}" class="bolopa-tabel-btn bolopa-tabel-btn-primary">
+                <x-admin.icon name="plus" alt="Tambah" size="16" />
+                <span>Tambah Pesanan</span>
+            </a>
+        </div>
+    </x-slot>
+
+    <x-slot name="controls">
+        <div class="bolopa-tabel-left-controls">
+            <div class="bolopa-tabel-entries-select">
                 <label for="entriesSelect">Tampilkan</label>
                 <select id="entriesSelect">
-                    <option value="5" {{ request('per_page') == 5 ? 'selected' : '' }}>5</option>
-                    <option value="10" {{ request('per_page') == 10 ? 'selected' : '' }}>10</option>
-                    <option value="25" {{ request('per_page') == 25 ? 'selected' : '' }}>25</option>
-                    <option value="50" {{ request('per_page') == 50 ? 'selected' : '' }}>50</option>
-                    <option value="all" {{ request('per_page') == 'all' ? 'selected' : '' }}>Semua</option>
+                    <option value="10" {{ request('per_page', 10) == 10 ? 'selected' : '' }}>10</option>
+                    <option value="25" {{ request('per_page', 10) == 25 ? 'selected' : '' }}>25</option>
+                    <option value="50" {{ request('per_page', 10) == 50 ? 'selected' : '' }}>50</option>
+                    <option value="all" {{ request('per_page', 10) == 'all' ? 'selected' : '' }}>Semua</option>
                 </select>
                 <span>entri</span>
             </div>
         </div>
 
-        <div class="right-controls">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
+        <div class="bolopa-tabel-right-controls">
+            <div class="bolopa-tabel-search-box">
+                <x-admin.icon name="search" alt="Cari" size="16" />
                 <input type="text" id="searchInput" placeholder="Cari pesanan..." value="{{ request('search') }}">
-                <button type="button" class="clear-btn" onclick="clearSearch()" style="display:none;"><i class="fas fa-times"></i></button>
             </div>
 
             @if(Auth::check() && Auth::user()->role === 'super_admin')
-            <button class="btn btn-success" id="btnExport"><i class="fas fa-file-export"></i> Export</button>
+            <button class="bolopa-tabel-btn bolopa-tabel-btn-success" id="btnExport">
+                <x-admin.icon name="export" alt="Export" size="16" />
+                <span>Export</span>
+            </button>
             @endif
             @if(Auth::check() && Auth::user()->role === 'super_admin')
-            <button class="btn btn-primary" id="btnPrint"><i class="fas fa-print"></i> Print</button>
+            <button class="bolopa-tabel-btn bolopa-tabel-btn-primary" id="btnPrint">
+                <x-admin.icon name="print" alt="Print" size="16" />
+                <span>Print</span>
+            </button>
             @endif
         </div>
-    </div>
+    </x-slot>
 
-    <div class="table-responsive">
-    <table class="table" id="dataTable">
-        <thead>
-            <tr>
-                <th data-sort="no" style="width: 5%;">No <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
-                <th data-sort="kode_pesanan" style="width: 12%;">Kode Pesanan <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
-                <th data-sort="tanggal_pesanan" style="width: 10%;">Tanggal <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
-                <th data-sort="nama_pelanggan" style="width: 18%;">Pelanggan <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
-                <th data-sort="total_harga" style="width: 12%;">Total <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
-                <th data-sort="status" style="width: 10%;">Status <span class="sort-icons"><i class="fas fa-sort-up sort-up"></i><i class="fas fa-sort-down sort-down"></i></span></th>
-                <th style="width: 15%;">Aksi</th>
-            </tr>
-        </thead>
-        <tbody>
-            @forelse($pesanans ?? [] as $index => $pesanan)
-            <tr>
-                <td>{{ ($pesanans->currentPage() - 1) * $pesanans->perPage() + $index + 1 }}</td>
-                <td>
-                    <div class="order-code">{{ $pesanan->kode_pesanan }}</div>
-                </td>
-                <td>
-                    <div class="order-date">{{ $pesanan->tanggal_pesanan->format('d/m/Y') }}</div>
-                </td>
-                <td>
-                    <div class="customer-info">
-                        <div class="name">{{ $pesanan->nama_pelanggan }}</div>
-                        <div class="phone">{{ $pesanan->no_telepon }}</div>
-                    </div>
-                </td>
-                <td>
-                    <div class="order-total">Rp {{ number_format($pesanan->total_harga, 0, ',', '.') }}</div>
-                </td>
-                <td>
-                    <span class="badge {{ $pesanan->status == 'pending' ? 'badge-warning' : ($pesanan->status == 'diproses' ? 'badge-info' : ($pesanan->status == 'selesai' ? 'badge-success' : 'badge-danger')) }}">
-                        {{ $pesanan->status_label }}
-                    </span>
-                </td>
-                <td class="actions">
-                    <a href="{{ route('backoffice.pesanan.show', $pesanan->id) }}" class="btn btn-info btn-action" title="Lihat Detail">
-                        <i class="fas fa-eye"></i>
-                    </a>
-                    <button class="btn btn-success btn-action" onclick="openStatusModal({{ $pesanan->id }}, '{{ $pesanan->status }}', '{{ $pesanan->kode_pesanan }}')" title="Update Status">
-                        <i class="fas fa-exchange-alt"></i>
-                    </button>
-                    <a href="{{ route('backoffice.pesanan.edit', $pesanan->id) }}" class="btn btn-warning btn-action" title="Edit Pesanan">
-                        <i class="fas fa-edit"></i>
-                    </a>
-                    <button class="btn btn-danger btn-action" onclick="confirmDelete({{ $pesanan->id }}, '{{ $pesanan->kode_pesanan }}', '{{ route('backoffice.pesanan.destroy', $pesanan->id) }}', this)" title="Hapus Pesanan">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </td>
-            </tr>
-            @empty
-            <tr>
-                <td colspan="7" style="text-align: center; padding: 40px;">
-                    <i class="fas fa-shopping-cart" style="font-size: 3rem; color: #6c757d; margin-bottom: 10px;"></i>
-                    <br>
-                    Tidak ada data pesanan
-                </td>
-            </tr>
-            @endforelse
-        </tbody>
-    </table>
-    </div>
+    <x-slot name="table">
+        <table class="bolopa-tabel" id="dataTable">
+            <thead>
+                <tr>
+                    <th data-sort="no" style="width: 5%;">
+                        No
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th data-sort="kode_pesanan" style="width: 12%;">
+                        Kode Pesanan
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th data-sort="tanggal_pesanan" style="width: 10%;">
+                        Tanggal
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th data-sort="nama_pelanggan" style="width: 18%;">
+                        Pelanggan
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th data-sort="total_harga" style="width: 12%;">
+                        Total
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th data-sort="status" style="width: 10%;">
+                        Status
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th style="width: 13%;">Aksi</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($pesanans ?? [] as $index => $pesanan)
+                <tr data-search="{{ strtolower($pesanan->kode_pesanan . ' ' . $pesanan->nama_pelanggan . ' ' . $pesanan->no_telepon . ' ' . $pesanan->status_label) }}">
+                    <td data-sort-value="{{ ($pesanans->currentPage() - 1) * $pesanans->perPage() + $index + 1 }}">{{ ($pesanans->currentPage() - 1) * $pesanans->perPage() + $index + 1 }}</td>
+                    <td data-sort-value="{{ strtolower($pesanan->kode_pesanan) }}">{{ $pesanan->kode_pesanan }}</td>
+                    <td data-sort-value="{{ $pesanan->tanggal_pesanan->format('Y-m-d') }}">{{ $pesanan->tanggal_pesanan->format('d/m/Y') }}</td>
+                    <td data-sort-value="{{ strtolower($pesanan->nama_pelanggan) }}">
+                        <div>{{ $pesanan->nama_pelanggan }}</div>
+                        <div style="font-size: 0.8rem; color: #6c757d;">{{ $pesanan->no_telepon }}</div>
+                    </td>
+                    <td data-sort-value="{{ $pesanan->total_harga }}">Rp {{ number_format($pesanan->total_harga, 0, ',', '.') }}</td>
+                    <td data-sort-value="{{ $pesanan->status }}">
+                        <span class="bolopa-tabel-badge {{ $pesanan->status == 'pending' ? 'bolopa-tabel-badge-warning' : ($pesanan->status == 'diproses' ? 'bolopa-tabel-badge-info' : ($pesanan->status == 'selesai' ? 'bolopa-tabel-badge-success' : 'bolopa-tabel-badge-danger')) }}">
+                            {{ $pesanan->status_label }}
+                        </span>
+                    </td>
+                    <td class="bolopa-tabel-actions" style="display: flex; align-items: center; justify-content: center; padding: 16px 12px;">
+                        <a href="{{ route('backoffice.pesanan.show', $pesanan->id) }}" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action" aria-label="Lihat detail {{ $pesanan->kode_pesanan }}">
+                            <x-admin.icon name="view" alt="Detail" size="16" />
+                        </a>
+                        <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-success bolopa-tabel-btn-action"
+                            onclick="openStatusModal({{ $pesanan->id }}, '{{ $pesanan->status }}', '{{ $pesanan->kode_pesanan }}')"
+                            aria-label="Update status {{ $pesanan->kode_pesanan }}">
+                            <x-admin.icon name="switch" alt="Update Status" size="16" />
+                        </button>
+                        <a href="{{ route('backoffice.pesanan.edit', $pesanan->id) }}" class="bolopa-tabel-btn bolopa-tabel-btn-warning bolopa-tabel-btn-action" aria-label="Edit {{ $pesanan->kode_pesanan }}">
+                            <x-admin.icon name="edit" alt="Edit" size="16" />
+                        </a>
+                        <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-danger bolopa-tabel-btn-action"
+                            onclick="confirmDelete({{ $pesanan->id }}, '{{ $pesanan->kode_pesanan }}', '{{ route('backoffice.pesanan.destroy', $pesanan->id) }}')"
+                            aria-label="Hapus {{ $pesanan->kode_pesanan }}">
+                            <x-admin.icon name="delete" alt="Hapus" size="16" />
+                        </button>
+                    </td>
+                </tr>
+                @empty
+                <tr>
+                    <td colspan="7" class="bolopa-tabel-empty">
+                        <x-admin.icon name="order" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
+                        <br>
+                        Tidak ada data pesanan
+                    </td>
+                </tr>
+                @endforelse
+            </tbody>
+        </table>
+    </x-slot>
 
-    @if(isset($pesanans) && $pesanans->hasPages() && $pesanans->lastPage() > 1)
-    <div class="pagination">
-        <div class="pagination-info">
-            Menampilkan {{ $pesanans->firstItem() ?? 0 }} sampai {{ $pesanans->lastItem() ?? 0 }} dari {{ $pesanans->total() ?? 0 }} entri
-        </div>
-        <div class="pagination-buttons">
-            @if($pesanans->onFirstPage())
-                <button disabled><i class="fas fa-chevron-left"></i></button>
-            @else
-                <a href="{{ $pesanans->previousPageUrl() . (request('per_page') ? '&per_page=' . request('per_page') : '') }}"><button><i class="fas fa-chevron-left"></i></button></a>
-            @endif
+    @if(isset($pesanans) && ($pesanans->hasPages() || $pesanans->total() > 0))
+        <x-slot name="footer">
+            <div class="bolopa-tabel-pagination">
+                <div class="bolopa-tabel-pagination-info">
+                    @if($pesanans->total() > 0)
+                        Menampilkan {{ $pesanans->firstItem() ?? 0 }} sampai {{ $pesanans->lastItem() ?? 0 }} dari {{ $pesanans->total() ?? 0 }} entri
+                    @else
+                        Tidak ada entri yang ditampilkan
+                    @endif
+                </div>
+                <div class="bolopa-tabel-pagination-buttons">
+                    @if($pesanans->hasPages())
+                        @if($pesanans->onFirstPage())
+                            <button type="button" disabled aria-label="Halaman sebelumnya">
+                                <x-admin.icon name="prev" alt="Halaman sebelumnya" size="18" />
+                            </button>
+                        @else
+                            <a href="{{ $pesanans->previousPageUrl() . (request('per_page') ? '&per_page=' . request('per_page') : '') }}">
+                                <button type="button" aria-label="Halaman sebelumnya">
+                                    <x-admin.icon name="prev" alt="Halaman sebelumnya" size="18" />
+                                </button>
+                            </a>
+                        @endif
 
-            @foreach($pesanans->getUrlRange(1, $pesanans->lastPage()) as $page => $url)
-                @if($page == $pesanans->currentPage())
-                    <button class="active">{{ $page }}</button>
-                @else
-                    <a href="{{ $url . (request('per_page') ? '&per_page=' . request('per_page') : '') }}"><button>{{ $page }}</button></a>
-                @endif
-            @endforeach
+                        @foreach($pesanans->getUrlRange(1, $pesanans->lastPage()) as $page => $url)
+                            @if($page == $pesanans->currentPage())
+                                <button type="button" class="bolopa-tabel-active" aria-current="page">{{ $page }}</button>
+                            @else
+                                <a href="{{ $url . (request('per_page') ? '&per_page=' . request('per_page') : '') }}">
+                                    <button type="button">{{ $page }}</button>
+                                </a>
+                            @endif
+                        @endforeach
 
-            @if($pesanans->hasMorePages())
-                <a href="{{ $pesanans->nextPageUrl() . (request('per_page') ? '&per_page=' . request('per_page') : '') }}"><button><i class="fas fa-chevron-right"></i></button></a>
-            @else
-                <button disabled><i class="fas fa-chevron-right"></i></button>
-            @endif
-        </div>
-    </div>
-    @elseif(isset($pesanans) && $pesanans->total() > 0)
-    <div class="pagination">
-        <div class="pagination-info">
-            Menampilkan {{ $pesanans->firstItem() ?? 0 }} sampai {{ $pesanans->lastItem() ?? 0 }} dari {{ $pesanans->total() ?? 0 }} entri
-        </div>
-        <div class="pagination-buttons">
-            <!-- Tombol pagination kosong untuk konsistensi layout -->
-        </div>
-    </div>
-    @elseif(isset($pesanans) && $pesanans->perPage() >= 1000)
-    <div class="pagination">
-        <div class="pagination-info">
-            Menampilkan semua {{ $pesanans->total() ?? 0 }} entri
-        </div>
-        <div class="pagination-buttons">
-            <button class="btn btn-secondary" onclick="resetPagination()">Kembali ke Pagination</button>
-        </div>
-    </div>
+                        @if($pesanans->hasMorePages())
+                            <a href="{{ $pesanans->nextPageUrl() . (request('per_page') ? '&per_page=' . request('per_page') : '') }}">
+                                <button type="button" aria-label="Halaman selanjutnya">
+                                    <x-admin.icon name="next" alt="Halaman selanjutnya" size="18" />
+                                </button>
+                            </a>
+                        @else
+                            <button type="button" disabled aria-label="Halaman selanjutnya">
+                                <x-admin.icon name="next" alt="Halaman selanjutnya" size="18" />
+                            </button>
+                        @endif
+                    @elseif($pesanans->perPage() >= 1000 && $pesanans->total() > 0)
+                        <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-primary" onclick="resetPagination()">Kembali ke Pagination</button>
+                    @endif
+                </div>
+            </div>
+        </x-slot>
     @endif
-</div>
+</x-admin.data-table>
 
-<!-- Toast Notification -->
-<div class="toast" id="toast"></div>
+<div class="bolopa-tabel-toast" id="pesananToast"></div>
+@endsection
 
+@push('scripts')
+<script src="{{ asset('bolopa/back/js/bolopa-table.js') }}"></script>
 <script>
-    // DOM Elements
-    const searchInput = document.getElementById('searchInput');
-    const entriesSelect = document.getElementById('entriesSelect');
-    const btnExport = document.getElementById('btnExport');
-    const btnPrint = document.getElementById('btnPrint');
-    const table = document.getElementById('dataTable');
-    const thElements = document.querySelectorAll('th[data-sort]');
-    const toast = document.getElementById('toast');
-
-    // Override default session message handling to use toast instead of SweetAlert
-    // Run immediately to prevent layout SweetAlert from executing
-    (function() {
-        // Store original Swal for allowed dialogs
-        let originalSwal = null;
-        if (typeof Swal !== 'undefined') {
-            originalSwal = window.Swal;
-        }
-
-        // Define allowed dialogs
-        const allowedTitles = ['Detail Pesanan', 'Hapus Pesanan'];
-
-        // Create showDetail function that uses original Swal
-        window.showDetail = function(id, kode, nama, tanggal, status, total, alamat, telepon) {
-            if (originalSwal) {
-                originalSwal.fire({
-                    title: 'Detail Pesanan',
-                    html: `
-                        <div class="detail-box">
-                            <div class="detail-header">
-                                <div class="icon-wrapper">
-                                    <i class="fas fa-shopping-cart"></i>
-                                </div>
-                                <div>
-                                    <div class="detail-title">${kode}</div>
-                                    <div class="detail-sub">${nama} - ${tanggal}</div>
-                                </div>
-                            </div>
-                            <div class="detail-content">
-                                <div class="detail-item">
-                                    <div class="detail-label">Status</div>
-                                    <div class="detail-value">${status}</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Total Harga</div>
-                                    <div class="detail-value">Rp ${total.toLocaleString('id-ID')}</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Alamat</div>
-                                    <div class="detail-value">${alamat}</div>
-                                </div>
-                                <div class="detail-item">
-                                    <div class="detail-label">Telepon</div>
-                                    <div class="detail-value">${telepon}</div>
-                                </div>
-                            </div>
-                        </div>
-                    `,
-                    showConfirmButton: false,
-                    showCloseButton: true,
-                    customClass: {
-                        popup: 'swal-detail-popup'
-                    }
-                });
-            }
-        };
-
-        // Create confirmDelete function that uses original Swal
-        window.confirmDelete = function(id, kode, url, buttonElement) {
-            if (originalSwal) {
-                originalSwal.fire({
-                    title: 'Hapus Pesanan',
-                    html: `Apakah Anda yakin ingin menghapus pesanan <strong>${kode}</strong>?<br><small style="color: #6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
-                    icon: 'warning',
-                    showCancelButton: true,
-                    confirmButtonColor: '#e63946',
-                    cancelButtonColor: '#4361ee',
-                    confirmButtonText: 'Ya, Hapus',
-                    cancelButtonText: 'Batal',
-                    customClass: {
-                        popup: 'swal-delete-popup'
-                    }
-                }).then((result) => {
-                    if (result.isConfirmed) {
-                        submitDeleteForm(url);
-                    }
-                });
-            }
-        };
-
-        // Completely disable SweetAlert for everything else
-        window.Swal = null;
-        delete window.Swal;
-
-        // Handle success messages with toast instead of SweetAlert
-        @if (session('success'))
-            showToast('{{ session('success') }}', 'success');
-        @endif
-
-        // Handle error messages with toast instead of SweetAlert
-        @if (session('error'))
-            showToast('{{ session('error') }}', 'error');
-        @endif
-
-        // Handle info messages with toast instead of SweetAlert
-        @if (session('info'))
-            showToast('{{ session('info') }}', 'info');
-        @endif
-    })();
-
-    // Data untuk sorting
-    let currentSort = {
-        column: null,
-        direction: 'asc'
-    };
-
-    // Event Listeners
-    if (searchInput) {
-        searchInput.addEventListener('input', filterData);
-        searchInput.addEventListener('input', toggleClearButton);
-    }
-    if (entriesSelect) {
-        entriesSelect.addEventListener('change', changeEntries);
-    }
-    if (btnExport) {
-        btnExport.addEventListener('click', exportData);
-    }
-    if (btnPrint) {
-        btnPrint.addEventListener('click', printData);
-    }
-
-    // Add event listeners to table headers for sorting
-    thElements.forEach(th => {
-        th.addEventListener('click', () => sortTable(th.getAttribute('data-sort')));
-    });
-
-    // Functions
-    function showToast(message, type = 'success') {
-        const toast = document.getElementById('toast');
-        toast.textContent = message;
-        toast.className = `toast ${type} show`;
-
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 3000);
-    }
-
-    function filterData() {
-        const searchTerm = searchInput.value.toLowerCase();
-        const rows = table.querySelectorAll('tbody tr');
-
-        rows.forEach(row => {
-            const text = row.textContent.toLowerCase();
-            row.style.display = text.includes(searchTerm) ? '' : 'none';
+    document.addEventListener('DOMContentLoaded', function () {
+        const tableApi = window.initBolopaTable({
+            tableSelector: '#dataTable',
+            entriesSelector: '#entriesSelect',
+            searchInputSelector: '#searchInput',
+            toastSelector: '#pesananToast'
         });
 
-        resetPagination();
-    }
-
-    function changeEntries() {
-        const value = entriesSelect.value;
-        const url = new URL(window.location);
-
-        if (value === 'all') {
-            url.searchParams.set('per_page', '1000');
-        } else {
-            url.searchParams.set('per_page', value);
-        }
-
-        window.location.href = url.toString();
-    }
-
-    // Toggle clear button visibility
-    function toggleClearButton() {
-        const clearBtn = document.querySelector('.clear-btn');
-        if (searchInput.value.length > 0) {
-            clearBtn.style.display = 'block';
-        } else {
-            clearBtn.style.display = 'none';
-        }
-    }
-
-    function clearSearch() {
-        searchInput.value = '';
-        filterData();
-        toggleClearButton();
-    }
-
-    function sortTable(column) {
-        const tbody = table.querySelector('tbody');
-        const rows = Array.from(tbody.querySelectorAll('tr'));
-
-        // Update sort direction
-        if (currentSort.column === column) {
-            currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
-        } else {
-            currentSort.column = column;
-            currentSort.direction = 'asc';
-        }
-
-        // Sort rows
-        rows.sort((a, b) => {
-            const aValue = a.children[getColumnIndex(column)].textContent.trim();
-            const bValue = b.children[getColumnIndex(column)].textContent.trim();
-
-            let comparison = 0;
-            if (aValue < bValue) comparison = -1;
-            if (aValue > bValue) comparison = 1;
-
-            return currentSort.direction === 'asc' ? comparison : -comparison;
-        });
-
-        // Re-append sorted rows
-        rows.forEach(row => tbody.appendChild(row));
-
-        // Update sort indicators
-        updateSortIndicators();
-
-        resetPagination();
-    }
-
-    function getColumnIndex(column) {
-        const headers = table.querySelectorAll('th[data-sort]');
-        for (let i = 0; i < headers.length; i++) {
-            if (headers[i].getAttribute('data-sort') === column) {
-                return i;
+        const searchInput = document.getElementById('searchInput');
+        if (searchInput) {
+            if (searchInput.value) {
+                searchInput.dispatchEvent(new Event('input'));
             }
         }
-        return 0;
-    }
 
-    function updateSortIndicators() {
-        // Reset all indicators
-        thElements.forEach(th => {
-            const icons = th.querySelectorAll('.sort-up, .sort-down');
-            icons.forEach(icon => {
-                icon.classList.remove('active-up', 'active-down');
-            });
-            th.classList.remove('active');
-        });
-
-        // Set active indicator
-        if (currentSort.column) {
-            const activeTh = table.querySelector(`th[data-sort="${currentSort.column}"]`);
-            if (activeTh) {
-                activeTh.classList.add('active');
-                const iconClass = currentSort.direction === 'asc' ? 'active-up' : 'active-down';
-                const icon = activeTh.querySelector(`.${iconClass.replace('active-', 'sort-')}`);
-                if (icon) {
-                    icon.classList.add(iconClass);
+        const entriesSelect = document.getElementById('entriesSelect');
+        if (entriesSelect) {
+            entriesSelect.addEventListener('change', function (event) {
+                const value = event.target.value;
+                const url = new URL(window.location.href);
+                if (value === 'all') {
+                    url.searchParams.set('per_page', '1000');
+                } else {
+                    url.searchParams.set('per_page', value);
                 }
-            }
+                url.searchParams.delete('page');
+                window.location.href = url.toString();
+            });
         }
-    }
 
-    function exportData() {
-        showToast('Fitur export akan segera hadir!', 'info');
-    }
+        const exportBtn = document.getElementById('btnExport');
+        if (exportBtn) {
+            exportBtn.addEventListener('click', function () {
+                try {
+                    exportTableData();
+                    tableApi && tableApi.showToast('Data pesanan berhasil diexport.', 'success');
+                } catch (error) {
+                    console.error('Export error:', error);
+                    tableApi && tableApi.showToast('Gagal export data pesanan.', 'error');
+                }
+            });
+        }
 
-    function printData() {
-        showToast('Fitur print akan segera hadir!', 'info');
-    }
+        const printBtn = document.getElementById('btnPrint');
+        if (printBtn) {
+            printBtn.addEventListener('click', function () {
+                try {
+                    tableApi && tableApi.showToast('Membuka tampilan print...', 'info');
+                    printTableData();
+                } catch (error) {
+                    console.error('Print error:', error);
+                    tableApi && tableApi.showToast('Gagal membuka tampilan print.', 'error');
+                }
+            });
+        }
+    });
 
     function submitDeleteForm(url) {
         const form = document.createElement('form');
         form.method = 'POST';
         form.action = url;
 
-        // Add CSRF token
         const csrfToken = document.querySelector('meta[name="csrf-token"]');
         if (csrfToken) {
             const csrfInput = document.createElement('input');
@@ -1315,7 +280,6 @@
             form.appendChild(csrfInput);
         }
 
-        // Add method spoofing for DELETE
         const methodInput = document.createElement('input');
         methodInput.type = 'hidden';
         methodInput.name = '_method';
@@ -1326,277 +290,279 @@
         form.submit();
     }
 
-    function resetPagination() {
-        // Reset to first page when filtering/sorting
-        const url = new URL(window.location);
-        url.searchParams.delete('page');
-        window.history.replaceState({}, '', url);
-    }
-
-    // Modal functions
-    function openStatusModal(pesananId, currentStatus, kodePesanan) {
-        // Set modal title
-        document.getElementById('statusModalLabel').innerHTML = `<i class="fas fa-exchange-alt me-2"></i>Update Status Pesanan - ${kodePesanan}`;
-
-        // Set current status badge and description
-        const statusBadge = document.getElementById('currentStatusBadge');
-        const statusDescription = document.getElementById('statusDescription');
-
-        let badgeClass = 'bg-secondary';
-        let statusText = '';
-        let description = '';
-        let headerGradient = '';
-        let iconColor = '';
-        let infoIconColor = '';
-        let alertClass = '';
-        let buttonClass = '';
-
-        switch(currentStatus) {
-            case 'pending':
-                badgeClass = 'bg-warning text-dark';
-                statusText = '⏳ Pending';
-                description = 'Pesanan telah diterima dan menunggu konfirmasi dari admin.';
-                headerGradient = 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)';
-                iconColor = '#ffffff';
-                infoIconColor = '#f59e0b';
-                alertClass = 'alert-warning';
-                buttonClass = 'btn-pending';
-                break;
-            case 'diproses':
-                badgeClass = 'bg-info';
-                statusText = '⚙️ Diproses';
-                description = 'Pesanan sedang dalam proses produksi atau persiapan.';
-                headerGradient = 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)';
-                iconColor = '#ffffff';
-                infoIconColor = '#3b82f6';
-                alertClass = 'alert-primary';
-                buttonClass = 'btn-primary';
-                break;
-            case 'selesai':
-                badgeClass = 'bg-success';
-                statusText = '✅ Selesai';
-                description = 'Pesanan telah selesai diproses dan siap untuk diambil/pengiriman.';
-                headerGradient = 'linear-gradient(135deg, #10b981 0%, #059669 100%)';
-                iconColor = '#ffffff';
-                infoIconColor = '#10b981';
-                alertClass = 'alert-success';
-                buttonClass = 'btn-selesai';
-                break;
-            case 'dibatalkan':
-                badgeClass = 'bg-danger';
-                statusText = '❌ Dibatalkan';
-                description = 'Pesanan telah dibatalkan dan tidak akan diproses lebih lanjut.';
-                headerGradient = 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)';
-                iconColor = '#ffffff';
-                infoIconColor = '#ef4444';
-                alertClass = 'alert-danger';
-                buttonClass = 'btn-danger';
-                break;
-            default:
-                statusText = currentStatus;
-                description = 'Status pesanan tidak diketahui.';
-                headerGradient = 'linear-gradient(135deg, #6b7280 0%, #4b5563 100%)';
-                iconColor = '#ffffff';
-                infoIconColor = '#6b7280';
-                alertClass = 'alert-secondary';
-                buttonClass = 'btn-secondary';
-        }
-
-        // Apply dynamic colors to modal elements
-        const modalHeader = document.querySelector('#statusModal .modal-header');
-        const modalTitleIcon = document.querySelector('#statusModal .modal-title i');
-        const infoIcon = document.querySelector('.current-status-info i');
-        const currentStatusInfoIcon = document.querySelector('.current-status-info .fa-info-circle');
-        const saveButton = document.querySelector('#statusForm button[type="submit"]');
-        const alertElement = document.querySelector('#statusModal .alert');
-
-        if (modalHeader) modalHeader.style.background = headerGradient;
-        if (modalTitleIcon) modalTitleIcon.style.color = iconColor;
-        if (infoIcon) infoIcon.style.color = infoIconColor;
-        if (currentStatusInfoIcon) currentStatusInfoIcon.style.color = infoIconColor;
-        if (saveButton) {
-            saveButton.className = `btn ${buttonClass}`;
-        }
-        if (alertElement) {
-            // Remove all alert classes and add the new one
-            alertElement.className = `alert ${alertClass}`;
-        }
-
-        statusBadge.className = `badge ${badgeClass}`;
-        statusBadge.textContent = statusText;
-        statusDescription.textContent = description;
-
-        // Set form action with correct relative URL for subdirectory compatibility
-        const currentPath = window.location.pathname;
-        const basePath = currentPath.substring(0, currentPath.indexOf('/backoffice'));
-        const form = document.getElementById('statusForm');
-        form.action = `${basePath}/backoffice/pesanan/${pesananId}/status`;
-
-        // Set current status in select
-        const statusSelect = document.getElementById('modalStatus');
-        statusSelect.value = currentStatus;
-
-        // Disable current status option
-        const options = statusSelect.querySelectorAll('option');
-        options.forEach(option => {
-            option.disabled = false;
-            if (option.value === currentStatus) {
-                option.disabled = true;
-                option.textContent = option.textContent + ' (Status Saat Ini)';
-            } else {
-                option.textContent = option.textContent.replace(' (Status Saat Ini)', '');
+    function confirmDelete(id, kode, url) {
+        Swal.fire({
+            title: 'Hapus Pesanan',
+            html: `Apakah Anda yakin ingin menghapus pesanan <strong>${kode}</strong>?<br><small style="color:#6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#e63946',
+            cancelButtonColor: '#4361ee',
+            confirmButtonText: 'Ya, Hapus',
+            cancelButtonText: 'Batal'
+        }).then((result) => {
+            if (result.isConfirmed) {
+                submitDeleteForm(url);
             }
         });
-
-        // Show modal using Bootstrap 5
-        const modal = new bootstrap.Modal(document.getElementById('statusModal'), {
-            backdrop: false
-        });
-        modal.show();
     }
 
-    // Handle status form submission - moved to DOM ready
-    document.addEventListener('DOMContentLoaded', function() {
-        const statusForm = document.getElementById('statusForm');
-        if (statusForm) {
-            statusForm.addEventListener('submit', function(e) {
-                e.preventDefault();
+    // Status Modal
+    function openStatusModal(id, currentStatus, kodePesanan) {
+        const statusOptions = {
+            'pending': 'Pending',
+            'diproses': 'Diproses',
+            'selesai': 'Selesai',
+            'dibatalkan': 'Dibatalkan'
+        };
 
-                const formData = new FormData(this);
-                const selectedStatus = formData.get('status');
+        let optionsHtml = '';
+        for (const [value, label] of Object.entries(statusOptions)) {
+            optionsHtml += `<option value="${value}" ${value === currentStatus ? 'selected' : ''}>${label}</option>`;
+        }
 
-                // Debug: Log all form data entries
-                console.log('Form data entries:');
-                for (let [key, value] of formData.entries()) {
-                    console.log(key, value);
+        Swal.fire({
+            title: 'Update Status Pesanan',
+            html: `
+                <div style="text-align: left; padding: 20px;">
+                    <p><strong>Kode Pesanan:</strong> ${kodePesanan}</p>
+                    <label for="status" style="display: block; margin-bottom: 8px; font-weight: 600;">Status Baru:</label>
+                    <select id="status" class="swal2-input" style="width: 100%; padding: 10px;">
+                        ${optionsHtml}
+                    </select>
+
+                    <div style="margin-top:12px; font-size:0.92rem; color:#495057;">
+                        <strong>Informasi Pengelolaan Stok:</strong>
+                        <ul style="margin:6px 0 0 18px; padding:0; line-height:1.4;">
+                            <li><strong>Diproses:</strong> Stok akan dikurangi dan ditahan</li>
+                            <li><strong>Selesai:</strong> Stok berkurang permanen</li>
+                            <li><strong>Dibatalkan:</strong> Stok akan dikembalikan</li>
+                        </ul>
+                    </div>
+                </div>
+            `,
+            showCancelButton: true,
+            confirmButtonText: 'Update',
+            cancelButtonText: 'Batal',
+            reverseButtons: true,
+            preConfirm: () => {
+                const status = document.getElementById('status').value;
+                return { status: status };
+            }
+        }).then((result) => {
+            if (result.isConfirmed) {
+                updateStatus(id, result.value.status);
+            }
+        });
+    }
+
+    function updateStatus(id, status) {
+        const urlTemplate = '{{ route('backoffice.pesanan.update-status', ['pesanan' => '__ID__']) }}';
+        const requestUrl = urlTemplate.replace('__ID__', id);
+
+        fetch(requestUrl, {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').content,
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+            },
+            body: JSON.stringify({ status: status })
+        })
+        .then(async response => {
+            const data = await response.json().catch(() => ({}));
+            if (!response.ok) {
+                const errorMessage = data && data.message ? data.message : 'Gagal update status';
+                throw new Error(errorMessage);
+            }
+            return data;
+        })
+        .then(data => {
+            if (data.success) {
+                Swal.fire({
+                    title: 'Berhasil!',
+                    text: data.message || 'Status pesanan berhasil diupdate',
+                    icon: 'success',
+                    timer: 1500,
+                    showConfirmButton: false
+                }).then(() => location.reload());
+            } else {
+                Swal.fire('Gagal!', data.message || 'Gagal update status', 'error');
+            }
+        })
+        .catch(error => {
+            Swal.fire('Error!', error.message || 'Terjadi kesalahan', 'error');
+        });
+    }
+
+    function exportTableData() {
+        const table = document.getElementById('dataTable');
+        if (!table) {
+            throw new Error('Tabel data pesanan tidak ditemukan.');
+        }
+
+        const rows = Array.from(table.querySelectorAll('tr'));
+        if (!rows.length) {
+            throw new Error('Tidak ada data untuk diexport.');
+        }
+
+        const visibleRows = rows.filter((row) => row.style.display !== 'none');
+        const headerRow = table.querySelector('thead tr');
+        let actionColumnIndex = -1;
+        if (headerRow) {
+            const headerCells = Array.from(headerRow.children);
+            actionColumnIndex = headerCells.findIndex((cell) => cell.textContent.trim().toLowerCase() === 'aksi');
+        }
+
+        const csvLines = visibleRows.map((row) => {
+            const cells = Array.from(row.querySelectorAll('th, td'));
+            return cells.map((cell, index) => {
+                if (actionColumnIndex >= 0 && index === actionColumnIndex && cell.colSpan <= 1) {
+                    return null;
                 }
 
-                // Debug: Check form elements directly
-                const statusSelect = this.querySelector('select[name="status"]');
-                console.log('Status select element:', statusSelect);
-                console.log('Status select value:', statusSelect ? statusSelect.value : 'NOT FOUND');
+                const text = (cell.innerText || cell.textContent || '')
+                    .replace(/\s+/g, ' ')
+                    .replace(/"/g, '""')
+                    .trim();
+                return '"' + text + '"';
+            }).filter((value) => value !== null).join(',');
+        });
 
-                // Show loading
-                const submitBtn = this.querySelector('button[type="submit"]');
-                const originalText = submitBtn.innerHTML;
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Menyimpan...';
+        const csvContent = '\uFEFF' + csvLines.join('\n');
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
 
-                console.log('Submitting form to:', this.action);
-                console.log('Form data object:', formData);
-                console.log('CSRF token:', document.querySelector('meta[name="csrf-token"]').getAttribute('content'));
+        const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
+        const filename = `pesanan-export-${timestamp}.csv`;
 
-                fetch(this.action, {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest',
-                        'Accept': 'application/json',
-                        'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
-                    }
-                })
-                .then(response => {
-                    console.log('Response status:', response.status);
-                    console.log('Response headers:', response.headers);
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = filename;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        URL.revokeObjectURL(link.href);
+    }
 
-                    if (!response.ok) {
-                        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
-                    }
+    function printTableData() {
+        const tableContainer = document.querySelector('.bolopa-tabel-table-responsive');
+        const table = document.getElementById('dataTable');
+        if (!tableContainer || !table) {
+            throw new Error('Tabel data pesanan tidak ditemukan.');
+        }
 
-                    return response.json();
-                })
-                .then(data => {
-                    console.log('Response data:', data);
+        // Clone full table (include all rows, even those currently hidden by filters)
+        const clonedTable = table.cloneNode(true);
 
-                    if (data.success) {
-                        // Close modal using Bootstrap 5
-                        const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
-                        modal.hide();
+        const headerRow = clonedTable.querySelector('thead tr');
+        let actionColumnIndex = -1;
+        if (headerRow) {
+            const headerCells = Array.from(headerRow.children);
+            actionColumnIndex = headerCells.findIndex((cell) => cell.textContent.trim().toLowerCase() === 'aksi');
+            if (actionColumnIndex >= 0) {
+                headerCells[actionColumnIndex].remove();
+            }
+        }
 
-                        // Show success message
-                        showToast(data.message || 'Status berhasil diupdate', 'success');
-
-                        // Reload page after delay
-                        setTimeout(() => {
-                            window.location.reload();
-                        }, 1500);
-                    } else {
-                        showToast(data.message || 'Terjadi kesalahan', 'error');
-                    }
-                })
-                .catch(error => {
-                    console.error('Fetch error:', error);
-
-                    // Close modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById('statusModal'));
-                    if (modal) {
-                        modal.hide();
-                    }
-
-                    // Show error message
-                    showToast('Terjadi kesalahan saat mengupdate status: ' + error.message, 'error');
-                })
-                .finally(() => {
-                    // Reset button
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = originalText;
-                });
+        if (actionColumnIndex >= 0) {
+            clonedTable.querySelectorAll('tbody tr').forEach((row) => {
+                const cells = row.children;
+                if (cells[actionColumnIndex]) {
+                    cells[actionColumnIndex].remove();
+                }
             });
         }
-    });
+
+        // Remove sort icons and any interactive controls inside the cloned table so print is clean
+        clonedTable.querySelectorAll('img.bolopa-tabel-sort-icon, img.bolopa-tabel-sort-up, img.bolopa-tabel-sort-down, .bolopa-tabel-sort-icons, .clear-btn, .bolopa-tabel-search-box').forEach(el => el.remove());
+
+        const printWindow = window.open('', '_blank', 'width=1024,height=768');
+        if (!printWindow) {
+            throw new Error('Popup print diblokir oleh browser.');
+        }
+
+        const styles = `
+            <style>
+                /* Print sizing and margins: prefer A4 portrait but let browser decide if different */
+                @page { size: A4 portrait; margin: 12mm; }
+                /* Base */
+                body { font-family: 'Poppins', Arial, sans-serif; margin: 0; color: #1f2937; }
+                .print-shell { padding: 12px 14px; }
+                .brand { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+                h1 { font-size: 16px; margin: 4px 0 8px 0; }
+                .meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; color:#374151; font-size:12px; }
+                /* Table */
+                table { width: 100%; border-collapse: collapse; table-layout: auto; font-size:11px; }
+                th, td { border: 2px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: middle; }
+                th { background: #f8fafc; font-weight: 700; color:#111827; }
+                tbody tr:nth-child(even) td { background: #fbfdfe; }
+                .small { font-size:11px; color:#6b7280; }
+                .notes { margin-top:12px; font-size:12px; color:#374151; }
+
+                /* Make sure long text wraps and cells don't force overflow */
+                td, th { white-space: normal; word-break: break-word; }
+
+                /* Print pagination safety: avoid cutting rows across pages */
+                @media print {
+                    .no-print { display: none !important; }
+                    table { page-break-inside: auto; }
+                    thead { display: table-header-group; }
+                    tfoot { display: table-footer-group; }
+                    tr { page-break-inside: avoid; page-break-after: auto; }
+                    /* Reduce font slightly for very wide tables */
+                    body { -webkit-print-color-adjust: exact; }
+                }
+            </style>
+        `;
+
+        const totalCount = table.querySelectorAll('tbody tr').length;
+        const metaInfo = `
+            <div class="meta">
+                <div>
+                    <strong>Dicetak oleh:</strong> {{ auth()->user()->name ?? 'Administrator' }}<br>
+                    <span class="small">Tanggal cetak: ${new Date().toLocaleString('id-ID')}</span>
+                </div>
+                <div style="text-align:right;">
+                    <div><strong>Total Pesanan:</strong> ${totalCount}</div>
+                    <div class="small">Sumber data: Sistem Bolopa</div>
+                </div>
+            </div>
+        `;
+
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Data Pesanan</title>
+                    ${styles}
+                </head>
+                <body>
+                    <div class="print-shell">
+                        <div class="brand">
+                            <div>
+                                <div style="font-weight:700; font-size:16px;">Cocofarma — Daftar Pesanan</div>
+                                <div class="small">Laporan ringkas pesanan</div>
+                            </div>
+                        </div>
+                        ${metaInfo}
+                        ${clonedTable.outerHTML}
+                        <div class="notes">
+                            Catatan: Kolom aksi dihilangkan untuk keperluan cetak. Untuk detail pesanan, buka halaman detail tiap pesanan.
+                        </div>
+                    </div>
+                </body>
+            </html>
+        `);
+
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.addEventListener('afterprint', () => {
+            printWindow.close();
+        });
+    }
+
+    function resetPagination() {
+        window.location.href = '{{ route('backoffice.pesanan.index') }}';
+    }
 </script>
-
-<!-- Status Update Modal - Improved Design -->
-<div class="modal fade" id="statusModal" tabindex="-1" aria-labelledby="statusModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="statusModalLabel">
-                    <i class="fas fa-exchange-alt"></i>Update Status Pesanan
-                </h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="current-status-info" style="padding: 16px 24px; background: #f8f9fa; border-bottom: 1px solid #e9ecef;">
-                <div class="d-flex align-items-center gap-2">
-                    <i class="fas fa-info-circle"></i>
-                    <strong>Status Saat Ini:</strong>
-                    <span id="currentStatusBadge" class="badge bg-secondary">Loading...</span>
-                </div>
-                <div id="statusDescription" class="mt-2 text-muted small">
-                    Memuat informasi status...
-                </div>
-            </div>
-            <form id="statusForm" method="POST">
-                @csrf
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label for="modalStatus" class="form-label">
-                            <i class="fas fa-tasks me-1"></i>Status Pesanan
-                        </label>
-                        <select class="form-select" id="modalStatus" name="status" required>
-                            <option value="pending">⏳ Pending</option>
-                            <option value="diproses">⚙️ Diproses</option>
-                            <option value="selesai">✅ Selesai</option>
-                            <option value="dibatalkan">❌ Dibatalkan</option>
-                        </select>
-                    </div>
-                    <div class="alert alert-info">
-                        <i class="fas fa-info-circle"></i>
-                        <strong>Informasi:</strong> Perubahan status akan mempengaruhi stok produk dan tidak dapat dibatalkan.
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
-                        <i class="fas fa-times"></i>Batal
-                    </button>
-                    <button type="submit" class="btn btn-primary">
-                        <i class="fas fa-save"></i>Update Status
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-
-@endsection
-
+@endpush

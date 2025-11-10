@@ -8,6 +8,67 @@
     $totalProduksi = \App\Models\Produksi::count() ?? 0;
     $totalUser = \App\Models\User::count() ?? 0;
 
+    // Data untuk bulan terakhir (bulan lalu)
+    $lastMonth = now()->subMonth();
+    $lastMonthYear = $lastMonth->year;
+    $lastMonthMonth = $lastMonth->month;
+
+    // Total Pendapatan bulan terakhir (penjualan)
+    $totalPendapatanLastMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $lastMonthYear)
+        ->whereMonth('tanggal_transaksi', $lastMonthMonth)
+        ->where('jenis_transaksi', 'penjualan')
+        ->where('status', 'selesai')
+        ->sum('total') ?? 0;
+
+    // Total Biaya bulan terakhir (pembelian bahan baku atau biaya produksi)
+    $totalBiayaLastMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $lastMonthYear)
+        ->whereMonth('tanggal_transaksi', $lastMonthMonth)
+        ->where('jenis_transaksi', 'pembelian')
+        ->where('status', 'selesai')
+        ->sum('total') ?? 0;
+
+    // Jika tidak ada pembelian, gunakan biaya produksi
+    if ($totalBiayaLastMonth == 0) {
+        $totalBiayaLastMonth = \App\Models\Produksi::whereYear('tanggal_produksi', $lastMonthYear)
+            ->whereMonth('tanggal_produksi', $lastMonthMonth)
+            ->where('status', 'selesai')
+            ->sum('biaya_produksi') ?? 0;
+    }
+
+    // Total Laba bulan terakhir
+    $totalLabaLastMonth = $totalPendapatanLastMonth - $totalBiayaLastMonth;
+
+    // Hitung persentase perubahan dari bulan sebelumnya
+    $prevMonth = $lastMonth->subMonth();
+    $prevMonthYear = $prevMonth->year;
+    $prevMonthMonth = $prevMonth->month;
+
+    $totalPendapatanPrevMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $prevMonthYear)
+        ->whereMonth('tanggal_transaksi', $prevMonthMonth)
+        ->where('jenis_transaksi', 'penjualan')
+        ->where('status', 'selesai')
+        ->sum('total') ?? 0;
+
+    $totalBiayaPrevMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $prevMonthYear)
+        ->whereMonth('tanggal_transaksi', $prevMonthMonth)
+        ->where('jenis_transaksi', 'pembelian')
+        ->where('status', 'selesai')
+        ->sum('total') ?? 0;
+
+    if ($totalBiayaPrevMonth == 0) {
+        $totalBiayaPrevMonth = \App\Models\Produksi::whereYear('tanggal_produksi', $prevMonthYear)
+            ->whereMonth('tanggal_produksi', $prevMonthMonth)
+            ->where('status', 'selesai')
+            ->sum('biaya_produksi') ?? 0;
+    }
+
+    $totalLabaPrevMonth = $totalPendapatanPrevMonth - $totalBiayaPrevMonth;
+
+    // Persentase
+    $pctPendapatan = $totalPendapatanPrevMonth > 0 ? round((($totalPendapatanLastMonth - $totalPendapatanPrevMonth) / $totalPendapatanPrevMonth) * 100) : 0;
+    $pctBiaya = $totalBiayaPrevMonth > 0 ? round((($totalBiayaLastMonth - $totalBiayaPrevMonth) / $totalBiayaPrevMonth) * 100) : 0;
+    $pctLaba = $totalLabaPrevMonth > 0 ? round((($totalLabaLastMonth - $totalLabaPrevMonth) / $totalLabaPrevMonth) * 100) : 0;
+
     // Ambil goals dari pengaturan
     $goalsSetting = \App\Models\Pengaturan::where('nama_pengaturan', 'dashboard_goals')->first();
     $goals = [];
@@ -47,9 +108,9 @@
                 $value = \App\Models\Produk::count() ?? 0;
                 break;
             case 'penjualan':
-                // Total penjualan bulan ini
-                $value = \App\Models\Transaksi::whereYear('tanggal_transaksi', now()->year)
-                    ->whereMonth('tanggal_transaksi', now()->month)
+                // Total penjualan bulan terakhir
+                $value = \App\Models\Transaksi::whereYear('tanggal_transaksi', $lastMonthYear)
+                    ->whereMonth('tanggal_transaksi', $lastMonthMonth)
                     ->where('jenis_transaksi', 'penjualan')
                     ->where('status', 'selesai')
                     ->sum('total') ?? 0;
@@ -58,16 +119,16 @@
                 $value = \App\Models\MasterBahanBaku::count() ?? 0;
                 break;
             case 'produksi':
-                // Total produksi bulan ini
-                $value = \App\Models\Produksi::whereYear('tanggal_produksi', now()->year)
-                    ->whereMonth('tanggal_produksi', now()->month)
+                // Total produksi bulan terakhir
+                $value = \App\Models\Produksi::whereYear('tanggal_produksi', $lastMonthYear)
+                    ->whereMonth('tanggal_produksi', $lastMonthMonth)
                     ->where('status', 'selesai')
                     ->sum('jumlah_hasil') ?? 0;
                 break;
             case 'pesanan':
-                // Total pesanan baru bulan ini
-                $value = \App\Models\Pesanan::whereYear('tanggal_pesanan', now()->year)
-                    ->whereMonth('tanggal_pesanan', now()->month)
+                // Total pesanan bulan terakhir
+                $value = \App\Models\Pesanan::whereYear('tanggal_pesanan', $lastMonthYear)
+                    ->whereMonth('tanggal_pesanan', $lastMonthMonth)
                     ->count() ?? 0;
                 break;
             case 'user':
@@ -162,7 +223,7 @@
       <div class="card text-white bolopa-bg-teal h-100 overflow-hidden" role="region" aria-labelledby="card1-title">
         <div class="card-body d-flex align-items-start justify-content-between">
           <div>
-            <h2 id="card1-title" class="fw-bold display-6 mb-0" aria-label="{{ $totalPesananBaru }} pesanan baru">{{ $totalPesananBaru }}</h2>
+            <h2 id="card1-title" class="fw-bold display-6 mb-0" aria-label="{{ number_format($totalPesananBaru, 0) }} pesanan baru">{{ number_format($totalPesananBaru, 0) }}</h2>
             <div class="small opacity-85">Pesanan Baru</div>
           </div>
           <div class="bolopa-card-icon">
@@ -183,7 +244,7 @@
       <div class="card text-white bolopa-bg-success-variant h-100 overflow-hidden" role="region" aria-labelledby="card2-title">
         <div class="card-body d-flex align-items-start justify-content-between">
           <div>
-            <h2 id="card2-title" class="fw-bold display-6 mb-0" aria-label="{{ $produkTerjual }} produk terjual">{{ $produkTerjual }}</h2>
+            <h2 id="card2-title" class="fw-bold display-6 mb-0" aria-label="{{ number_format($produkTerjual, 0) }} produk terjual">{{ number_format($produkTerjual, 0) }}</h2>
             <div class="small opacity-85">Produk Terjual</div>
           </div>
           <div class="bolopa-card-icon">
@@ -241,6 +302,59 @@
       </div>
     </div>
 
+  </div>
+</div>
+
+<!-- Financial Summary Cards -->
+<div class="container py-4">
+  <div class="row g-3">
+    <!-- TOTAL PENDAPATAN -->
+    <div class="col-12 col-sm-6 col-md-4">
+      <div class="card text-white bolopa-bg-success h-100 overflow-hidden">
+        <div class="card-body d-flex align-items-start justify-content-between">
+          <div>
+            <div class="small opacity-85">TOTAL PENDAPATAN</div>
+            <div class="fw-bold">{{ $pctPendapatan }}%</div>
+            <h4 class="fw-bold mb-0">Rp {{ number_format($totalPendapatanLastMonth, 0, ',', '.') }}</h4>
+          </div>
+          <div class="bolopa-card-icon">
+            <i class="fas fa-dollar-sign fa-3x" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOTAL BIAYA -->
+    <div class="col-12 col-sm-6 col-md-4">
+      <div class="card text-white bolopa-bg-danger h-100 overflow-hidden">
+        <div class="card-body d-flex align-items-start justify-content-between">
+          <div>
+            <div class="small opacity-85">TOTAL BIAYA</div>
+            <div class="fw-bold">{{ $pctBiaya }}%</div>
+            <h4 class="fw-bold mb-0">Rp {{ number_format($totalBiayaLastMonth, 0, ',', '.') }}</h4>
+          </div>
+          <div class="bolopa-card-icon">
+            <i class="fas fa-money-bill-wave fa-3x" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TOTAL LABA -->
+    <div class="col-12 col-sm-6 col-md-4">
+      <div class="card text-white bolopa-bg-primary h-100 overflow-hidden">
+        <div class="card-body d-flex align-items-start justify-content-between">
+          <div>
+            <div class="small opacity-85">TOTAL LABA</div>
+            <div class="fw-bold">{{ $pctLaba }}%</div>
+            <h4 class="fw-bold mb-0">{{ number_format($totalLabaLastMonth, 0) }}</h4>
+          </div>
+          <div class="bolopa-card-icon">
+            <i class="fas fa-chart-line fa-3x" aria-hidden="true"></i>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -330,7 +444,7 @@
               <div class="bolopa-goal-item mb-3 {{ $goalClass }}">
                 <div class="d-flex justify-content-between">
                   <div class="small">{{ $goal['label'] }}</div>
-                  <div class="fw-bold">{{ $goal['value'] ?? 0 }} / {{ $goal['target'] }}</div>
+                  <div class="fw-bold">{{ number_format($goal['value'] ?? 0, 0) }} / {{ number_format($goal['target'], 0) }}</div>
                 </div>
                 <div class="progress mt-2">
                   <div class="bolopa-goal-bar bolopa-bar-{{ $colorClass }}" role="progressbar" data-value="{{ $goal['value'] ?? 0 }}" data-target="{{ $goal['target'] }}" data-pct="{{ $pct }}" style="width:{{ $pct }}%"></div>

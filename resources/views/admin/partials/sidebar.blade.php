@@ -3,7 +3,7 @@
         <img class="brand-icon" src="{{ asset('bolopa/back/images/icon/twemoji--coconut.svg') }}" alt="Cocofarma" />
         <div class="logo_name">Cocofarma</div>
         <!-- Use SVG image for hamburger to support swapping between open/closed visuals -->
-        <img id="btn" src="{{ asset('bolopa/back/images/icon/line-md--menu-fold-right.svg') }}" alt="menu"
+        <img id="btn" data-sidebar-toggle src="{{ asset('bolopa/back/images/icon/line-md--menu-fold-right.svg') }}" alt="menu"
             style="width:28px;height:28px;cursor:pointer;filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(63deg) brightness(108%) contrast(103%);" />
     </div>
     <!-- Menu group switch: toggle between Operasional and Master -->
@@ -198,15 +198,47 @@
         left: 0;
         top: 0;
         height: 100%;
-        width: 78px;
+        width: var(--sidebar-collapsed-width);
         background: #11101D;
         padding: 6px 14px;
-        z-index: 99;
-        transition: all 0.5s ease;
+        z-index: 1050;
+        transition: width 0.4s ease, transform 0.3s ease;
+        transform: translateX(0);
+        display: flex;
+        flex-direction: column;
+        overflow: hidden;
     }
 
     .sidebar.open {
-        width: 250px;
+        width: var(--sidebar-expanded-width);
+    }
+
+    @media (max-width: 992px) {
+        .sidebar {
+            width: min(92vw, 320px);
+            padding: 18px 18px 20px;
+            transform: translateX(-110%);
+            box-shadow: none;
+            border-radius: 0 18px 18px 0;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+            box-shadow: 0 0 0 999px rgba(17, 16, 29, 0.45), 0 20px 45px rgba(15, 15, 26, 0.35);
+        }
+
+        .sidebar .nav-list {
+            padding-right: 6px;
+        }
+
+        .sidebar .logo-details {
+            justify-content: flex-start;
+            padding-right: 0;
+        }
+
+        .sidebar .logo-details .logo_name {
+            font-size: 18px;
+        }
     }
 
     .sidebar .logo-details {
@@ -427,17 +459,32 @@
     .sidebar li.profile {
         position: fixed;
         height: 60px;
-        width: 78px;
+        width: var(--sidebar-collapsed-width);
         left: 0;
         bottom: -8px;
         padding: 10px 14px;
         background: #1d1b31;
-        transition: all 0.5s ease;
+        transition: width 0.4s ease, transform 0.3s ease;
         overflow: hidden;
     }
 
     .sidebar.open li.profile {
-        width: 250px;
+        width: min(var(--sidebar-expanded-width), 100%);
+    }
+
+    @media (max-width: 992px) {
+        .sidebar li.profile {
+            position: fixed;
+            width: var(--sidebar-collapsed-width);
+            left: 0;
+            bottom: -8px;
+            margin-top: 0;
+            border-radius: 0;
+        }
+
+        .sidebar.open li.profile {
+            width: min(var(--sidebar-expanded-width), 100%);
+        }
     }
 
     .sidebar li .profile-details {
@@ -494,15 +541,27 @@
         background: #E4E9F7;
         min-height: 100vh;
         top: 0;
-        left: 78px;
-        width: calc(100% - 78px);
+        left: var(--sidebar-collapsed-width);
+        width: calc(100% - var(--sidebar-collapsed-width));
         transition: all 0.5s ease;
         z-index: 2;
     }
 
     .sidebar.open~.home-section {
-        left: 250px;
-        width: calc(100% - 250px);
+        left: var(--sidebar-expanded-width);
+        width: calc(100% - var(--sidebar-expanded-width));
+    }
+
+    @media (max-width: 992px) {
+        .home-section {
+            left: 0;
+            width: 100%;
+        }
+
+        .sidebar.open~.home-section {
+            left: 0;
+            width: 100%;
+        }
     }
 
     .home-section .text {
@@ -527,7 +586,7 @@
         position: fixed;
         top: 0;
         left: 0;
-        width: 78px;
+        width: var(--sidebar-collapsed-width);
         height: 100vh;
         background: #2f2f31;
         color: white;
@@ -537,7 +596,7 @@
     }
 
     .sidebar.open {
-        width: 250px;
+        width: var(--sidebar-expanded-width);
     }
 
     .sidebar-header {
@@ -630,6 +689,18 @@
         display: flex;
         flex-direction: column;
         justify-content: space-between;
+        overflow-y: auto;
+        scrollbar-width: thin;
+        scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
+    }
+
+    .sidebar-nav::-webkit-scrollbar {
+        width: 6px;
+    }
+
+    .sidebar-nav::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.2);
+        border-radius: 999px;
     }
 
     .nav-section {
@@ -716,7 +787,7 @@
     .sidebar:not(.open) .nav-link::after {
         content: attr(title);
         position: absolute;
-        left: 78px;
+        left: var(--sidebar-collapsed-width);
         top: 50%;
         transform: translateY(-50%);
         background: rgba(47, 47, 49, 0.95);
@@ -743,21 +814,40 @@
 
     /* Content adjustment */
     .content-with-sidebar {
-        margin-left: 78px;
+        margin-left: var(--sidebar-collapsed-width);
         transition: margin-left 0.3s ease;
     }
 
     .sidebar.open~.content-with-sidebar {
-        margin-left: 250px;
+        margin-left: var(--sidebar-expanded-width);
     }
 
     @media (max-width: 992px) {
         .sidebar {
-            display: none;
+            display: block;
+            width: min(92vw, 320px);
+            transform: translateX(-110%);
+            padding: 18px 18px 20px;
+            background: rgba(17, 16, 29, 0.98);
+            border-radius: 0 18px 18px 0;
+        }
+
+        .sidebar.open {
+            transform: translateX(0);
+            box-shadow: 0 0 0 999px rgba(17, 16, 29, 0.45), 0 20px 45px rgba(15, 15, 26, 0.35);
         }
 
         .content-with-sidebar {
             margin-left: 0;
+        }
+
+        .sidebar .nav-list {
+            padding-right: 6px;
+        }
+
+        .sidebar .logo-details {
+            justify-content: flex-start;
+            padding-right: 0;
         }
     }
 </style>
@@ -850,37 +940,61 @@
 
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const navList = document.querySelector('.nav-list');
-        const menuOperational = document.getElementById('menuGroupOperational');
-        const menuMaster = document.getElementById('menuGroupMaster');
-        const menuItems = navList ? navList.querySelectorAll('li[data-group]') : [];
         const sidebarEl = document.querySelector('.sidebar');
-        const toggleBtn = document.getElementById('btn');
-
-        // Restore sidebar open/closed state
-        const sidebarState = localStorage.getItem('sidebar-open');
-        if (sidebarState === '1') {
-            sidebarEl.classList.add('open');
-        } else if (sidebarState === '0') {
-            sidebarEl.classList.remove('open');
+        if (!sidebarEl) {
+            return;
         }
 
-        // Setup SVG sources for open/closed states
+    const navList = document.querySelector('.nav-list');
+    const menuOperational = document.getElementById('menuGroupOperational');
+    const menuMaster = document.getElementById('menuGroupMaster');
+    const menuItems = navList ? navList.querySelectorAll('li[data-group]') : [];
+    const primaryToggle = document.getElementById('btn');
+    const toggleButtons = Array.from(document.querySelectorAll('[data-sidebar-toggle]'));
+
+    const isMobileViewport = () => window.matchMedia('(max-width: 992px)').matches;
+    let lastViewportMobile = isMobileViewport();
+
         const svgRight = '{{ asset('bolopa/back/images/icon/line-md--menu-fold-right.svg') }}';
         const svgLeft = '{{ asset('bolopa/back/images/icon/line-md--menu-fold-left.svg') }}';
-        if (toggleBtn && toggleBtn.tagName === 'IMG') {
-            // Ensure the initial icon matches the state
-            toggleBtn.src = sidebarEl.classList.contains('open') ? svgLeft : svgRight;
+
+        const dispatchSidebarEvent = (isOpen) => {
+            if (typeof window !== 'undefined') {
+                window.dispatchEvent(new Event('resize'));
+                if (typeof CustomEvent === 'function') {
+                    window.dispatchEvent(new CustomEvent('sidebar:toggled', { detail: { open: isOpen } }));
+                }
+            }
+        };
+
+        const syncSidebarState = (isOpen, persist = false, fireEvent = true) => {
+            sidebarEl.classList.toggle('open', isOpen);
+            document.body.classList.toggle('sidebar-open', isOpen);
+            if (primaryToggle && primaryToggle.tagName === 'IMG') {
+                primaryToggle.src = isOpen ? svgLeft : svgRight;
+            }
+            if (persist) {
+                localStorage.setItem('sidebar-open', isOpen ? '1' : '0');
+            }
+            if (fireEvent) {
+                (window.requestAnimationFrame || function(cb){ return setTimeout(cb, 0); })(() => dispatchSidebarEvent(isOpen));
+            }
+        };
+
+        const storedState = localStorage.getItem('sidebar-open');
+        let initialIsOpen = storedState === '1' ? true : storedState === '0' ? false : sidebarEl.classList.contains('open');
+        if (isMobileViewport()) {
+            initialIsOpen = false;
         }
+        syncSidebarState(initialIsOpen, false);
 
         // Restore selected menu group (default operational)
         let selectedGroup = localStorage.getItem('sidebar-group') || 'operational';
-        // If master button is not present (user is not super_admin) and saved group is 'master', fallback
         if (selectedGroup === 'master' && !menuMaster) {
             selectedGroup = 'operational';
         }
 
-        function applySelectedGroup(group) {
+        const applySelectedGroup = (group) => {
             if (menuOperational) {
                 menuOperational.classList.toggle('active', group === 'operational');
             }
@@ -897,16 +1011,14 @@
             });
 
             localStorage.setItem('sidebar-group', group);
-        }
+        };
 
-        // Mark navList as JS-enabled so CSS will allow JS-controlled visibility
         if (navList) {
             navList.classList.add('js-enabled');
         }
 
         applySelectedGroup(selectedGroup);
 
-        // Click handlers (attach only if the buttons exist)
         if (menuOperational) {
             menuOperational.addEventListener('click', function() {
                 applySelectedGroup('operational');
@@ -918,24 +1030,51 @@
             });
         }
 
-        // Persist toggle button state and swap SVG icon
-        if (toggleBtn && sidebarEl) {
-            toggleBtn.addEventListener('click', function() {
-                const isOpen = sidebarEl.classList.toggle('open');
-                localStorage.setItem('sidebar-open', isOpen ? '1' : '0');
-                if (toggleBtn.tagName === 'IMG') {
-                    toggleBtn.src = isOpen ? svgLeft : svgRight;
-                }
+        if (toggleButtons.length) {
+            toggleButtons.forEach(btn => {
+                btn.addEventListener('click', function(event) {
+                    event.preventDefault();
+                    const newState = !sidebarEl.classList.contains('open');
+                    syncSidebarState(newState, true);
+                });
             });
         }
 
-        // Ensure the menu group remains applied when keyboard toggled
         document.addEventListener('keydown', function(e) {
             if ((e.ctrlKey || e.metaKey) && e.key === 'b') {
                 e.preventDefault();
-                const isOpen = sidebarEl.classList.toggle('open');
-                localStorage.setItem('sidebar-open', isOpen ? '1' : '0');
+                const newState = !sidebarEl.classList.contains('open');
+                syncSidebarState(newState, true);
             }
+            if (e.key === 'Escape' && sidebarEl.classList.contains('open') && isMobileViewport()) {
+                syncSidebarState(false, true);
+            }
+        });
+
+        const handleResize = () => {
+            const nowMobile = isMobileViewport();
+            if (nowMobile && !lastViewportMobile && sidebarEl.classList.contains('open')) {
+                syncSidebarState(false, false, false);
+            }
+            lastViewportMobile = nowMobile;
+        };
+
+        window.addEventListener('resize', handleResize);
+        handleResize();
+
+        document.addEventListener('click', function(event) {
+            if (!isMobileViewport() || !sidebarEl.classList.contains('open')) {
+                return;
+            }
+            const target = event.target;
+            const elementTarget = target instanceof Element ? target : target.parentElement;
+            if (elementTarget && sidebarEl.contains(elementTarget)) {
+                return;
+            }
+            if (elementTarget && elementTarget.closest('[data-sidebar-toggle]')) {
+                return;
+            }
+            syncSidebarState(false, true);
         });
     });
 </script>

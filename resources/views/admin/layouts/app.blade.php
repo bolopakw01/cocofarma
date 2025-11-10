@@ -8,7 +8,7 @@
     <title>{{ config('app.name', 'Laravel') }} | @yield('pageTitle', $pageTitle ?? 'Backoffice')</title>
 
     <!-- Central admin UI CSS (includes Google Fonts Poppins and base variables) -->
-    <link rel="stylesheet" href="{{ asset('bolopa/back/css/admin-ui.css') }}">
+    <link rel="stylesheet" href="{{ asset('bolopa/back/css/admin-ui.css') }}?v={{ filemtime(public_path('bolopa/back/css/admin-ui.css')) }}">
 
     <!-- Favicon (tab icon) -->
     <link rel="icon" type="image/svg+xml" href="{{ asset('bolopa/back/images/icon/twemoji--coconut.svg') }}">
@@ -127,7 +127,7 @@
         @include('admin.partials.header')
 
     <!-- Page Content -->
-    <main class="main-content" style="flex: 1; position: relative; padding-top: 20px; padding-bottom: 20px;">
+    <main class="main-content" style="flex: 1; position: relative; padding-top: 40px; padding-bottom: 20px;">
             <div id="loading-overlay" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: flex; justify-content: center; align-items: center; z-index: 9999; backdrop-filter: blur(2px);">
                 <div id="page">
                     <div id="container">
@@ -139,7 +139,9 @@
                     </div>
                 </div>
             </div>
-            @yield('content')
+            <div class="page-shell">
+                @yield('content')
+            </div>
         </main>
 
         <!-- Footer -->
