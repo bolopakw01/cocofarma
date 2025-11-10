@@ -433,7 +433,7 @@
                 </div>
 
                 <div id="noStockMessage" class="no-stock-message" style="display: none;">
-                    Tidak ada stok operasional aktif yang tersedia untuk produk baru. Anda tetap dapat mengubah item yang sudah ada.
+                    Semua produk aktif dari master produk dapat dipesan. Produk tanpa stok operasional akan diproses sebagai pre-order.
                 </div>
 
                 <table class="items-table" id="itemsTable">
@@ -508,14 +508,8 @@
         const addItemBtn = document.getElementById('addItemBtn');
         const noStockMessage = document.getElementById('noStockMessage');
 
-        if (!productsData.length) {
-            if (noStockMessage) {
-                noStockMessage.style.display = 'block';
-            }
-            if (addItemBtn) {
-                addItemBtn.disabled = true;
-            }
-        }
+        // Always allow adding items since we show all active products
+        // Remove the check that disables buttons when no stock is available
 
         // Event listeners
         document.getElementById('addItemBtn').addEventListener('click', addItem);
@@ -558,14 +552,11 @@
             option.setAttribute('data-price', produk.harga_jual);
             option.setAttribute('data-stok', produk.stok_tersedia);
             
-            const stockText = produk.stok_tersedia > 0 ? `Stok: ${produk.stok_tersedia}` : 'Stok: Habis';
+            const stockText = produk.stok_tersedia > 0 ? `Stok: ${produk.stok_tersedia}` : 'Stok: Habis (Pre-order)';
             option.textContent = `${produk.nama_produk} (${produk.satuan}) - ${stockText}`;
             
-            // Disable option if out of stock (except when already selected in existing rows)
-            if (produk.stok_tersedia <= 0 && !option.selected) {
-                option.disabled = true;
-                option.style.color = '#999';
-            }
+            // Allow selection even if out of stock (pre-order capability)
+            // Only disable if product is not available at all (but we show all active products)
             
             productSelect.appendChild(option);
         });
@@ -692,19 +683,16 @@
             return;
         }
 
-        if (stokTersedia <= 0) {
-            alert('Produk ini sedang habis stok dan tidak dapat dipilih.');
-            select.value = '';
-            priceInput.value = '';
-            quantityInput.value = '';
-            quantityInput.removeAttribute('max');
-            calculateSubtotal(row);
-            calculateTotal();
-            return;
-        }
-
+        // Allow ordering even if stock is 0 (pre-order capability)
         priceInput.value = Math.round(price); // Display as integer
-        quantityInput.max = stokTersedia; // Set max quantity
+        
+        // Set max quantity only if stock is available, otherwise allow any quantity
+        if (stokTersedia > 0) {
+            quantityInput.max = stokTersedia;
+        } else {
+            quantityInput.removeAttribute('max');
+        }
+        
         calculateSubtotal(row);
         calculateTotal();
     }
@@ -769,14 +757,15 @@
             }
 
             if (productSelect.value) {
-                // Check stock availability
+                // Check stock availability - allow pre-ordering
                 const selectedOption = productSelect.options[productSelect.selectedIndex];
                 const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
                 const jumlahDiminta = parseFloat(quantityInput.value) || 0;
 
-                if (jumlahDiminta > stokTersedia) {
-                    alert(`Item ${index + 1}: Jumlah melebihi stok tersedia (${stokTersedia})!`);
-                    isValid = false;
+                // Only warn if quantity exceeds available stock, but still allow the order
+                if (jumlahDiminta > stokTersedia && stokTersedia > 0) {
+                    // Optional: You could show a warning here but still allow the order
+                    // For now, we allow pre-orders without restriction
                 }
             }
 

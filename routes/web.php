@@ -79,24 +79,29 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
 
         // Operational Produk page (simple index view)
         Route::prefix('produk')->name('produk.')->group(function () {
-            // Operational Produk index: show produced items (stok_produks) as results of production
+            // Operational Produk index: show all active master products + their operational stock
             Route::get('/', function () {
+                // Get all active products from master produk
+                $activeProduks = \App\Models\Produk::where('status', 'aktif')
+                    ->orderBy('nama_produk')
+                    ->get();
+
                 // Fetch recent produced stock entries with relations
-                $stokProduks = StokProduk::with(['produk', 'batchProduksi'])
+                $stokProduks = \App\Models\StokProduk::with(['produk', 'batchProduksi'])
                     ->orderByDesc('tanggal')
                     ->orderByDesc('id')
                     ->limit(50)
                     ->get();
 
                 // Also fetch recent produksi records that have status 'selesai'
-                $produksis = Produksi::with(['produk', 'batchProduksi'])
+                $produksis = \App\Models\Produksi::with(['produk', 'batchProduksi'])
                     ->where('status', 'selesai')
                     ->orderByDesc('tanggal_produksi')
                     ->orderByDesc('id')
                     ->limit(50)
                     ->get();
 
-                return view('admin.pages.produk.index-produk', compact('stokProduks', 'produksis'));
+                return view('admin.pages.produk.index-produk', compact('stokProduks', 'produksis', 'activeProduks'));
             })->name('index');
 
             // Stok produk management (super_admin only)

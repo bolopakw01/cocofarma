@@ -57,7 +57,12 @@ class PesananController extends Controller
             ->having('total_stok', '>', 0)
             ->get();
 
-        // Map operational stock to view-friendly structure using master product info
+        // Get all active products from master produk
+        $activeProduks = Produk::where('status', 'aktif')
+            ->orderBy('nama_produk')
+            ->get();
+
+        // Map operational stock to view-friendly structure
         $produks = $produkStoks->map(function ($stok) {
             return (object) [
                 'id' => $stok->produk_id,
@@ -67,6 +72,21 @@ class PesananController extends Controller
                 'stok_tersedia' => $stok->total_stok,
             ];
         });
+
+        // Add active products that don't have operational stock yet
+        $produkIdsDenganStok = $produkStoks->pluck('produk_id');
+        $produkTanpaStok = $activeProduks->whereNotIn('id', $produkIdsDenganStok)->map(function ($produk) {
+            return (object) [
+                'id' => $produk->id,
+                'nama_produk' => $produk->nama_produk,
+                'satuan' => $produk->satuan,
+                'harga_jual' => $produk->harga_jual,
+                'stok_tersedia' => 0,
+            ];
+        });
+
+        // Combine products with stock and products without stock
+        $produks = $produks->concat($produkTanpaStok);
 
         return view('admin.pages.pesanan.create-pesanan', compact('produks'));
     }
@@ -93,7 +113,7 @@ class PesananController extends Controller
         $kode_pesanan = 'PSN' . $tanggal . $timestamp . $random;
 
         DB::transaction(function () use ($request, $kode_pesanan) {
-            // Validate stock availability for each item
+            // Validate stock availability for each item (allow products with 0 stock to be ordered)
             foreach ($request->items as $item) {
                 $produkId = $item['produk_id'];
                 $jumlahDibutuhkan = $item['jumlah'];
@@ -103,8 +123,10 @@ class PesananController extends Controller
                     ->where('sisa_stok', '>', 0)
                     ->sum('sisa_stok');
 
+                // Allow ordering even if stock is 0, but warn if insufficient stock
                 if ($totalStok < $jumlahDibutuhkan) {
-                    throw new \Exception("Stok produk ID {$produkId} tidak mencukupi. Tersedia: {$totalStok}, Dibutuhkan: {$jumlahDibutuhkan}");
+                    // For now, allow ordering but stock will be reduced when production is completed
+                    // In a real scenario, you might want to handle pre-orders differently
                 }
             }
 
@@ -126,11 +148,11 @@ class PesananController extends Controller
                 'total_harga' => $total_harga
             ]);
 
-            // Process each item and reduce stock (FIFO)
+            // Process each item and reduce stock (FIFO) - only reduce if stock is available
             foreach ($request->items as $item) {
                 $produkId = $item['produk_id'];
                 $jumlahDibutuhkan = $item['jumlah'];
-                
+
                 // Get product price from master
                 $produk = \App\Models\Produk::find($produkId);
                 $hargaSatuan = $produk->harga_jual;
@@ -144,6 +166,7 @@ class PesananController extends Controller
 
                 $sisaDibutuhkan = $jumlahDibutuhkan;
 
+                // Only reduce stock if available, otherwise leave as pending
                 foreach ($stokEntries as $stokEntry) {
                     if ($sisaDibutuhkan <= 0) break;
 
@@ -200,7 +223,12 @@ class PesananController extends Controller
             ->having('total_stok', '>', 0)
             ->get();
 
-        // Map operational stock to view-friendly structure using master product info
+        // Get all active products from master produk
+        $activeProduks = Produk::where('status', 'aktif')
+            ->orderBy('nama_produk')
+            ->get();
+
+        // Map operational stock to view-friendly structure
         $produks = $produkStoks->map(function ($stok) {
             return (object) [
                 'id' => $stok->produk_id,
@@ -211,9 +239,24 @@ class PesananController extends Controller
             ];
         });
 
+        // Add active products that don't have operational stock yet
+        $produkIdsDenganStok = $produkStoks->pluck('produk_id');
+        $produkTanpaStok = $activeProduks->whereNotIn('id', $produkIdsDenganStok)->map(function ($produk) {
+            return (object) [
+                'id' => $produk->id,
+                'nama_produk' => $produk->nama_produk,
+                'satuan' => $produk->satuan,
+                'harga_jual' => $produk->harga_jual,
+                'stok_tersedia' => 0,
+            ];
+        });
+
+        // Combine products with stock and products without stock
+        $produks = $produks->concat($produkTanpaStok);
+
         // Ensure products already in the order remain selectable even if stock is zero
         $produkIdsDalamPesanan = $pesanan->pesananItems->pluck('produk_id')->unique();
-        $produkIdsOperasional = $produkStoks->pluck('produk_id');
+        $produkIdsOperasional = $produks->pluck('id');
         $produkIdsTambahan = $produkIdsDalamPesanan->diff($produkIdsOperasional);
 
         if ($produkIdsTambahan->isNotEmpty()) {
@@ -252,7 +295,7 @@ class PesananController extends Controller
         ]);
 
         DB::transaction(function () use ($request, $pesanan) {
-            // Validate stock availability for each item
+            // Validate stock availability for each item (allow products with 0 stock to be ordered)
             foreach ($request->items as $item) {
                 $produkId = $item['produk_id'];
                 $jumlahDibutuhkan = $item['jumlah'];
@@ -262,8 +305,10 @@ class PesananController extends Controller
                     ->where('sisa_stok', '>', 0)
                     ->sum('sisa_stok');
 
+                // Allow ordering even if stock is 0, but warn if insufficient stock
                 if ($totalStok < $jumlahDibutuhkan) {
-                    throw new \Exception("Stok produk ID {$produkId} tidak mencukupi. Tersedia: {$totalStok}, Dibutuhkan: {$jumlahDibutuhkan}");
+                    // For now, allow ordering but stock will be reduced when production is completed
+                    // In a real scenario, you might want to handle pre-orders differently
                 }
             }
 
@@ -320,7 +365,7 @@ class PesananController extends Controller
             // Hapus pesanan items lama
             $pesanan->pesananItems()->delete();
 
-            // Process each new item and reduce stock (FIFO)
+            // Process each new item and reduce stock (FIFO) - only reduce if stock is available
             foreach ($request->items as $item) {
                 $produkId = $item['produk_id'];
                 $jumlahDibutuhkan = $item['jumlah'];
@@ -338,6 +383,7 @@ class PesananController extends Controller
 
                 $sisaDibutuhkan = $jumlahDibutuhkan;
 
+                // Only reduce stock if available, otherwise leave as pending
                 foreach ($stokEntries as $stokEntry) {
                     if ($sisaDibutuhkan <= 0) break;
 
@@ -576,6 +622,7 @@ class PesananController extends Controller
 
             $sisaDibutuhkan = $jumlahDibutuhkan;
 
+            // Only reduce available stock, allow ordering even if stock is insufficient
             foreach ($stokEntries as $stokEntry) {
                 if ($sisaDibutuhkan <= 0) break;
 
@@ -592,9 +639,8 @@ class PesananController extends Controller
                 }
             }
 
-            if ($sisaDibutuhkan > 0) {
-                throw new \Exception("Stok produk ID {$produkId} tidak mencukupi");
-            }
+            // Note: We no longer throw exception for insufficient stock
+            // Products can be ordered even without available stock
         }
     }
 

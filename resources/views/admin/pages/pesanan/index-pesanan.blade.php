@@ -208,6 +208,7 @@
 
 @push('scripts')
 <script src="{{ asset('bolopa/back/js/bolopa-table.js') }}"></script>
+<script src="{{ asset('bolopa/back/js/bolopa-export-print.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const tableApi = window.initBolopaTable({
@@ -239,31 +240,32 @@
             });
         }
 
-        const exportBtn = document.getElementById('btnExport');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function () {
-                try {
-                    exportTableData();
-                    tableApi && tableApi.showToast('Data pesanan berhasil diexport.', 'success');
-                } catch (error) {
-                    console.error('Export error:', error);
-                    tableApi && tableApi.showToast('Gagal export data pesanan.', 'error');
-                }
-            });
-        }
+        const notify = function (message, type) {
+            if (tableApi && typeof tableApi.showToast === 'function') {
+                tableApi.showToast(message, type);
+            } else if (type === 'error') {
+                console.error(message);
+            }
+        };
 
-        const printBtn = document.getElementById('btnPrint');
-        if (printBtn) {
-            printBtn.addEventListener('click', function () {
-                try {
-                    tableApi && tableApi.showToast('Membuka tampilan print...', 'info');
-                    printTableData();
-                } catch (error) {
-                    console.error('Print error:', error);
-                    tableApi && tableApi.showToast('Gagal membuka tampilan print.', 'error');
-                }
-            });
-        }
+        window.initBolopaExportPrint({
+            tableSelector: '#dataTable',
+            exportButtonSelector: '#btnExport',
+            printButtonSelector: '#btnPrint',
+            filenamePrefix: 'pesanan-export',
+            printedBy: '{{ auth()->user()->name ?? 'Administrator' }}',
+            printBrandTitle: 'Cocofarma — Daftar Pesanan',
+            printBrandSubtitle: 'Laporan ringkas pesanan',
+            printNotes: 'Catatan: Kolom aksi dihilangkan untuk keperluan cetak. Untuk detail pesanan, buka halaman detail tiap pesanan.',
+            totalLabel: 'Total Pesanan',
+            notify: notify,
+            messages: {
+                exportSuccess: 'Data pesanan berhasil diekspor.',
+                exportError: 'Gagal export data pesanan.',
+                printInfo: 'Membuka tampilan print...',
+                printError: 'Gagal membuka tampilan print.'
+            }
+        });
     });
 
     function submitDeleteForm(url) {
@@ -392,172 +394,6 @@
         })
         .catch(error => {
             Swal.fire('Error!', error.message || 'Terjadi kesalahan', 'error');
-        });
-    }
-
-    function exportTableData() {
-        const table = document.getElementById('dataTable');
-        if (!table) {
-            throw new Error('Tabel data pesanan tidak ditemukan.');
-        }
-
-        const rows = Array.from(table.querySelectorAll('tr'));
-        if (!rows.length) {
-            throw new Error('Tidak ada data untuk diexport.');
-        }
-
-        const visibleRows = rows.filter((row) => row.style.display !== 'none');
-        const headerRow = table.querySelector('thead tr');
-        let actionColumnIndex = -1;
-        if (headerRow) {
-            const headerCells = Array.from(headerRow.children);
-            actionColumnIndex = headerCells.findIndex((cell) => cell.textContent.trim().toLowerCase() === 'aksi');
-        }
-
-        const csvLines = visibleRows.map((row) => {
-            const cells = Array.from(row.querySelectorAll('th, td'));
-            return cells.map((cell, index) => {
-                if (actionColumnIndex >= 0 && index === actionColumnIndex && cell.colSpan <= 1) {
-                    return null;
-                }
-
-                const text = (cell.innerText || cell.textContent || '')
-                    .replace(/\s+/g, ' ')
-                    .replace(/"/g, '""')
-                    .trim();
-                return '"' + text + '"';
-            }).filter((value) => value !== null).join(',');
-        });
-
-        const csvContent = '\uFEFF' + csvLines.join('\n');
-        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-
-        const timestamp = new Date().toISOString().replace(/[-:T]/g, '').slice(0, 14);
-        const filename = `pesanan-export-${timestamp}.csv`;
-
-        const link = document.createElement('a');
-        link.href = URL.createObjectURL(blob);
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        URL.revokeObjectURL(link.href);
-    }
-
-    function printTableData() {
-        const tableContainer = document.querySelector('.bolopa-tabel-table-responsive');
-        const table = document.getElementById('dataTable');
-        if (!tableContainer || !table) {
-            throw new Error('Tabel data pesanan tidak ditemukan.');
-        }
-
-        // Clone full table (include all rows, even those currently hidden by filters)
-        const clonedTable = table.cloneNode(true);
-
-        const headerRow = clonedTable.querySelector('thead tr');
-        let actionColumnIndex = -1;
-        if (headerRow) {
-            const headerCells = Array.from(headerRow.children);
-            actionColumnIndex = headerCells.findIndex((cell) => cell.textContent.trim().toLowerCase() === 'aksi');
-            if (actionColumnIndex >= 0) {
-                headerCells[actionColumnIndex].remove();
-            }
-        }
-
-        if (actionColumnIndex >= 0) {
-            clonedTable.querySelectorAll('tbody tr').forEach((row) => {
-                const cells = row.children;
-                if (cells[actionColumnIndex]) {
-                    cells[actionColumnIndex].remove();
-                }
-            });
-        }
-
-        // Remove sort icons and any interactive controls inside the cloned table so print is clean
-        clonedTable.querySelectorAll('img.bolopa-tabel-sort-icon, img.bolopa-tabel-sort-up, img.bolopa-tabel-sort-down, .bolopa-tabel-sort-icons, .clear-btn, .bolopa-tabel-search-box').forEach(el => el.remove());
-
-        const printWindow = window.open('', '_blank', 'width=1024,height=768');
-        if (!printWindow) {
-            throw new Error('Popup print diblokir oleh browser.');
-        }
-
-        const styles = `
-            <style>
-                /* Print sizing and margins: prefer A4 portrait but let browser decide if different */
-                @page { size: A4 portrait; margin: 12mm; }
-                /* Base */
-                body { font-family: 'Poppins', Arial, sans-serif; margin: 0; color: #1f2937; }
-                .print-shell { padding: 12px 14px; }
-                .brand { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
-                h1 { font-size: 16px; margin: 4px 0 8px 0; }
-                .meta { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; color:#374151; font-size:12px; }
-                /* Table */
-                table { width: 100%; border-collapse: collapse; table-layout: auto; font-size:11px; }
-                th, td { border: 2px solid #d1d5db; padding: 8px 10px; text-align: left; vertical-align: middle; }
-                th { background: #f8fafc; font-weight: 700; color:#111827; }
-                tbody tr:nth-child(even) td { background: #fbfdfe; }
-                .small { font-size:11px; color:#6b7280; }
-                .notes { margin-top:12px; font-size:12px; color:#374151; }
-
-                /* Make sure long text wraps and cells don't force overflow */
-                td, th { white-space: normal; word-break: break-word; }
-
-                /* Print pagination safety: avoid cutting rows across pages */
-                @media print {
-                    .no-print { display: none !important; }
-                    table { page-break-inside: auto; }
-                    thead { display: table-header-group; }
-                    tfoot { display: table-footer-group; }
-                    tr { page-break-inside: avoid; page-break-after: auto; }
-                    /* Reduce font slightly for very wide tables */
-                    body { -webkit-print-color-adjust: exact; }
-                }
-            </style>
-        `;
-
-        const totalCount = table.querySelectorAll('tbody tr').length;
-        const metaInfo = `
-            <div class="meta">
-                <div>
-                    <strong>Dicetak oleh:</strong> {{ auth()->user()->name ?? 'Administrator' }}<br>
-                    <span class="small">Tanggal cetak: ${new Date().toLocaleString('id-ID')}</span>
-                </div>
-                <div style="text-align:right;">
-                    <div><strong>Total Pesanan:</strong> ${totalCount}</div>
-                    <div class="small">Sumber data: Sistem Bolopa</div>
-                </div>
-            </div>
-        `;
-
-        printWindow.document.write(`
-            <html>
-                <head>
-                    <title>Data Pesanan</title>
-                    ${styles}
-                </head>
-                <body>
-                    <div class="print-shell">
-                        <div class="brand">
-                            <div>
-                                <div style="font-weight:700; font-size:16px;">Cocofarma — Daftar Pesanan</div>
-                                <div class="small">Laporan ringkas pesanan</div>
-                            </div>
-                        </div>
-                        ${metaInfo}
-                        ${clonedTable.outerHTML}
-                        <div class="notes">
-                            Catatan: Kolom aksi dihilangkan untuk keperluan cetak. Untuk detail pesanan, buka halaman detail tiap pesanan.
-                        </div>
-                    </div>
-                </body>
-            </html>
-        `);
-
-        printWindow.document.close();
-        printWindow.focus();
-        printWindow.print();
-        printWindow.addEventListener('afterprint', () => {
-            printWindow.close();
         });
     }
 

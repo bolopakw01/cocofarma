@@ -7,451 +7,17 @@
 @section('title', 'Produk Operasional - Cocofarma')
 
 @section('content')
-<style>
-    :root {
-        --primary: #4361ee;
-        --secondary: #3f37c9;
-        --primary-hover: #3a4fd8;
-        --success: #4cc9f0;
-        --info: #4895ef;
-        --warning: #f72585;
-        --danger: #e63946;
-        --light: #f8f9fa;
-        --dark: #212529;
-        --gray: #6c757d;
-        --light-gray: #e9ecef;
-        --border-radius: 8px;
-        --box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-        --transition: all 0.3s ease;
-    }
+<x-admin.data-table id="produk-operasional-table">
+    <x-slot name="header">
+        <div class="bolopa-tabel-header-title">
+            <x-admin.icon name="product" alt="Produk Operasional" size="28" />
+            <span>Produk Operasional</span>
+        </div>
+    </x-slot>
 
-    * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-        font-family: inherit;
-
-    /* Smaller, muted up/down icons that stack vertically */
-    .table th i.sort-up,
-    .table th i.sort-down {
-        color: rgba(0,0,0,0.35);
-        font-size: 0.65rem;
-        margin-left: 6px;
-    }
-    }
-
-    html, body {
-        height: 100%;
-        overflow-x: hidden;
-        overflow-y: auto;
-    }
-
-
-    .sort-icons {
-        display: inline-flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        margin-left: 8px;
-        vertical-align: middle;
-        line-height: 1;
-    }
-
-    .table th .sort-icons i { margin: 0; padding: 0; height: 12px; }
-
-    /* Bring the two arrows closer so they visually connect */
-    .table th .sort-icons i.sort-up { margin-bottom: -5px; }
-    .table th .sort-icons i.sort-down { margin-top: -5px; }
-
-    .table th.active i.sort-up.active-up,
-    .table th.active i.sort-down.active-down {
-        color: #000 !important;
-        font-size: 0.75rem;
-    }
-    .container {
-        max-width: 1200px;
-        margin: 0 auto;
-        background: white;
-        border-radius: var(--border-radius);
-        box-shadow: var(--box-shadow);
-        padding: 20px;
-        overflow: hidden;
-
-    }
-
-    header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--light-gray);
-    }
-
-    .page-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 24px;
-        padding-bottom: 16px;
-        border-bottom: 1px solid var(--light-gray);
-    }
-
-    h1 {
-        color: var(--dark);
-        font-size: 1.6rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-    }
-
-    .controls {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: space-between;
-        gap: 16px;
-        margin-bottom: 20px;
-        padding: 16px;
-        background: var(--light);
-        border-radius: var(--border-radius);
-    }
-
-    .left-controls {
-        display: flex;
-        align-items: center;
-        gap: 16px;
-    }
-
-    .right-controls {
-        display: flex;
-        gap: 10px;
-    }
-
-    .search-box {
-        position: relative;
-    }
-
-    .search-box input {
-        padding: 10px 15px 10px 40px;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        font-size: 0.9rem;
-        width: 250px;
-        transition: var(--transition);
-    }
-
-    .search-box input:focus {
-        outline: none;
-        border-color: var(--primary);
-        box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.15);
-        width: 280px; /* expand on focus to match master-bahan */
-    }
-
-    .search-box i {
-        position: absolute;
-        left: 15px;
-        top: 50%;
-        transform: translateY(-50%);
-        color: var(--gray);
-    }
-
-    .entries-select {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        white-space: nowrap;
-    }
-
-    .entries-select select {
-        padding: 8px 12px;
-        border: 1px solid var(--light-gray);
-        border-radius: var(--border-radius);
-        background: white;
-        font-size: 0.9rem;
-        cursor: pointer;
-    }
-
-    .btn {
-        padding: 8px 16px;
-        border: none;
-        border-radius: var(--border-radius);
-        cursor: pointer;
-        font-weight: 500;
-        transition: var(--transition);
-        font-size: 0.9rem;
-        display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-
-    .btn-primary {
-        background: var(--primary);
-        color: white;
-    }
-
-    .btn-primary:hover {
-        background: var(--secondary);
-        transform: translateY(-1px);
-    }
-
-    .btn-success {
-        background: var(--success);
-        color: white;
-    }
-
-    .btn-success:hover {
-        background: #3aafd9;
-        transform: translateY(-1px);
-    }
-
-    .btn-danger {
-        background: var(--danger);
-        color: white;
-    }
-
-    .btn-danger:hover {
-        background: #c22c38;
-        transform: translateY(-1px);
-    }
-
-    .btn-action {
-        padding: 5px 10px;
-        font-size: 0.8rem;
-        margin: 0 2px;
-    }
-
-    .btn-info {
-        background: var(--info);
-        color: white;
-    }
-
-    .btn-info:hover {
-        background: #3a7fd8;
-        transform: translateY(-1px);
-    }
-
-    .btn-warning {
-        background: var(--warning);
-        color: white;
-    }
-
-    .btn-warning:hover {
-        background: #d61c6a;
-        transform: translateY(-1px);
-    }
-
-    .btn-secondary {
-        background: #6c757d;
-        color: white;
-        border: 1px solid #6c757d;
-    }
-
-    .btn-secondary:hover {
-        background: #5a6268;
-        border-color: #5a6268;
-        transform: translateY(-1px);
-    }
-
-    table {
-        width: 100%;
-        border-collapse: separate;
-        border-spacing: 0;
-        margin-bottom: 20px;
-        position: relative;
-        table-layout: fixed;
-        min-width: 100%;
-        max-width: none;
-    }
-
-    th,
-    td {
-        padding: 8px 10px;
-        text-align: left;
-        border-bottom: 1px solid var(--light-gray);
-        word-wrap: break-word;
-        overflow-wrap: break-word;
-        max-width: 0;
-    }
-
-    th:nth-child(3),
-    td:nth-child(3) {
-        white-space: normal;
-        overflow: visible;
-        text-overflow: clip;
-    }
-
-    /* Right-align biaya column */
-    th:nth-child(8),
-    td:nth-child(8) {
-        text-align: right;
-    }
-
-    th {
-        background-color: var(--light);
-        font-weight: 600;
-        color: var(--dark);
-        position: sticky;
-        top: 0;
-        z-index: 5;
-        cursor: pointer;
-        user-select: none;
-        font-size: 0.9rem;
-        white-space: nowrap;
-    }
-
-    th:hover {
-        background-color: #e9ecef;
-    }
-
-    th i {
-        margin-left: 5px;
-        font-size: 0.8rem;
-        opacity: 0.6;
-    }
-
-    th.active i {
-        opacity: 1;
-    }
-
-    tr {
-        transition: var(--transition);
-    }
-
-    tr:hover {
-        background-color: #f8f9fa;
-        transform: translateY(-1px);
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
-    }
-
-    .badge {
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: 600;
-    }
-
-    .badge-success {
-        background: #d4edda;
-        color: #155724;
-    }
-
-    .badge-danger {
-        background: #f8d7da;
-        color: #721c24;
-    }
-
-    .actions {
-        display: flex;
-        justify-content: center;
-        gap: 5px;
-        min-width: 120px;
-    }
-
-    .pagination {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-top: 20px;
-        flex-wrap: wrap;
-        gap: 10px;
-    }
-
-    .pagination-info {
-        color: var(--gray);
-        font-size: 0.9rem;
-        flex-shrink: 0;
-        white-space: nowrap;
-        max-width: 30%;
-        overflow: hidden;
-        text-overflow: ellipsis;
-    }
-
-    .pagination-buttons {
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-        justify-content: flex-end;
-        flex-shrink: 0;
-        max-width: 70%;
-    }
-
-    .pagination-buttons button {
-        padding: 6px 10px;
-        border: 1px solid var(--light-gray);
-        background: white;
-        border-radius: var(--border-radius);
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        min-width: 34px;
-        height: 34px;
-        font-size: 0.9rem;
-        transition: var(--transition);
-    }
-
-    .pagination-buttons button:hover {
-        background: var(--light);
-    }
-
-    .pagination-buttons button.active {
-        background: var(--primary);
-        color: white;
-        border-color: var(--primary);
-    }
-
-    .pagination-buttons button:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-    }
-
-    .label {
-        font-size: .9rem;
-        color: #6c757d;
-        display: flex;
-        align-items: center;
-    }
-
-    .value {
-        font-weight: 600;
-        font-size: 1.05rem;
-        color: #343a40;
-    }
-
-    .stok-highlight {
-        font-size: 1.4rem;
-        font-weight: 700;
-        color: #198754;
-        display: flex;
-        align-items: center;
-        gap: .5rem;
-    }
-
-    .swal-detail-popup {
-    font-family: inherit !important;
-    }
-
-    .flex-grow-1 {
-        flex-grow: 1;
-    }
-    /* Center table columns for this page's data table to match requested layout */
-    #dataTable th,
-    #dataTable td {
-        text-align: center;
-        vertical-align: middle;
-    }
-</style>
-
-<div class="container">
-    <div class="page-header">
-        <h1><i class="fas fa-box"></i> Produk Operasional</h1>
-        <a href="#" class="btn btn-primary" style="display:none;"><i class="fas fa-plus"></i> Tambah Produk</a>
-    </div>
-
-    <div class="controls">
-        <div class="left-controls">
-            <div class="entries-select">
+    <x-slot name="controls">
+        <div class="bolopa-tabel-left-controls">
+            <div class="bolopa-tabel-entries-select">
                 <label for="entriesSelect">Tampilkan</label>
                 <select id="entriesSelect">
                     <option value="5">5</option>
@@ -462,189 +28,291 @@
                 </select>
                 <span>entri</span>
             </div>
-
-            <!-- search moved to right-controls to match master-bahan layout -->
         </div>
 
-        <div class="right-controls">
-            <div class="search-box">
-                <i class="fas fa-search"></i>
+        <div class="bolopa-tabel-right-controls">
+            <div class="bolopa-tabel-search-box">
+                <x-admin.icon name="search" alt="Cari" size="16" />
                 <input type="text" id="searchInput" placeholder="Cari produk...">
-                <button type="button" class="clear-btn" onclick="clearSearch()" style="display:none;"><i class="fas fa-times"></i></button>
             </div>
 
             @if(Auth::check() && Auth::user()->role === 'super_admin')
-            <button class="btn btn-success" id="btnExport" style="display:none;"><i class="fas fa-file-export"></i> Export</button>
+            <button class="bolopa-tabel-btn bolopa-tabel-btn-success" id="btnExport" type="button">
+                <x-admin.icon name="export" alt="Export" />
+                Export
+            </button>
             @endif
             @if(Auth::check() && Auth::user()->role === 'super_admin')
-            <button class="btn btn-primary" id="btnPrint" style="display:none;"><i class="fas fa-print"></i> Print</button>
+            <button class="bolopa-tabel-btn bolopa-tabel-btn-primary" id="btnPrint" type="button">
+                <x-admin.icon name="print" alt="Print" />
+                Print
+            </button>
             @endif
         </div>
-    </div>
+    </x-slot>
 
-    <div class="table-responsive">
+    <x-slot name="table">
         @php
             $show = 'stok';
             if(isset($stokProduks) && $stokProduks->count() > 0) {
                 $show = 'stok';
             } elseif(isset($produksis) && $produksis->count() > 0) {
                 $show = 'produksi';
+            } elseif(isset($activeProduks) && $activeProduks->count() > 0) {
+                $show = 'master';
             }
         @endphp
 
-        <table class="table" id="dataTable">
-            @if($show === 'stok')
+        @if($show === 'master')
+            <table class="table" id="dataTable">
                 <thead>
                     <tr>
-                        <th data-sort="no" style="width: 6%;">No
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
+                        <th data-sort="no" class="bolopa-align-center bolopa-align-middle bolopa-nowrap">Nomor
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                             </span>
                         </th>
-                        <th data-sort="tanggal" style="width: 12%;">Tanggal
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
+                        <th class="bolopa-align-center bolopa-align-middle">Gambar</th>
+                        <th data-sort="nama" class="bolopa-align-left bolopa-align-middle">Nama
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                             </span>
                         </th>
-                        <th data-sort="nama" style="width: 30%;">Nama
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
+                        <th data-sort="kategori" class="bolopa-align-left bolopa-align-middle">Kategori
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                             </span>
                         </th>
-                        <th data-sort="jumlah" style="width: 16%;">Jumlah
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
+                        <th data-sort="satuan" class="bolopa-align-left bolopa-align-middle">Satuan
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                             </span>
                         </th>
-                        <th data-sort="harga" style="width: 14%;">Harga
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
+                        <th data-sort="harga" class="bolopa-align-right bolopa-align-middle">Harga
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                             </span>
                         </th>
-                        <th data-sort="grade" style="width: 12%;">Grade
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
-                            </span>
-                        </th>
-                        <th style="width: 22%;">Aksi</th>
+                        <th class="bolopa-align-center bolopa-align-middle">Aksi</th>
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($stokProduks ?? collect() as $sp)
-                        <tr data-stok-id="{{ $sp->id }}">
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ optional($sp->tanggal)->format('d/m/Y') ?? '-' }}</td>
-                            <td>{{ optional($sp->produk)->nama_produk ?? '-' }}</td>
-                            <td>{{ $sp->sisa_stok == floor($sp->sisa_stok) ? number_format($sp->sisa_stok, 0, ',', '.') : number_format($sp->sisa_stok, 2, ',', '.') }}</td>
-                            <td>{{ $sp->harga_satuan ? 'Rp ' . number_format($sp->harga_satuan, 0, ',', '.') : '-' }}</td>
-                            <td>{{ $sp->grade_display ?? $sp->grade_kualitas ?? '-' }}</td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn btn-info btn-action" onclick="viewDetails({{ $sp->id }}, 'stok')" title="Lihat Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    @if(Auth::check() && Auth::user()->role === 'super_admin')
-                                    <button class="btn btn-warning btn-action" onclick="window.location.href='{{ route('backoffice.produk.stok.edit', $sp->id) }}'" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-danger btn-action" data-delete-url="{{ route('backoffice.produk.stok.destroy', $sp->id) }}" onclick="deleteStok(this)" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    @endif
+                    @forelse($activeProduks ?? collect() as $produk)
+                        <tr data-search="{{ strtolower($produk->nama_produk.' '.$produk->kategori.' '.$produk->satuan) }}">
+                            <td data-sort-value="{{ $loop->iteration }}" class="bolopa-align-center bolopa-align-middle">
+                                {{ $loop->iteration }}
+                            </td>
+                            <td class="bolopa-align-center bolopa-align-middle">
+                            @php
+                                $imagePath = $produk->foto ? public_path('bolopa/pokoknyayangadapadasistem/FotoProduk/' . $produk->foto) : null;
+                                $imageExists = $imagePath && file_exists($imagePath);
+                            @endphp
+                            @if($produk->foto && $imageExists)
+                                <img src="{{ asset('bolopa/pokoknyayangadapadasistem/FotoProduk/' . $produk->foto) }}"
+                                     alt="{{ $produk->nama_produk }}"
+                                     style="width: 50px; height: 50px; object-fit: cover; border-radius: 4px; border: 1px solid #ddd; vertical-align: middle;">
+                            @else
+                                <div style="width: 50px; height: 50px; background: #6c757d; border-radius: 4px; border: 1px solid #ddd; display: inline-flex; align-items: center; justify-content: center; color: white; font-weight: bold; font-size: 18px; vertical-align: middle;">
+                                    {{ Str::upper(Str::substr($produk->nama_produk, 0, 1)) }}
                                 </div>
+                            @endif
+                        </td>
+                            <td data-sort-value="{{ strtolower($produk->nama_produk) }}" class="bolopa-align-left bolopa-align-middle">
+                                <span class="bolopa-tabel-status-indicator bolopa-tabel-status-active"></span>
+                                {{ $produk->nama_produk }}
+                            </td>
+                            <td data-sort-value="{{ strtolower($produk->kategori) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->kategori }}</td>
+                            <td data-sort-value="{{ strtolower($produk->satuan) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->satuan }}</td>
+                            <td data-sort-value="{{ $produk->harga_jual }}" class="bolopa-align-right bolopa-align-middle">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
+                            <td class="bolopa-tabel-actions bolopa-align-center bolopa-align-middle" style="display: flex; align-items: center; justify-content: center; padding: 15px 12px;">
+                                <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action"
+                                    onclick="viewMasterProductDetails({{ $produk->id }})"
+                                    aria-label="Lihat detail {{ $produk->nama_produk }}">
+                                    <x-admin.icon name="view" alt="Detail" size="16" />
+                                </button>
+                                @if(Auth::check() && Auth::user()->role === 'super_admin')
+                                <button class="bolopa-tabel-btn bolopa-tabel-btn-warning bolopa-tabel-btn-action"
+                                    onclick="window.location.href='{{ route('backoffice.master-produk.edit', $produk->id) }}'"
+                                    aria-label="Edit {{ $produk->nama_produk }}">
+                                    <x-admin.icon name="edit" alt="Edit" size="16" />
+                                </button>
+                                @endif
                             </td>
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" style="text-align: center; padding: 40px; color: #6c757d;">
-                                <i class="fas fa-box-open" style="font-size:3rem; margin-bottom:10px;"></i><br>
-                                Belum ada data stok produk
+                            <td colspan="7" class="bolopa-align-center bolopa-align-middle" style="padding:40px;">
+                                <x-admin.icon name="product" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
+                                <br>
+                                Tidak ada data produk
                             </td>
                         </tr>
                     @endforelse
                 </tbody>
-            @else
-                <thead>
-                    <tr>
-                        <th data-sort="no" style="width: 6%;">No
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
-                            </span>
-                        </th>
-                        <th data-sort="tanggal" style="width: 12%;">Tanggal
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
-                            </span>
-                        </th>
-                        <th data-sort="nama" style="width: 30%;">Nama
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
-                            </span>
-                        </th>
-                        <th data-sort="jumlah" style="width: 18%;">Jumlah
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
-                            </span>
-                        </th>
-                        <th data-sort="grade" style="width: 12%;">Grade
-                            <span class="sort-icons">
-                                <i class="fas fa-sort-up sort-up"></i>
-                                <i class="fas fa-sort-down sort-down"></i>
-                            </span>
-                        </th>
-                        <th style="width: 22%;">Aksi</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    @forelse($produksis ?? collect() as $p)
+            </table>
+        @else
+            <table class="table" id="dataTable">
+                @if($show === 'stok')
+                    <thead>
                         <tr>
-                            <td>{{ $loop->iteration }}</td>
-                            <td>{{ optional($p->tanggal_produksi)->format('d/m/Y') ?? '-' }}</td>
-                            <td>{{ optional($p->produk)->nama_produk ?? '-' }}</td>
-                            <td>{{ ($p->jumlah_hasil ?? 0) == floor(($p->jumlah_hasil ?? 0)) ? number_format($p->jumlah_hasil ?? 0, 0, ',', '.') : number_format($p->jumlah_hasil ?? 0, 2, ',', '.') }}</td>
-                            <td>{{ $p->grade_display ?? $p->grade_kualitas ?? '-' }}</td>
-                            <td>
-                                <div class="actions">
-                                    <button class="btn btn-info btn-action" onclick="viewDetails({{ $p->id }}, 'produksi')" title="Lihat Detail">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    @if(Auth::check() && Auth::user()->role === 'super_admin')
-                                    <button class="btn btn-warning btn-action" onclick="window.location.href='{{ route('backoffice.produksi.edit', $p->id) }}'" title="Edit">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-danger btn-action" data-delete-url="{{ route('backoffice.produksi.destroy', $p->id) }}" onclick="deleteProduksi(this)" title="Hapus">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                    @endif
-                                </div>
-                            </td>
+                            <th data-sort="no" class="bolopa-align-center bolopa-align-middle bolopa-nowrap">No
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="tanggal" class="bolopa-align-center bolopa-align-middle">Tanggal
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="nama" class="bolopa-align-left bolopa-align-middle">Nama
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="jumlah" class="bolopa-align-right bolopa-align-middle">Jumlah
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="harga" class="bolopa-align-right bolopa-align-middle">Harga
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="grade" class="bolopa-align-center bolopa-align-middle">Grade
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th class="bolopa-align-center bolopa-align-middle">Aksi</th>
                         </tr>
-                    @empty
+                    </thead>
+                    <tbody>
+                        @forelse($stokProduks ?? collect() as $sp)
+                            <tr data-stok-id="{{ $sp->id }}">
+                                <td class="bolopa-align-center bolopa-align-middle">{{ $loop->iteration }}</td>
+                                <td class="bolopa-align-center bolopa-align-middle">{{ optional($sp->tanggal)->format('d/m/Y') ?? '-' }}</td>
+                                <td class="bolopa-align-left bolopa-align-middle">{{ optional($sp->produk)->nama_produk ?? '-' }}</td>
+                                <td class="bolopa-align-right bolopa-align-middle">{{ $sp->sisa_stok == floor($sp->sisa_stok) ? number_format($sp->sisa_stok, 0, ',', '.') : number_format($sp->sisa_stok, 2, ',', '.') }}</td>
+                                <td class="bolopa-align-right bolopa-align-middle">{{ $sp->harga_satuan ? 'Rp ' . number_format($sp->harga_satuan, 0, ',', '.') : '-' }}</td>
+                                <td class="bolopa-align-center bolopa-align-middle">{{ $sp->grade_display ?? $sp->grade_kualitas ?? '-' }}</td>
+                                <td class="bolopa-align-center bolopa-align-middle">
+                                    <div class="actions">
+                                        <button class="btn btn-info btn-action" onclick="viewDetails({{ $sp->id }}, 'stok')" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        @if(Auth::check() && Auth::user()->role === 'super_admin')
+                                        <button class="btn btn-warning btn-action" onclick="window.location.href='{{ route('backoffice.produk.stok.edit', $sp->id) }}'" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-action" data-delete-url="{{ route('backoffice.produk.stok.destroy', $sp->id) }}" onclick="deleteStok(this)" title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="7" class="bolopa-align-center bolopa-align-middle" style="padding: 40px; color: #6c757d;">
+                                    <i class="fas fa-box-open" style="font-size:3rem; margin-bottom:10px;"></i><br>
+                                    Belum ada data stok produk
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                @else
+                    <thead>
                         <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #6c757d;">
-                                <i class="fas fa-box-open" style="font-size:3rem; margin-bottom:10px;"></i><br>
-                                Belum ada data produksi
-                            </td>
+                            <th data-sort="no" class="bolopa-align-center bolopa-align-middle bolopa-nowrap">No
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="tanggal" class="bolopa-align-center bolopa-align-middle">Tanggal
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="nama" class="bolopa-align-left bolopa-align-middle">Nama
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="jumlah" class="bolopa-align-right bolopa-align-middle">Jumlah
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th data-sort="grade" class="bolopa-align-center bolopa-align-middle">Grade
+                                <span class="bolopa-tabel-sort-wrap">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                    <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                                </span>
+                            </th>
+                            <th class="bolopa-align-center bolopa-align-middle">Aksi</th>
                         </tr>
-                    @endforelse
-                </tbody>
-            @endif
-        </table>
-    </div>
-</div>
+                    </thead>
+                    <tbody>
+                        @forelse($produksis ?? collect() as $p)
+                            <tr>
+                                <td class="bolopa-align-center bolopa-align-middle">{{ $loop->iteration }}</td>
+                                <td class="bolopa-align-center bolopa-align-middle">{{ optional($p->tanggal_produksi)->format('d/m/Y') ?? '-' }}</td>
+                                <td class="bolopa-align-left bolopa-align-middle">{{ optional($p->produk)->nama_produk ?? '-' }}</td>
+                                <td class="bolopa-align-right bolopa-align-middle">{{ ($p->jumlah_hasil ?? 0) == floor(($p->jumlah_hasil ?? 0)) ? number_format($p->jumlah_hasil ?? 0, 0, ',', '.') : number_format($p->jumlah_hasil ?? 0, 2, ',', '.') }}</td>
+                                <td class="bolopa-align-center bolopa-align-middle">{{ $p->grade_display ?? $p->grade_kualitas ?? '-' }}</td>
+                                <td class="bolopa-align-center bolopa-align-middle">
+                                    <div class="actions">
+                                        <button class="btn btn-info btn-action" onclick="viewDetails({{ $p->id }}, 'produksi')" title="Lihat Detail">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        @if(Auth::check() && Auth::user()->role === 'super_admin')
+                                        <button class="btn btn-warning btn-action" onclick="window.location.href='{{ route('backoffice.produksi.edit', $p->id) }}'" title="Edit">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+                                        <button class="btn btn-danger btn-action" data-delete-url="{{ route('backoffice.produksi.destroy', $p->id) }}" onclick="deleteProduksi(this)" title="Hapus">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                        @endif
+                                    </div>
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="bolopa-align-center bolopa-align-middle" style="padding: 40px; color: #6c757d;">
+                                    <i class="fas fa-box-open" style="font-size:3rem; margin-bottom:10px;"></i><br>
+                                    Belum ada data produksi
+                                </td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                @endif
+            </table>
+        @endif
+    </x-slot>
+</x-admin.data-table>
+
+<div class="bolopa-tabel-toast" id="produkOperasionalToast"></div>
 
 @push('scripts')
 <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script src="{{ asset('bolopa/back/js/bolopa-export-print.js') }}"></script>
 <script>
     // Simple client-side search/filter for table rows
     (function(){
@@ -677,6 +345,29 @@
             if(searchInput) searchInput.value = '';
             filterTable();
         }
+
+        const notify = function (message, type) {
+            showToast(message, type);
+        };
+
+        window.initBolopaExportPrint({
+            tableSelector: '#dataTable',
+            exportButtonSelector: '#btnExport',
+            printButtonSelector: '#btnPrint',
+            filenamePrefix: 'produk-operasional-export',
+            printedBy: '{{ auth()->user()->name ?? 'Administrator' }}',
+            printBrandTitle: 'Cocofarma — Produk Operasional',
+            printBrandSubtitle: 'Laporan data produk operasional',
+            printNotes: 'Catatan: Kolom aksi dihilangkan untuk keperluan cetak. Data mencakup produk master, stok, dan produksi.',
+            totalLabel: 'Total Data',
+            notify: notify,
+            messages: {
+                exportSuccess: 'Data produk operasional berhasil diekspor.',
+                exportError: 'Gagal export data produk operasional.',
+                printInfo: 'Membuka tampilan print...',
+                printError: 'Gagal membuka tampilan print.'
+            }
+        });
 
         // Initial run
         document.addEventListener('DOMContentLoaded', filterTable);
@@ -802,10 +493,43 @@
             confirmButtonText: 'Tutup'
         });
     }
+
+    function viewMasterProductDetails(id) {
+        // For now, redirect to master produk show page
+        // In future, could implement AJAX modal
+        window.location.href = `/backoffice/master-produk/${id}`;
+    }
+
+    // Helper function to show toast
+    function showToast(message, type = 'info') {
+        const toast = document.getElementById('produkOperasionalToast');
+        if (toast) {
+            toast.textContent = message;
+            toast.className = `bolopa-tabel-toast ${type}`;
+            toast.style.display = 'block';
+            setTimeout(() => {
+                toast.style.display = 'none';
+            }, 3000);
+        }
+    }
 </script>
 @endpush
 
 @endsection
+
+@push('styles')
+<style>
+    /* Table column alignments sesuai master produk */
+    #dataTable th:nth-child(1), #dataTable td:nth-child(1) { text-align: center; } /* No */
+    #dataTable th:nth-child(2), #dataTable td:nth-child(2) { text-align: center; } /* Gambar */
+    #dataTable th:nth-child(3), #dataTable td:nth-child(3) { text-align: left; } /* Nama */
+    #dataTable th:nth-child(4), #dataTable td:nth-child(4) { text-align: left; } /* Kategori */
+    #dataTable th:nth-child(5), #dataTable td:nth-child(5) { text-align: left; } /* Satuan */
+    #dataTable th:nth-child(6), #dataTable td:nth-child(6) { text-align: right; } /* Harga */
+    #dataTable th:nth-child(7), #dataTable td:nth-child(7) { text-align: center; } /* Aksi */
+
+</style>
+@endpush
 
 
 

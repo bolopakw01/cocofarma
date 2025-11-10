@@ -208,6 +208,7 @@
 
 @push('scripts')
 <script src="{{ asset('bolopa/back/js/bolopa-table.js') }}"></script>
+<script src="{{ asset('bolopa/back/js/bolopa-export-print.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const tableApi = window.initBolopaTable({
@@ -234,19 +235,32 @@
             });
         }
 
-        const exportBtn = document.getElementById('btnExport');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function () {
-                tableApi && tableApi.showToast('Fitur export akan segera tersedia.', 'info');
-            });
-        }
+        const notify = function (message, type) {
+            if (tableApi && typeof tableApi.showToast === 'function') {
+                tableApi.showToast(message, type);
+            } else if (type === 'error') {
+                console.error(message);
+            }
+        };
 
-        const printBtn = document.getElementById('btnPrint');
-        if (printBtn) {
-            printBtn.addEventListener('click', function () {
-                tableApi && tableApi.showToast('Fitur print akan segera tersedia.', 'info');
-            });
-        }
+        window.initBolopaExportPrint({
+            tableSelector: '#dataTable',
+            exportButtonSelector: '#btnExport',
+            printButtonSelector: '#btnPrint',
+            filenamePrefix: 'master-bahan',
+            printedBy: '{{ auth()->user()->name ?? 'Administrator' }}',
+            printBrandTitle: 'Cocofarma — Master Bahan',
+            printBrandSubtitle: 'Daftar master bahan baku',
+            printNotes: 'Catatan: Kolom aksi dihilangkan pada hasil cetak untuk menjaga kerapian laporan.',
+            totalLabel: 'Total Bahan',
+            notify: notify,
+            messages: {
+                exportSuccess: 'Data master bahan berhasil diekspor.',
+                exportError: 'Gagal export data master bahan.',
+                printInfo: 'Membuka tampilan print...',
+                printError: 'Gagal membuka tampilan print.'
+            }
+        });
     });
 
     function submitDeleteForm(url) {
@@ -273,22 +287,6 @@
         form.submit();
     }
 
-    function confirmDelete(id, nama, url) {
-        Swal.fire({
-            title: 'Hapus Bahan Baku',
-            html: `Apakah Anda yakin ingin menghapus bahan <strong>${nama}</strong>?<br><small style="color:#6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#e63946',
-            cancelButtonColor: '#4361ee',
-            confirmButtonText: 'Ya, Hapus',
-            cancelButtonText: 'Batal'
-        }).then((result) => {
-            if (result.isConfirmed) {
-                submitDeleteForm(url);
-            }
-        });
-    }
     function confirmDelete(id, nama, url) {
         Swal.fire({
             title: 'Hapus Bahan Baku',

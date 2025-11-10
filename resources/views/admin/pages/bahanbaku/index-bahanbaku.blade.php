@@ -218,6 +218,7 @@
 
 @push('scripts')
 <script src="{{ asset('bolopa/back/js/bolopa-table.js') }}"></script>
+<script src="{{ asset('bolopa/back/js/bolopa-export-print.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const tableApi = window.initBolopaTable({
@@ -244,19 +245,32 @@
             });
         }
 
-        const exportBtn = document.getElementById('btnExport');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function () {
-                tableApi && tableApi.showToast('Fitur export akan segera tersedia.', 'info');
-            });
-        }
+        const notify = function (message, type) {
+            if (tableApi && typeof tableApi.showToast === 'function') {
+                tableApi.showToast(message, type);
+            } else if (type === 'error') {
+                console.error(message);
+            }
+        };
 
-        const printBtn = document.getElementById('btnPrint');
-        if (printBtn) {
-            printBtn.addEventListener('click', function () {
-                tableApi && tableApi.showToast('Fitur print akan segera tersedia.', 'info');
-            });
-        }
+        window.initBolopaExportPrint({
+            tableSelector: '#dataTable',
+            exportButtonSelector: '#btnExport',
+            printButtonSelector: '#btnPrint',
+            filenamePrefix: 'bahan-baku',
+            printedBy: '{{ auth()->user()->name ?? 'Administrator' }}',
+            printBrandTitle: 'Cocofarma — Bahan Baku',
+            printBrandSubtitle: 'Daftar stok bahan baku operasional',
+            printNotes: 'Catatan: Kolom aksi dihilangkan saat cetak untuk menjaga tata letak laporan.',
+            totalLabel: 'Total Bahan Baku',
+            notify: notify,
+            messages: {
+                exportSuccess: 'Data bahan baku berhasil diekspor.',
+                exportError: 'Gagal export data bahan baku.',
+                printInfo: 'Membuka tampilan print...',
+                printError: 'Gagal membuka tampilan print.'
+            }
+        });
     });
 
     function submitDeleteForm(url) {

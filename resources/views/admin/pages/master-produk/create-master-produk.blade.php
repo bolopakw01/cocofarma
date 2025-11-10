@@ -291,6 +291,24 @@
         color: var(--gray);
     }
 
+    .file-error-alert {
+        background: rgba(230, 57, 70, 0.1);
+        border: 1px solid rgba(230, 57, 70, 0.3);
+        border-radius: var(--border-radius);
+        padding: 10px 12px;
+        margin-top: 8px;
+        font-size: 0.9rem;
+        color: var(--danger);
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+    }
+
+    .file-error-alert i {
+        margin-top: 1px;
+        flex-shrink: 0;
+    }
+
     .remove-file {
         background: var(--danger);
         color: white;
@@ -537,6 +555,7 @@
                         <i class="fas fa-times"></i>
                     </button>
                 </div>
+                <div id="fileError" class="text-danger" style="display:none; margin-top:8px;"></div>
                 @error('foto')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
@@ -803,17 +822,29 @@ function initializeFileUpload() {
     }
 
     function handleFileSelect(file) {
+        const fileError = document.getElementById('fileError');
+
+        // Clear previous error messages
+        fileError.style.display = 'none';
+        fileError.textContent = '';
+        fileError.className = 'text-danger';
+
         if (!file) return;
 
         // Validate file type
         if (!file.type.startsWith('image/')) {
-            alert('Harap pilih file gambar yang valid.');
+            fileError.innerHTML = '<i class="fas fa-exclamation-triangle"></i> File yang dipilih bukan gambar. Harap pilih file gambar yang valid (JPG, PNG, GIF, dll).';
+            fileError.className = 'file-error-alert';
+            fileError.style.display = 'flex';
             return;
         }
 
         // Validate file size: reject above server limit
         if (file.size > rejectThreshold) {
-            alert('Ukuran file maksimal 2MB. Gambar terlalu besar untuk diunggah.');
+            const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+            fileError.innerHTML = `<i class="fas fa-exclamation-triangle"></i> Ukuran file ${sizeMb} MB terlalu besar. Maksimal ukuran file adalah 2MB.`;
+            fileError.className = 'file-error-alert';
+            fileError.style.display = 'flex';
             return;
         }
 
@@ -830,6 +861,12 @@ function initializeFileUpload() {
         const reader = new FileReader();
         reader.onload = function(e) {
             const dataUrl = e.target.result;
+
+            // Clear any previous error messages when file is successfully loaded
+            fileError.style.display = 'none';
+            fileError.textContent = '';
+            fileError.className = 'text-danger';
+
             // If Cropper available, open modal and let user crop
             if (typeof Cropper !== 'undefined') {
                 openCropper(dataUrl);
@@ -847,13 +884,25 @@ function initializeFileUpload() {
         reader.readAsDataURL(file);
     }
 
-    // when removing file, also clear hidden cropped input
+    // when removing file, also clear hidden cropped input and error messages
     const originalRemoveFile = window.removeFile;
     window.removeFile = function() {
         fileInput.value = '';
         fotoCroppedInput.value = '';
         filePreview.style.display = 'none';
         fileUploadLabel.style.display = 'flex';
+
+        // Clear error messages
+        const fileError = document.getElementById('fileError');
+        fileError.style.display = 'none';
+        fileError.textContent = '';
+        fileError.className = 'text-danger';
+
+        const fileWarning = document.getElementById('fileWarning');
+        if (fileWarning) {
+            fileWarning.style.display = 'none';
+            fileWarning.textContent = '';
+        }
     };
 }
 

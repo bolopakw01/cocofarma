@@ -313,13 +313,34 @@ html, body {
 }
 
 .bolopa-tabel-left-controls,
-.bolopa-tabel-right-controls,
-.bolopa-tabel-controls-left,
-.bolopa-tabel-controls-right{
+.bolopa-tabel-controls-left{
   display: flex;
   align-items: center;
   gap: 16px;
   flex-wrap: wrap;
+}
+
+.bolopa-tabel-right-controls,
+.bolopa-tabel-controls-right{
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: nowrap;
+  justify-content: flex-start;
+}
+
+.bolopa-tabel-right-controls > *{
+  flex: 0 0 auto;
+}
+
+.bolopa-tabel-right-controls .bolopa-tabel-search-box{
+  flex: 1 1 220px;
+  min-width: 200px;
+}
+
+.bolopa-tabel-right-controls .bolopa-tabel-btn,
+.bolopa-tabel-controls-right .bolopa-tabel-btn{
+  white-space: nowrap;
 }
 
 .bolopa-tabel-entries-select,
@@ -453,6 +474,30 @@ html, body {
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
   text-decoration: none;
   color: inherit;
+}
+
+/* ------------------------------------------------------------------------- */
+/* Table alignment utilities                                                 */
+/* ------------------------------------------------------------------------- */
+
+.bolopa-align-left{
+  text-align: left !important;
+}
+
+.bolopa-align-right{
+  text-align: right !important;
+}
+
+.bolopa-align-center{
+  text-align: center !important;
+}
+
+.bolopa-align-middle{
+  vertical-align: middle !important;
+}
+
+.bolopa-nowrap{
+  white-space: nowrap !important;
 }
 
 .bolopa-tabel-btn:focus-visible,
@@ -692,11 +737,11 @@ html, body {
 table.bolopa-tabel{
   width: 100%;
   margin: 0;
-  border-collapse: separate;
-  border-spacing: 0;
+  border-collapse: collapse;
   table-layout: auto;
   min-width: 100%;
   background: transparent;
+  border: 1px solid #dde3ec;
 }
 
 .bolopa-tabel-table-responsive th,
@@ -705,10 +750,11 @@ table.bolopa-tabel th,
 table.bolopa-tabel td{
   padding: 14px 16px;
   text-align: left;
-  border-bottom: 1px solid #e9ecef;
+  border: 1px solid #dde3ec;
   white-space: nowrap;
   vertical-align: middle;
   min-width: 100px;
+  background-color: #fff;
 }
 
 /* Allow text wrapping for better readability in certain columns */
@@ -739,12 +785,31 @@ table.bolopa-tabel th{
   user-select: none;
   padding-right: 48px;
   z-index: 5;
-  border-right: 1px solid #dee2e6;
+  /* Prevent text overflow to sort icon area */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bolopa-tabel-table-responsive th[data-sort],
+table.bolopa-tabel th[data-sort]{
+  position: relative;
+  /* Ensure text doesn't overflow into sort icon area */
+  padding-right: 36px;
+}
+
+/* Ensure text content doesn't overlap with sort icons */
+.bolopa-tabel-table-responsive th[data-sort] > *:not(.bolopa-tabel-sort-wrap):not(.bolopa-tabel-sort-icons),
+table.bolopa-tabel th[data-sort] > *:not(.bolopa-tabel-sort-wrap):not(.bolopa-tabel-sort-icons){
+  margin-right: 24px;
+  display: inline-block;
+  max-width: calc(100% - 24px);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .bolopa-tabel-table-responsive th:last-child{
   padding-right: 16px;
-  border-right: none;
 }
 
 .bolopa-tabel-table-responsive th:hover{
@@ -763,19 +828,20 @@ table.bolopa-tabel th{
 }
 
 .bolopa-tabel-table-responsive th[data-sort="no"] .bolopa-tabel-sort-wrap{
-  right: 6px;
+  right: 4px;
 }
 
 .bolopa-tabel-sort-wrap,
 .bolopa-tabel-sort-icons{
   position: absolute;
-  right: 12px;
+  right: 8px;
   top: 50%;
   transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   display: inline-block;
   pointer-events: none;
+  z-index: 10;
 }
 
 .bolopa-tabel-sort-wrap img.bolopa-tabel-sort-icon,
@@ -835,11 +901,6 @@ table.bolopa-tabel tbody td{
   color: #495057;
   font-weight: 400;
   line-height: 1.5;
-  border-right: 1px solid #f1f3f5;
-}
-
-.bolopa-tabel-table-responsive tbody td:last-child{
-  border-right: none;
 }
 
 .bolopa-tabel-table-responsive tbody td:first-child{
@@ -1232,13 +1293,21 @@ table.bolopa-tabel tbody td{
   }
 
   .bolopa-tabel-left-controls,
-  .bolopa-tabel-right-controls{
+  .bolopa-tabel-right-controls,
+  .bolopa-tabel-controls-left,
+  .bolopa-tabel-controls-right{
     width: 100%;
     flex-wrap: wrap;
+    justify-content: flex-start;
   }
 
   .bolopa-tabel-search-box{
     width: 100%;
+  }
+
+  .bolopa-tabel-right-controls .bolopa-tabel-btn,
+  .bolopa-tabel-controls-right .bolopa-tabel-btn{
+    flex: 1 1 auto;
   }
 
   .bolopa-tabel-search-box input{

@@ -60,65 +60,65 @@
         <table class="table" id="dataTable">
             <thead>
                 <tr>
-                    <th data-sort="no">No
+                    <th data-sort="no" class="bolopa-align-center bolopa-align-middle bolopa-nowrap">No
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th>Gambar</th>
-                    <th data-sort="kode">Kode Produk
+                    <th class="bolopa-align-center bolopa-align-middle">Gambar</th>
+                    <th data-sort="kode" class="bolopa-align-left bolopa-align-middle">Kode Produk
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th data-sort="nama">Nama Produk
+                    <th data-sort="nama" class="bolopa-align-left bolopa-align-middle">Nama Produk
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th data-sort="kategori">Kategori
+                    <th data-sort="kategori" class="bolopa-align-left bolopa-align-middle">Kategori
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th data-sort="satuan">Satuan
+                    <th data-sort="satuan" class="bolopa-align-left bolopa-align-middle">Satuan
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th data-sort="harga">Harga Jual
+                    <th data-sort="harga" class="bolopa-align-right bolopa-align-middle">Harga
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th data-sort="minimum">Min Stok
+                    <th data-sort="minimum" class="bolopa-align-right bolopa-align-middle">Min Stok
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th data-sort="status">Status
+                    <th data-sort="status" class="bolopa-align-center bolopa-align-middle">Status
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
-                    <th>Aksi</th>
+                    <th class="bolopa-align-center bolopa-align-middle">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($produks ?? [] as $index => $produk)
                     <tr data-search="{{ strtolower($produk->kode_produk.' '.$produk->nama_produk.' '.$produk->kategori.' '.$produk->satuan) }}">
-                        <td data-sort-value="{{ ($produks->currentPage() - 1) * $produks->perPage() + $index + 1 }}" style="text-align: center;">
+                        <td data-sort-value="{{ ($produks->currentPage() - 1) * $produks->perPage() + $index + 1 }}" class="bolopa-align-center bolopa-align-middle">
                             {{ ($produks->currentPage() - 1) * $produks->perPage() + $index + 1 }}
                         </td>
-                        <td style="text-align: center; vertical-align: middle;">
+                        <td class="bolopa-align-center bolopa-align-middle">
                             @php
                                 $imagePath = $produk->foto ? public_path('bolopa/pokoknyayangadapadasistem/FotoProduk/' . $produk->foto) : null;
                                 $imageExists = $imagePath && file_exists($imagePath);
@@ -133,21 +133,21 @@
                                 </div>
                             @endif
                         </td>
-                        <td data-sort-value="{{ strtolower($produk->kode_produk) }}" style="text-align: left;">{{ $produk->kode_produk }}</td>
-                        <td data-sort-value="{{ strtolower($produk->nama_produk) }}" style="text-align: left;">
+                        <td data-sort-value="{{ strtolower($produk->kode_produk) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->kode_produk }}</td>
+                        <td data-sort-value="{{ strtolower($produk->nama_produk) }}" class="bolopa-align-left bolopa-align-middle">
                             <span class="bolopa-tabel-status-indicator {{ $produk->status ? 'bolopa-tabel-status-active' : 'bolopa-tabel-status-inactive' }}"></span>
                             {{ $produk->nama_produk }}
                         </td>
-                        <td data-sort-value="{{ strtolower($produk->kategori) }}" style="text-align: left;">{{ $produk->kategori }}</td>
-                        <td data-sort-value="{{ strtolower($produk->satuan) }}" style="text-align: left;">{{ $produk->satuan }}</td>
-                        <td data-sort-value="{{ $produk->harga_jual }}" style="text-align: right;">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
-                        <td data-sort-value="{{ $produk->minimum_stok }}" style="text-align: right;">{{ $produk->minimum_stok }}</td>
-                        <td data-sort-value="{{ $produk->status ? 1 : 0 }}" style="text-align: center;">
-                            <span class="bolopa-tabel-badge {{ $produk->status ? 'bolopa-tabel-badge-success' : 'bolopa-tabel-badge-danger' }}">
-                                {{ $produk->status ? 'Aktif' : 'Non-Aktif' }}
+                        <td data-sort-value="{{ strtolower($produk->kategori) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->kategori }}</td>
+                        <td data-sort-value="{{ strtolower($produk->satuan) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->satuan }}</td>
+                        <td data-sort-value="{{ $produk->harga_jual }}" class="bolopa-align-right bolopa-align-middle">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
+                        <td data-sort-value="{{ $produk->minimum_stok }}" class="bolopa-align-right bolopa-align-middle">{{ $produk->minimum_stok }}</td>
+                        <td data-sort-value="{{ $produk->status === 'aktif' ? 1 : 0 }}" class="bolopa-align-center bolopa-align-middle">
+                            <span class="bolopa-tabel-badge {{ $produk->status === 'aktif' ? 'bolopa-tabel-badge-success' : 'bolopa-tabel-badge-danger' }}">
+                                {{ $produk->status === 'aktif' ? 'Aktif' : 'Non-Aktif' }}
                             </span>
                         </td>
-                        <td class="bolopa-tabel-actions" style="display: flex; align-items: center; justify-content: center; padding: 15px 12px;">
+                        <td class="bolopa-tabel-actions bolopa-align-center bolopa-align-middle" style="display: flex; align-items: center; justify-content: center; padding: 15px 12px;">
                             <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action"
                                 data-produk-id="{{ $produk->id }}"
                                 data-produk-kode="{{ $produk->kode_produk }}"
@@ -159,7 +159,7 @@
                                 data-produk-harga="{{ $produk->harga_jual }}"
                                 data-produk-stok="{{ $produk->stok }}"
                                 data-produk-minimum="{{ $produk->minimum_stok }}"
-                                data-produk-status="{{ $produk->status ? 'true' : 'false' }}"
+                                data-produk-status="{{ $produk->status === 'aktif' ? 'true' : 'false' }}"
                                 onclick="showDetailFromData(this)"
                                 aria-label="Lihat detail {{ $produk->nama_produk }}">
                                 <x-admin.icon name="view" alt="Detail" size="16" />
@@ -176,7 +176,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" style="text-align:center; padding:40px;">
+                        <td colspan="10" class="bolopa-align-center bolopa-align-middle" style="padding:40px;">
                             <x-admin.icon name="product" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
                             <br>
                             Tidak ada data produk
@@ -272,33 +272,11 @@
     #dataTable th:nth-child(9), #dataTable td:nth-child(9) { text-align: center; } /* Status */
     #dataTable th:nth-child(10), #dataTable td:nth-child(10) { text-align: center; } /* Aksi */
 
-    /* Fix cross-browser button alignment */
-    .bolopa-tabel-right-controls {
-        display: flex !important;
-        align-items: center !important;
-        gap: 8px !important;
-        flex-wrap: nowrap !important;
-    }
-
-    .bolopa-tabel-right-controls .bolopa-tabel-btn {
-        flex-shrink: 0 !important;
-        margin: 0 !important;
-        box-sizing: border-box !important;
-    }
-
-    /* Ensure consistent button heights */
-    .bolopa-tabel-btn {
-        height: 36px !important;
-        line-height: 1 !important;
-        display: inline-flex !important;
-        align-items: center !important;
-        justify-content: center !important;
-        white-space: nowrap !important;
-    }
 </style>
 @endpush
 @push('scripts')
 <script src="{{ asset('bolopa/back/js/bolopa-table.js') }}"></script>
+<script src="{{ asset('bolopa/back/js/bolopa-export-print.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const tableApi = window.initBolopaTable({
@@ -325,19 +303,32 @@
             });
         }
 
-        const exportBtn = document.getElementById('btnExport');
-        if (exportBtn) {
-            exportBtn.addEventListener('click', function () {
-                tableApi && tableApi.showToast('Fitur export akan segera tersedia.', 'info');
-            });
-        }
+        const notify = function (message, type) {
+            if (tableApi && typeof tableApi.showToast === 'function') {
+                tableApi.showToast(message, type);
+            } else if (type === 'error') {
+                console.error(message);
+            }
+        };
 
-        const printBtn = document.getElementById('btnPrint');
-        if (printBtn) {
-            printBtn.addEventListener('click', function () {
-                tableApi && tableApi.showToast('Fitur print akan segera tersedia.', 'info');
-            });
-        }
+        window.initBolopaExportPrint({
+            tableSelector: '#dataTable',
+            exportButtonSelector: '#btnExport',
+            printButtonSelector: '#btnPrint',
+            filenamePrefix: 'master-produk',
+            printedBy: '{{ auth()->user()->name ?? 'Administrator' }}',
+            printBrandTitle: 'Cocofarma — Master Produk',
+            printBrandSubtitle: 'Sistem Manajemen Produk',
+            printNotes: 'Catatan: Kolom aksi dihilangkan untuk keperluan cetak. Gambar ditampilkan sebagai placeholder agar tetap konsisten.',
+            totalLabel: 'Total Produk',
+            notify: notify,
+            messages: {
+                exportSuccess: 'Data master produk berhasil diekspor.',
+                exportError: 'Gagal export data master produk.',
+                printInfo: 'Membuka tampilan print...',
+                printError: 'Gagal membuka tampilan print.'
+            }
+        });
     });
 
     function submitDeleteForm(url) {
@@ -399,6 +390,7 @@
 
     function showDetail(id, kode, nama, deskripsi, fotoUrl, kategori, satuan, harga, stok, minimum, status) {
         const statusLabel = status ? 'Aktif' : 'Non-Aktif';
+        const statusBadgeClass = status ? 'badge-success' : 'badge-danger';
         const statusDotClass = status ? 'dot-on' : 'dot-off';
 
         // Check if image file actually exists
@@ -426,12 +418,13 @@
                 .swal-card-header {display:flex;align-items:center;justify-content:space-between;padding:20px 24px;border-bottom:1px solid #eef2f7;}
                 .swal-card-header h1 {font-size:18px;margin:0;}
                 .badges {display:flex;gap:8px;align-items:center;}
-                .badge {font-size:13px;padding:6px 10px;border-radius:999px;color:#fff;display:inline-flex;align-items:center;gap:8px;}
-                .badge.status {background:rgba(34,197,94,0.12);color:var(--success);border:1px solid rgba(34,197,94,0.18);}
+                .badge {font-size:13px;padding:6px 10px;border-radius:12px;color:#fff;display:inline-flex;align-items:center;gap:8px;font-weight:600;}
+                .badge-success {background:#d4edda;color:#155724;border:1px solid #c3e6cb;}
+                .badge-danger {background:#f8d7da;color:#721c24;border:1px solid #f5c6cb;}
                 .badge .dot {width:10px;height:10px;border-radius:50%;display:inline-block;flex:0 0 auto;}
-                .badge .dot.dot-on {background:#34d399;box-shadow:0 0 8px rgba(52,211,153,0.45);animation:badge-pulse 2s infinite;}
-                .badge .dot.dot-off {background:#94a3b8;opacity:0.7;box-shadow:none;}
-                @keyframes badge-pulse {0%{transform:scale(.9);box-shadow:0 0 0 0 rgba(52,211,153,0.45)}70%{transform:scale(1);box-shadow:0 0 0 8px rgba(52,211,153,0)}100%{transform:scale(.9);box-shadow:0 0 0 0 rgba(52,211,153,0)}}
+                .badge .dot.dot-on {background:#28a745;box-shadow:0 0 8px rgba(40,167,69,0.45);animation:badge-pulse 2s infinite;}
+                .badge .dot.dot-off {background:#6c757d;opacity:0.7;box-shadow:none;}
+                @keyframes badge-pulse {0%{transform:scale(.9);box-shadow:0 0 0 0 rgba(40,167,69,0.45)}70%{transform:scale(1);box-shadow:0 0 0 8px rgba(40,167,69,0)}100%{transform:scale(.9);box-shadow:0 0 0 0 rgba(40,167,69,0)}}
                 .swal-card-body {display:grid;grid-template-columns:280px 1fr;gap:20px;padding:20px 24px;}
                 .img-wrap {background:linear-gradient(180deg,#eef2ff,#fff);border-radius:10px;display:flex;align-items:center;justify-content:center;height:220px;border:1px dashed #e6eefc;overflow:hidden;}
                 .product-sku {font-size:13px;color:var(--muted);margin-top:4px;text-align:left;}
@@ -460,7 +453,7 @@
                 <div class="swal-card-header">
                     <h1 id="judul-produk">Detail Produk</h1>
                     <div class="badges">
-                        <span class="badge status d-inline-flex align-items-center">
+                        <span class="badge ${statusBadgeClass} d-inline-flex align-items-center">
                             <span class="dot ${statusDotClass}" aria-hidden="true"></span>${statusLabel}
                         </span>
                     </div>
@@ -491,7 +484,7 @@
                                 <div class="field">${satuan}</div>
                             </div>
                             <div class="field-item">
-                                <div class="label">Harga Jual</div>
+                                <div class="label">Harga</div>
                                 <div class="field">Rp ${Number(harga).toLocaleString('id-ID')}</div>
                             </div>
                             <div class="field-item">
@@ -535,5 +528,7 @@
         url.searchParams.delete('page');
         window.location.href = url.toString();
     }
+
+    // Export & print handled via shared helper
 </script>
 @endpush
