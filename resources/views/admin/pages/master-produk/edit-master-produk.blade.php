@@ -351,14 +351,14 @@
         }
     }
 
-    @keyframes slideInLeft {
+    @keyframes modalFadeIn {
         from {
             opacity: 0;
-            transform: translateX(-30px);
+            transform: scale(0.9);
         }
         to {
             opacity: 1;
-            transform: translateX(0);
+            transform: scale(1);
         }
     }
 
@@ -402,11 +402,44 @@
         outline: none !important;
     }
 
-    .text-muted {
-        color: #6c757d;
-        font-size: 0.875rem;
-        margin-top: 4px;
-        display: block;
+    .swal2-cropper-popup {
+        width: auto !important;
+        max-width: 900px !important;
+    }
+
+    .swal2-cropper-popup .swal2-html-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Responsive layout for cropper */
+    @media (max-width: 768px) {
+        .swal2-cropper-popup {
+            max-width: 95vw !important;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div {
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div > div:last-child {
+            width: 100% !important;
+            flex-direction: row !important;
+            justify-content: center;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div > div:last-child > div:last-child {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div > div:last-child > div:last-child button {
+            flex: 1;
+            min-width: 80px;
+        }
     }
 </style>
 
@@ -465,6 +498,44 @@
                 @enderror
             </div>
         </div>
+        {{-- Hidden cropper container for SweetAlert --}}
+        <div id="cropperContainer" style="display: none;">
+            <div style="display:flex; gap:20px; align-items:flex-start; max-width:800px;">
+                <!-- Left side: Cropper image -->
+                <div style="flex:1; min-width:0;">
+                    <div style="max-width:100%; max-height:400px; overflow:hidden; border:2px solid #e0e0e0; border-radius:8px;">
+                        <img id="cropperImage" src="" style="max-width:100%; display:block;">
+                    </div>
+                </div>
+
+                <!-- Right side: Controls and preview -->
+                <div style="flex-shrink:0; width:200px; display:flex; flex-direction:column; gap:15px;">
+                    <!-- Preview -->
+                    <div style="text-align:center;">
+                        <div style="font-weight:600; color:#555; margin-bottom:8px; font-size:14px;">Preview Hasil Crop</div>
+                        <div style="width:150px; height:150px; overflow:hidden; background:#f8f8f8; border:2px solid #ddd; border-radius:8px; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+                            <canvas id="cropperPreview" style="max-width:100%; max-height:100%;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="rotateLeft" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-undo"></i> Putar Kiri
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="rotateRight" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-redo"></i> Putar Kanan
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="flipHorizontal" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-arrows-alt-h"></i> Balik Horizontal
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="flipVertical" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-arrows-alt-v"></i> Balik Vertikal
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
 
         <div class="form-row">
             <div class="form-group">
@@ -506,8 +577,8 @@
             <div class="form-group">
                 <label for="status">Status <span style="color: var(--danger);">*</span></label>
                 <select id="status" name="status" required>
-                    <option value="1" {{ old('status', $produk->status) == '1' ? 'selected' : '' }}>Aktif</option>
-                    <option value="0" {{ old('status', $produk->status) == '0' ? 'selected' : '' }}>Nonaktif</option>
+                    <option value="active" {{ old('status', $produk->status) === 'aktif' ? 'selected' : '' }}>Aktif</option>
+                    <option value="inactive" {{ old('status', $produk->status) === 'nonaktif' ? 'selected' : '' }}>Nonaktif</option>
                 </select>
                 @error('status')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
@@ -518,7 +589,7 @@
                 <label for="foto">Foto Produk</label>
                 @if($produk->foto)
                     <div class="current-image">
-                        <img src="{{ asset('storage/' . $produk->foto) }}" alt="Current Image">
+                        <img src="{{ asset('bolopa/pokoknyayangadapadasistem/FotoProduk/' . $produk->foto) }}" alt="Current Image">
                         <div class="current-image-info">
                             <strong>Foto Saat Ini</strong>
                             <small>Klik upload di bawah untuk mengganti foto</small>
@@ -527,6 +598,7 @@
                 @endif
                 <div class="file-upload">
                     <input type="file" id="foto" name="foto" accept="image/*">
+                    <input type="hidden" id="foto_cropped" name="foto_cropped" value="">
                     <div class="file-upload-label" id="fileUploadLabel">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <span>Klik untuk upload foto baru atau drag & drop</span>
@@ -535,6 +607,7 @@
                 <div class="file-preview" id="filePreview">
                     <img id="previewImage" src="" alt="Preview">
                     <div class="file-info" id="fileInfo"></div>
+                    <div id="fileWarning" style="display:none; color:#b02a37; margin-top:8px; font-size:0.9rem;"></div>
                     <button type="button" class="remove-file" onclick="removeFile()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -564,6 +637,14 @@
     </form>
 </div>
 
+<!-- Cropper.js CSS/JS (loaded via CDN). It's safe: we check for availability and fallback when absent. IDs are isolated to avoid collisions. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+
+<!-- SweetAlert2 CSS/JS -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.min.css">
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11.7.32/dist/sweetalert2.all.min.js"></script>
+
 <script>
 // Prevent manual editing of kode field
 document.getElementById('kode_produk').addEventListener('keydown', function(e) {
@@ -586,18 +667,124 @@ document.getElementById('kode_produk').addEventListener('contextmenu', function(
     return false;
 });
 
-// Initialize file upload
+// Initialize file upload (with optional cropper)
 document.addEventListener('DOMContentLoaded', function() {
     initializeFileUpload();
 });
 
-// File upload functionality
+// File upload + cropper functionality (isolated scope)
 function initializeFileUpload() {
     const fileInput = document.getElementById('foto');
     const fileUploadLabel = document.getElementById('fileUploadLabel');
     const filePreview = document.getElementById('filePreview');
     const previewImage = document.getElementById('previewImage');
     const fileInfo = document.getElementById('fileInfo');
+    const fotoCroppedInput = document.getElementById('foto_cropped');
+
+    let cropperInstance = null;
+
+    function safeRemoveCropper() {
+        if (cropperInstance) {
+            try { cropperInstance.destroy(); } catch (e) {}
+            cropperInstance = null;
+        }
+    }
+
+    function openCropper(dataURL) {
+        if (typeof Cropper === 'undefined') {
+            // No cropper available, fallback to simple preview
+            previewImage.src = dataURL;
+            filePreview.style.display = 'block';
+            fileUploadLabel.style.display = 'none';
+            return;
+        }
+
+        // Get the cropper container HTML
+        const cropperHTML = document.getElementById('cropperContainer').innerHTML;
+
+        Swal.fire({
+            title: 'Potong Gambar Produk',
+            html: cropperHTML,
+            showCancelButton: true,
+            confirmButtonText: 'Potong & Simpan',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal2-cropper-popup',
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            },
+            didOpen: () => {
+                const cropperImage = Swal.getHtmlContainer().querySelector('#cropperImage');
+
+                // Set image source and wait for it to load
+                cropperImage.src = dataURL;
+                cropperImage.onload = function() {
+                    // Initialize cropper
+                    setTimeout(() => {
+                        cropperInstance = new Cropper(cropperImage, {
+                            aspectRatio: 1,
+                            viewMode: 1,
+                            autoCropArea: 1,
+                            responsive: true,
+                            background: false,
+                            zoomOnWheel: true,
+                            crop() {
+                                const previewCanvas = Swal.getHtmlContainer().querySelector('#cropperPreview');
+                                updateCropPreview(previewCanvas);
+                            }
+                        });
+
+                        // Add event listeners for controls
+                        const rotateLeft = Swal.getHtmlContainer().querySelector('#rotateLeft');
+                        const rotateRight = Swal.getHtmlContainer().querySelector('#rotateRight');
+                        const flipHorizontal = Swal.getHtmlContainer().querySelector('#flipHorizontal');
+                        const flipVertical = Swal.getHtmlContainer().querySelector('#flipVertical');
+
+                        if (rotateLeft) rotateLeft.addEventListener('click', () => cropperInstance.rotate(-90));
+                        if (rotateRight) rotateRight.addEventListener('click', () => cropperInstance.rotate(90));
+                        if (flipHorizontal) flipHorizontal.addEventListener('click', () => cropperInstance.scaleX(-cropperInstance.getData().scaleX || -1));
+                        if (flipVertical) flipVertical.addEventListener('click', () => cropperInstance.scaleY(-cropperInstance.getData().scaleY || -1));
+                    }, 100);
+                };
+            },
+            preConfirm: () => {
+                if (cropperInstance) {
+                    try {
+                        const canvas = cropperInstance.getCroppedCanvas({
+                            width: 1200,
+                            height: 1200,
+                            imageSmoothingQuality: 'high'
+                        });
+                        if (!canvas) throw new Error('Canvas generation failed');
+                        return canvas.toDataURL('image/jpeg', 0.9);
+                    } catch (err) {
+                        Swal.showValidationMessage('Crop gagal: gambar terlalu besar atau memori tidak mencukupi. Silakan pilih gambar yang lebih kecil.');
+                        return false;
+                    }
+                }
+                return false;
+            },
+            willClose: () => {
+                safeRemoveCropper();
+            }
+        }).then((result) => {
+            if (result.isConfirmed && result.value) {
+                previewImage.src = result.value;
+                fotoCroppedInput.value = result.value;
+                filePreview.style.display = 'block';
+                fileUploadLabel.style.display = 'none';
+                const fw = document.getElementById('fileWarning');
+                if (fw) {
+                    fw.style.display = 'none';
+                    fw.textContent = '';
+                }
+            }
+        });
+    }
+
+    const fileWarning = document.getElementById('fileWarning');
+    const warnThreshold = 1.5 * 1024 * 1024; // 1.5MB
+    const rejectThreshold = 2 * 1024 * 1024; // 2MB
 
     // File input change
     fileInput.addEventListener('change', function(e) {
@@ -619,70 +806,70 @@ function initializeFileUpload() {
 
     fileUploadLabel.addEventListener('drop', handleDrop, false);
 
-    function preventDefaults(e) {
-        e.preventDefault();
-        e.stopPropagation();
-    }
-
-    function highlight() {
-        fileUploadLabel.classList.add('dragover');
-    }
-
-    function unhighlight() {
-        fileUploadLabel.classList.remove('dragover');
-    }
-
-    function handleDrop(e) {
-        const dt = e.dataTransfer;
-        const files = dt.files;
-        if (files.length > 0) {
-            handleFileSelect(files[0]);
-        }
+    function preventDefaults(e) { e.preventDefault(); e.stopPropagation(); }
+    function highlight() { fileUploadLabel.classList.add('dragover'); }
+    function unhighlight() { fileUploadLabel.classList.remove('dragover'); }
+    function updateCropPreview(previewCanvas) {
+        if (!cropperInstance || !previewCanvas) return;
+        const canvas = cropperInstance.getCroppedCanvas({ width: 600, height: 600, imageSmoothingQuality: 'high' });
+        if (!canvas) return;
+        // draw into preview canvas
+        previewCanvas.width = canvas.width;
+        previewCanvas.height = canvas.height;
+        const ctx = previewCanvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(canvas, 0, 0);
     }
 
     function handleFileSelect(file) {
         if (!file) return;
+        if (!file.type.startsWith('image/')) { alert('Harap pilih file gambar yang valid.'); return; }
 
-        // Validate file type
-        if (!file.type.startsWith('image/')) {
-            alert('Harap pilih file gambar yang valid.');
-            return;
+        // Reject if over server limit
+        if (file.size > rejectThreshold) { alert('Ukuran file maksimal 2MB. Gambar terlalu besar untuk diunggah.'); return; }
+
+        // Warn if approaching limit
+        if (file.size > warnThreshold) {
+            const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+            const proceed = confirm(`Gambar berukuran ${sizeMb} MB. Ini mendekati batas maksimal upload dan dapat menyebabkan crop/upload gagal. Lanjutkan?`);
+            if (!proceed) return;
+            if (fileWarning) { fileWarning.style.display = 'block'; fileWarning.textContent = 'Peringatan: gambar besar dapat menyebabkan kegagalan crop atau ditolak oleh server.'; }
+        } else {
+            if (fileWarning) { fileWarning.style.display = 'none'; fileWarning.textContent = ''; }
         }
 
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB.');
-            return;
-        }
-
-        // Show preview
         const reader = new FileReader();
         reader.onload = function(e) {
-            previewImage.src = e.target.result;
-            filePreview.style.display = 'block';
-            fileUploadLabel.style.display = 'none';
-
-            // Show file info
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            fileInfo.textContent = `${file.name} (${fileSize} MB)`;
+            const dataUrl = e.target.result;
+            if (typeof Cropper !== 'undefined') {
+                openCropper(dataUrl);
+            } else {
+                previewImage.src = dataUrl;
+                filePreview.style.display = 'block';
+                fileUploadLabel.style.display = 'none';
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                fileInfo.textContent = `${file.name} (${fileSize} MB)`;
+            }
         };
         reader.readAsDataURL(file);
     }
-}
 
-function removeFile() {
-    const fileInput = document.getElementById('foto');
-    const fileUploadLabel = document.getElementById('fileUploadLabel');
-    const filePreview = document.getElementById('filePreview');
-
-    fileInput.value = '';
-    filePreview.style.display = 'none';
-    fileUploadLabel.style.display = 'flex';
+    // when removing file, also clear hidden cropped input
+    const originalRemoveFile = window.removeFile;
+    window.removeFile = function() {
+        const fileInput = document.getElementById('foto');
+        const fileUploadLabel = document.getElementById('fileUploadLabel');
+        const filePreview = document.getElementById('filePreview');
+        fileInput.value = '';
+        if (document.getElementById('foto_cropped')) document.getElementById('foto_cropped').value = '';
+        filePreview.style.display = 'none';
+        fileUploadLabel.style.display = 'flex';
+    };
 }
 
 // Form validation and submission with enhanced visual feedback
 document.querySelector('form').addEventListener('submit', function(e) {
-    const requiredFields = ['nama_produk', 'kategori', 'satuan', 'harga_jual', 'minimum_stok'];
+    const requiredFields = ['nama_produk', 'kategori', 'satuan', 'harga_jual', 'minimum_stok', 'status'];
     let isValid = true;
 
     // Reset previous error states

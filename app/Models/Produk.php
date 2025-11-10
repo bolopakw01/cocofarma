@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use App\Models\CodeCounter;
 
 class Produk extends Model
 {
@@ -90,39 +88,24 @@ class Produk extends Model
     {
         static::creating(function ($model) {
             if (empty($model->kode_produk)) {
-                $date = now()->format('dmy'); // DDMMYY
-                $base = 'MP' . $date; // key for counter, per day
+                $prefix = 'PRD-';
+                $maxAttempts = 20;
+                $attempt = 0;
 
-                $name = $model->nama_produk ?? '';
-                $abbr = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 3));
-                if ($abbr === '') {
-                    $abbr = 'XXX';
+                do {
+                    $randomSegment = strtoupper(Str::random(10));
+                    $kode = $prefix . $randomSegment;
+                    $attempt++;
+                } while (
+                    Produk::withTrashed()->where('kode_produk', $kode)->exists() &&
+                    $attempt < $maxAttempts
+                );
+
+                if (Produk::withTrashed()->where('kode_produk', $kode)->exists()) {
+                    throw new \RuntimeException('Gagal menghasilkan kode produk unik setelah beberapa percobaan.');
                 }
 
-                DB::transaction(function () use ($base, $abbr, $model) {
-                    $counter = CodeCounter::where('key', $base)->lockForUpdate()->first();
-                    if (! $counter) {
-                        $counter = CodeCounter::create(['key' => $base, 'counter' => 1]);
-                        $num = 1;
-                    } else {
-                        $counter->counter = $counter->counter + 1;
-                        $counter->save();
-                        $num = $counter->counter;
-                    }
-
-                    $nextNumber = $num > 999 ? str_pad((string) $num, 4, '0', STR_PAD_LEFT) : str_pad((string) $num, 3, '0', STR_PAD_LEFT);
-                    $kode = $base . $abbr . $nextNumber;
-
-                    // Ensure uniqueness, including soft-deleted records
-                    $maxTries = 10;
-                    $tries = 0;
-                    while (Produk::withTrashed()->where('kode_produk', $kode)->exists() && $tries < $maxTries) {
-                        $rand = str_pad((string) random_int(0, 99), 2, '0', STR_PAD_LEFT);
-                        $kode = $base . $abbr . $nextNumber . $rand;
-                        $tries++;
-                    }
-                    $model->kode_produk = $kode;
-                });
+                $model->kode_produk = $kode;
             }
         });
     }

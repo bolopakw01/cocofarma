@@ -323,14 +323,14 @@
         }
     }
 
-    @keyframes slideInLeft {
+    @keyframes modalFadeIn {
         from {
             opacity: 0;
-            transform: translateX(-30px);
+            transform: scale(0.9);
         }
         to {
             opacity: 1;
-            transform: translateX(0);
+            transform: scale(1);
         }
     }
 
@@ -374,11 +374,44 @@
         outline: none !important;
     }
 
-    .text-muted {
-        color: #6c757d;
-        font-size: 0.875rem;
-        margin-top: 4px;
-        display: block;
+    .swal2-cropper-popup {
+        width: auto !important;
+        max-width: 900px !important;
+    }
+
+    .swal2-cropper-popup .swal2-html-container {
+        margin: 0 !important;
+        padding: 0 !important;
+    }
+
+    /* Responsive layout for cropper */
+    @media (max-width: 768px) {
+        .swal2-cropper-popup {
+            max-width: 95vw !important;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div {
+            flex-direction: column !important;
+            gap: 15px !important;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div > div:last-child {
+            width: 100% !important;
+            flex-direction: row !important;
+            justify-content: center;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div > div:last-child > div:last-child {
+            display: flex;
+            flex-direction: row;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+
+        .swal2-cropper-popup .swal2-html-container > div > div:last-child > div:last-child button {
+            flex: 1;
+            min-width: 80px;
+        }
     }
 </style>
 
@@ -422,7 +455,7 @@
             <div class="form-group">
                 <label for="kode_produk">Kode Produk <span style="color: var(--danger);">*</span></label>
                 <input type="text" id="kode_produk" name="kode_produk" value="{{ old('kode_produk') }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
-                <small class="text-muted">Format: MP + YYMMDD + Nama (4 karakter) - Kode akan terisi otomatis berdasarkan nama produk</small>
+                <small class="text-muted">Format: PRD-XXXXXXXXXX - Kode akan terisi otomatis dengan string acak unik</small>
                 @error('kode_produk')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
@@ -477,8 +510,8 @@
             <div class="form-group">
                 <label for="status">Status <span style="color: var(--danger);">*</span></label>
                 <select id="status" name="status" required>
-                    <option value="1" {{ old('status', '1') == '1' ? 'selected' : '' }}>Aktif</option>
-                    <option value="0" {{ old('status') == '0' ? 'selected' : '' }}>Nonaktif</option>
+                    <option value="active" {{ old('status', 'active') == 'active' ? 'selected' : '' }}>Aktif</option>
+                    <option value="inactive" {{ old('status') == 'inactive' ? 'selected' : '' }}>Nonaktif</option>
                 </select>
                 @error('status')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
@@ -489,6 +522,8 @@
                 <label for="foto">Foto Produk</label>
                 <div class="file-upload">
                     <input type="file" id="foto" name="foto" accept="image/*">
+                    {{-- Hidden input to carry cropped image (base64) without replacing file input directly --}}
+                    <input type="hidden" id="foto_cropped" name="foto_cropped" value="">
                     <div class="file-upload-label" id="fileUploadLabel">
                         <i class="fas fa-cloud-upload-alt"></i>
                         <span>Klik untuk upload foto atau drag & drop</span>
@@ -497,6 +532,7 @@
                 <div class="file-preview" id="filePreview">
                     <img id="previewImage" src="" alt="Preview">
                     <div class="file-info" id="fileInfo"></div>
+                    <div id="fileWarning" style="display:none; color:#b02a37; margin-top:8px; font-size:0.9rem;"></div>
                     <button type="button" class="remove-file" onclick="removeFile()">
                         <i class="fas fa-times"></i>
                     </button>
@@ -504,6 +540,45 @@
                 @error('foto')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
+            </div>
+        </div>
+
+        {{-- Hidden cropper container for SweetAlert --}}
+        <div id="cropperContainer" style="display:none;">
+            <div style="display:flex; gap:20px; align-items:flex-start; max-width:800px;">
+                <!-- Left side: Cropper image -->
+                <div style="flex:1; min-width:0;">
+                    <div style="max-width:100%; max-height:400px; overflow:hidden; border:2px solid #e0e0e0; border-radius:8px;">
+                        <img id="cropperImage" src="" style="max-width:100%; display:block;">
+                    </div>
+                </div>
+
+                <!-- Right side: Controls and preview -->
+                <div style="flex-shrink:0; width:200px; display:flex; flex-direction:column; gap:15px;">
+                    <!-- Preview -->
+                    <div style="text-align:center;">
+                        <div style="font-weight:600; color:#555; margin-bottom:8px; font-size:14px;">Preview Hasil Crop</div>
+                        <div style="width:150px; height:150px; overflow:hidden; background:#f8f8f8; border:2px solid #ddd; border-radius:8px; display:flex; align-items:center; justify-content:center; margin:0 auto;">
+                            <canvas id="cropperPreview" style="max-width:100%; max-height:100%;"></canvas>
+                        </div>
+                    </div>
+
+                    <!-- Controls -->
+                    <div style="display:flex; flex-direction:column; gap:8px;">
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="rotateLeft" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-undo"></i> Putar Kiri
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="rotateRight" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-redo"></i> Putar Kanan
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="flipHorizontal" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-arrows-alt-h"></i> Balik Horizontal
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-secondary" id="flipVertical" style="width:100%; font-size:12px; padding:6px;">
+                            <i class="fas fa-arrows-alt-v"></i> Balik Vertikal
+                        </button>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -526,87 +601,165 @@
     </form>
 </div>
 
+<!-- Cropper.js CSS/JS (loaded via CDN). It's safe: we check for availability and fallback when absent. IDs are isolated to avoid collisions. -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+<!-- SweetAlert2 for crop modal -->
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
-// Enhanced auto-generate kode produk with date (readonly field)
-document.getElementById('nama_produk').addEventListener('input', function() {
-    const kodeInput = document.getElementById('kode_produk');
-    const namaValue = this.value.trim();
-
-    if (namaValue.length > 0) {
-        // Get current date in YYMMDD format
-        const today = new Date();
-        const year = today.getFullYear().toString().slice(-2); // Last 2 digits of year
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month with leading zero
-        const day = String(today.getDate()).padStart(2, '0'); // Day with leading zero
-        const dateString = year + month + day; // YYMMDD format
-
-        // Clean the name and take first 4 characters (since we have date, shorter name is better)
-        const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-        if (cleanName.length > 0) {
-            kodeInput.value = 'MP' + dateString + cleanName;
-        } else {
-            kodeInput.value = 'MP' + dateString;
-        }
-    } else {
-        kodeInput.value = '';
-    }
-});
-
-// Prevent manual editing of kode field
-document.getElementById('kode_produk').addEventListener('keydown', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_produk').addEventListener('paste', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_produk').addEventListener('cut', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_produk').addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-// Auto-generate kode on page load if nama_produk has value
+// Auto-generate random kode produk when form loads
 document.addEventListener('DOMContentLoaded', function() {
-    const namaInput = document.getElementById('nama_produk');
     const kodeInput = document.getElementById('kode_produk');
 
-    if (namaInput.value.trim()) {
-        const namaValue = namaInput.value.trim();
-        // Get current date in YYMMDD format
-        const today = new Date();
-        const year = today.getFullYear().toString().slice(-2);
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const dateString = year + month + day;
-
-        // Clean the name and take first 4 characters
-        const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-        if (cleanName.length > 0) {
-            kodeInput.value = 'MP' + dateString + cleanName;
-        } else {
-            kodeInput.value = 'MP' + dateString;
-        }
+    // Generate random kode produk
+    function generateRandomKode() {
+        const prefix = 'PRD-';
+        const randomString = Math.random().toString(36).substring(2, 12).toUpperCase();
+        return prefix + randomString;
     }
 
-    // Initialize file upload
+    // Set kode produk on page load
+    if (kodeInput && !kodeInput.value) {
+        kodeInput.value = generateRandomKode();
+    }
+
+    // Initialize file upload (with optional cropper)
     initializeFileUpload();
 });
 
-// File upload functionality
+// File upload + cropper functionality (isolated scope)
 function initializeFileUpload() {
     const fileInput = document.getElementById('foto');
     const fileUploadLabel = document.getElementById('fileUploadLabel');
     const filePreview = document.getElementById('filePreview');
     const previewImage = document.getElementById('previewImage');
     const fileInfo = document.getElementById('fileInfo');
+    const fotoCroppedInput = document.getElementById('foto_cropped');
+
+    // Cropper UI elements
+    const cropperContainer = document.getElementById('cropperContainer');
+    const cropperImage = document.getElementById('cropperImage');
+    const cropperPreview = document.getElementById('cropperPreview');
+
+    let cropperInstance = null;
+    let currentSwal = null;
+
+    function safeRemoveCropper() {
+        if (cropperInstance) {
+            try { cropperInstance.destroy(); } catch (e) {}
+            cropperInstance = null;
+        }
+    }
+
+    function openCropper(dataURL) {
+        if (typeof Cropper === 'undefined') {
+            // No cropper available, fallback to simple preview
+            previewImage.src = dataURL;
+            filePreview.style.display = 'block';
+            fileUploadLabel.style.display = 'none';
+            return;
+        }
+
+        cropperImage.src = dataURL;
+
+        // Use SweetAlert2 for crop modal
+        currentSwal = Swal.fire({
+            title: 'Crop Gambar Produk',
+            html: cropperContainer.innerHTML,
+            showCancelButton: true,
+            showConfirmButton: true,
+            confirmButtonText: 'Crop & Gunakan',
+            cancelButtonText: 'Batal',
+            customClass: {
+                popup: 'swal2-cropper-popup',
+                confirmButton: 'btn btn-primary',
+                cancelButton: 'btn btn-secondary'
+            },
+            didOpen: () => {
+                // Initialize cropper after Swal is open
+                const swalImage = Swal.getHtmlContainer().querySelector('#cropperImage');
+
+                // Set image source and wait for it to load
+                swalImage.src = dataURL;
+                swalImage.onload = function() {
+                    const swalPreview = Swal.getHtmlContainer().querySelector('#cropperPreview');
+
+                    if (swalPreview) {
+                        // small timeout to ensure image size available
+                        setTimeout(function() {
+                            cropperInstance = new Cropper(swalImage, {
+                                aspectRatio: 1, // square by default for product thumbnails
+                                viewMode: 1,
+                                autoCropArea: 1,
+                                responsive: true,
+                                background: false,
+                                zoomOnWheel: true,
+                                crop() {
+                                    updateCropPreview(swalPreview);
+                                }
+                            });
+                            updateCropPreview(swalPreview);
+                        }, 100);
+                    }
+                };
+
+                // Add event listeners for controls
+                const rotateLeft = Swal.getHtmlContainer().querySelector('#rotateLeft');
+                const rotateRight = Swal.getHtmlContainer().querySelector('#rotateRight');
+                const flipHorizontal = Swal.getHtmlContainer().querySelector('#flipHorizontal');
+                const flipVertical = Swal.getHtmlContainer().querySelector('#flipVertical');
+
+                if (rotateLeft) rotateLeft.addEventListener('click', () => cropperInstance && cropperInstance.rotate(-90));
+                if (rotateRight) rotateRight.addEventListener('click', () => cropperInstance && cropperInstance.rotate(90));
+                if (flipHorizontal) flipHorizontal.addEventListener('click', () => cropperInstance && cropperInstance.scaleX(-cropperInstance.getData().scaleX || -1));
+                if (flipVertical) flipVertical.addEventListener('click', () => cropperInstance && cropperInstance.scaleY(-cropperInstance.getData().scaleY || -1));
+            },
+            preConfirm: () => {
+                // Handle crop apply
+                if (cropperInstance) {
+                    try {
+                        const canvas = cropperInstance.getCroppedCanvas({ width: 1200, height: 1200, imageSmoothingQuality: 'high' });
+                        if (!canvas) throw new Error('Canvas generation failed');
+                        const dataUrl = canvas.toDataURL('image/jpeg', 0.9);
+                        // set preview and hidden input
+                        previewImage.src = dataUrl;
+                        fotoCroppedInput.value = dataUrl;
+                        filePreview.style.display = 'block';
+                        fileUploadLabel.style.display = 'none';
+                        // clear any previous warning
+                        const fw = document.getElementById('fileWarning'); if (fw) { fw.style.display = 'none'; fw.textContent = ''; }
+                        return true;
+                    } catch (err) {
+                        Swal.showValidationMessage('Crop gagal: gambar terlalu besar atau memori tidak mencukupi. Silakan pilih gambar yang lebih kecil.');
+                        return false;
+                    }
+                }
+            },
+            willClose: () => {
+                safeRemoveCropper();
+                currentSwal = null;
+            }
+        });
+    }
+
+    function updateCropPreview(previewCanvas) {
+        if (!cropperInstance || !previewCanvas) return;
+        const canvas = cropperInstance.getCroppedCanvas({ width: 600, height: 600, imageSmoothingQuality: 'high' });
+        if (!canvas) return;
+        // draw into preview canvas
+        previewCanvas.width = canvas.width;
+        previewCanvas.height = canvas.height;
+        const ctx = previewCanvas.getContext('2d');
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(canvas, 0, 0);
+    }
+
+    const fileWarning = document.getElementById('fileWarning');
+
+    // thresholds
+    const warnThreshold = 1.5 * 1024 * 1024; // 1.5MB - show warning that upload may be rejected
+    const rejectThreshold = 2 * 1024 * 1024; // 2MB - current server validation limit
 
     // File input change
     fileInput.addEventListener('change', function(e) {
@@ -658,40 +811,55 @@ function initializeFileUpload() {
             return;
         }
 
-        // Validate file size (max 2MB)
-        if (file.size > 2 * 1024 * 1024) {
-            alert('Ukuran file maksimal 2MB.');
+        // Validate file size: reject above server limit
+        if (file.size > rejectThreshold) {
+            alert('Ukuran file maksimal 2MB. Gambar terlalu besar untuk diunggah.');
             return;
         }
 
-        // Show preview
+        // Warn if file is approaching limit (non-blocking, ask for confirmation)
+        if (file.size > warnThreshold) {
+            const sizeMb = (file.size / 1024 / 1024).toFixed(2);
+            const proceed = confirm(`Gambar berukuran ${sizeMb} MB. Ini mendekati batas maksimal upload dan dapat menyebabkan crop/upload gagal. Lanjutkan?`);
+            if (!proceed) return;
+            if (fileWarning) { fileWarning.style.display = 'block'; fileWarning.textContent = 'Peringatan: gambar besar dapat menyebabkan kegagalan crop atau ditolak oleh server.'; }
+        } else {
+            if (fileWarning) { fileWarning.style.display = 'none'; fileWarning.textContent = ''; }
+        }
+
         const reader = new FileReader();
         reader.onload = function(e) {
-            previewImage.src = e.target.result;
-            filePreview.style.display = 'block';
-            fileUploadLabel.style.display = 'none';
+            const dataUrl = e.target.result;
+            // If Cropper available, open modal and let user crop
+            if (typeof Cropper !== 'undefined') {
+                openCropper(dataUrl);
+            } else {
+                // fallback: just use preview
+                previewImage.src = dataUrl;
+                filePreview.style.display = 'block';
+                fileUploadLabel.style.display = 'none';
 
-            // Show file info
-            const fileSize = (file.size / 1024 / 1024).toFixed(2);
-            fileInfo.textContent = `${file.name} (${fileSize} MB)`;
+                // Show file info
+                const fileSize = (file.size / 1024 / 1024).toFixed(2);
+                fileInfo.textContent = `${file.name} (${fileSize} MB)`;
+            }
         };
         reader.readAsDataURL(file);
     }
-}
 
-function removeFile() {
-    const fileInput = document.getElementById('foto');
-    const fileUploadLabel = document.getElementById('fileUploadLabel');
-    const filePreview = document.getElementById('filePreview');
-
-    fileInput.value = '';
-    filePreview.style.display = 'none';
-    fileUploadLabel.style.display = 'flex';
+    // when removing file, also clear hidden cropped input
+    const originalRemoveFile = window.removeFile;
+    window.removeFile = function() {
+        fileInput.value = '';
+        fotoCroppedInput.value = '';
+        filePreview.style.display = 'none';
+        fileUploadLabel.style.display = 'flex';
+    };
 }
 
 // Form validation and submission with enhanced visual feedback
 document.querySelector('form').addEventListener('submit', function(e) {
-    const requiredFields = ['nama_produk', 'kategori', 'satuan', 'harga_jual', 'minimum_stok'];
+    const requiredFields = ['nama_produk', 'kategori', 'satuan', 'harga_jual', 'minimum_stok', 'status'];
     let isValid = true;
 
     // Reset previous error states

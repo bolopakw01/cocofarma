@@ -60,7 +60,8 @@ class ProdukController extends Controller
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:0,1'
+            'foto_cropped' => 'nullable|string',
+            'status' => 'required|in:active,inactive'
         ]);
 
         $data = [
@@ -71,12 +72,24 @@ class ProdukController extends Controller
             'stok' => 0, // Default stok 0 untuk produk baru
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
-            'status' => $request->status == '1' ? 'aktif' : 'nonaktif'
+            'status' => $request->status === 'active' ? 'aktif' : 'nonaktif'
         ];
 
-        // Handle foto upload
-        if ($request->hasFile('foto')) {
-            $fotoPath = $request->file('foto')->store('produk', 'public');
+        // Handle foto_cropped (base64) first -- if present it takes precedence over uploaded file
+        if ($request->filled('foto_cropped')) {
+            $base64 = $request->input('foto_cropped');
+            if (preg_match('/^data:(image\/\w+);base64,/', $base64, $type)) {
+                $dataBase64 = substr($base64, strpos($base64, ',') + 1);
+                $dataBase64 = base64_decode($dataBase64);
+                $extension = explode('/', $type[1])[1];
+                $extension = $extension === 'jpeg' ? 'jpg' : $extension;
+                $filename = 'produk_' . Str::random(12) . '.' . $extension;
+                Storage::disk('produk_foto')->put($filename, $dataBase64);
+                $data['foto'] = $filename;
+            }
+        } elseif ($request->hasFile('foto')) {
+            // Fallback to normal file upload
+            $fotoPath = $request->file('foto')->store('', 'produk_foto');
             $data['foto'] = basename($fotoPath);
         }
 
@@ -154,7 +167,8 @@ class ProdukController extends Controller
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
             'foto' => 'nullable|image|mimes:jpeg,png,jpg,gif|max:2048',
-            'status' => 'required|in:0,1'
+            'foto_cropped' => 'nullable|string',
+            'status' => 'required|in:active,inactive'
         ]);
 
         $data = [
@@ -165,24 +179,40 @@ class ProdukController extends Controller
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,
             // Normalize incoming status (same mapping as store)
-            'status' => $request->status == '1' ? 'aktif' : 'nonaktif'
+            'status' => $request->status === 'active' ? 'aktif' : 'nonaktif'
         ];
 
-        // Handle foto upload
-        if ($request->hasFile('foto')) {
+        // Handle foto_cropped (base64) first -- if present it takes precedence over uploaded file
+        if ($request->filled('foto_cropped')) {
             // Delete old foto if exists
-            if ($produk->foto && Storage::disk('public')->exists('produk/' . $produk->foto)) {
-                Storage::disk('public')->delete('produk/' . $produk->foto);
+            if ($produk->foto && Storage::disk('produk_foto')->exists($produk->foto)) {
+                Storage::disk('produk_foto')->delete($produk->foto);
             }
 
-            $fotoPath = $request->file('foto')->store('produk', 'public');
+            $base64 = $request->input('foto_cropped');
+            if (preg_match('/^data:(image\/\w+);base64,/', $base64, $type)) {
+                $dataBase64 = substr($base64, strpos($base64, ',') + 1);
+                $dataBase64 = base64_decode($dataBase64);
+                $extension = explode('/', $type[1])[1];
+                $extension = $extension === 'jpeg' ? 'jpg' : $extension;
+                $filename = 'produk_' . Str::random(12) . '.' . $extension;
+                Storage::disk('produk_foto')->put($filename, $dataBase64);
+                $data['foto'] = $filename;
+            }
+        } elseif ($request->hasFile('foto')) {
+            // Delete old foto if exists
+            if ($produk->foto && Storage::disk('produk_foto')->exists($produk->foto)) {
+                Storage::disk('produk_foto')->delete($produk->foto);
+            }
+
+            $fotoPath = $request->file('foto')->store('', 'produk_foto');
             $data['foto'] = basename($fotoPath);
         }
 
         // Handle foto removal
         if ($request->remove_foto == '1') {
-            if ($produk->foto && Storage::disk('public')->exists('produk/' . $produk->foto)) {
-                Storage::disk('public')->delete('produk/' . $produk->foto);
+            if ($produk->foto && Storage::disk('produk_foto')->exists($produk->foto)) {
+                Storage::disk('produk_foto')->delete($produk->foto);
             }
             $data['foto'] = null;
         }
@@ -205,8 +235,8 @@ class ProdukController extends Controller
         }
 
         // Delete foto if exists
-        if ($produk->foto && Storage::disk('public')->exists($produk->foto)) {
-            Storage::disk('public')->delete($produk->foto);
+        if ($produk->foto && Storage::disk('produk_foto')->exists($produk->foto)) {
+            Storage::disk('produk_foto')->delete($produk->foto);
         }
 
         // Deleting product will cascade to produksis and stok_produks per DB foreign keys

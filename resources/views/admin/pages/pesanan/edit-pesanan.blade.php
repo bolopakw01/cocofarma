@@ -255,6 +255,16 @@
         color: var(--dark);
     }
 
+    .no-stock-message {
+        background: #fff5f5;
+        border: 1px solid #f8d7da;
+        color: #c53030;
+        padding: 12px 16px;
+        border-radius: var(--border-radius);
+        margin-bottom: 15px;
+        font-size: 0.9rem;
+    }
+
     .items-table .product-select {
         width: 100%;
         padding: 8px;
@@ -422,6 +432,10 @@
                     </button>
                 </div>
 
+                <div id="noStockMessage" class="no-stock-message" style="display: none;">
+                    Tidak ada stok operasional aktif yang tersedia untuk produk baru. Anda tetap dapat mengubah item yang sudah ada.
+                </div>
+
                 <table class="items-table" id="itemsTable">
                     <thead>
                         <tr>
@@ -439,7 +453,7 @@
                                 <select name="items[{{ $index }}][produk_id]" class="product-select" required>
                                     <option value="">Pilih Produk</option>
                                     @foreach($produks as $produk)
-                                    <option value="{{ $produk->id }}" data-price="{{ $produk->harga_jual }}" {{ $item->produk_id == $produk->id ? 'selected' : '' }}>
+                                    <option value="{{ $produk->id }}" data-price="{{ $produk->harga_jual }}" data-stok="{{ $produk->stok_tersedia }}" {{ $item->produk_id == $produk->id ? 'selected' : '' }}>
                                         {{ $produk->nama_produk }} ({{ $produk->satuan }})
                                     </option>
                                     @endforeach
@@ -491,6 +505,18 @@
     const productsData = @json($produks);
 
     document.addEventListener('DOMContentLoaded', function() {
+        const addItemBtn = document.getElementById('addItemBtn');
+        const noStockMessage = document.getElementById('noStockMessage');
+
+        if (!productsData.length) {
+            if (noStockMessage) {
+                noStockMessage.style.display = 'block';
+            }
+            if (addItemBtn) {
+                addItemBtn.disabled = true;
+            }
+        }
+
         // Event listeners
         document.getElementById('addItemBtn').addEventListener('click', addItem);
         document.getElementById('itemsBody').addEventListener('change', handleItemChange);
@@ -505,6 +531,10 @@
     });
 
     function addItem() {
+        if (!productsData.length) {
+            return;
+        }
+
         const tbody = document.getElementById('itemsBody');
         const tr = document.createElement('tr');
         tr.classList.add('item-row');
@@ -527,7 +557,16 @@
             option.value = produk.id;
             option.setAttribute('data-price', produk.harga_jual);
             option.setAttribute('data-stok', produk.stok_tersedia);
-            option.textContent = `${produk.nama_produk} (${produk.satuan}) - Stok: ${produk.stok_tersedia}`;
+            
+            const stockText = produk.stok_tersedia > 0 ? `Stok: ${produk.stok_tersedia}` : 'Stok: Habis';
+            option.textContent = `${produk.nama_produk} (${produk.satuan}) - ${stockText}`;
+            
+            // Disable option if out of stock (except when already selected in existing rows)
+            if (produk.stok_tersedia <= 0 && !option.selected) {
+                option.disabled = true;
+                option.style.color = '#999';
+            }
+            
             productSelect.appendChild(option);
         });
 
@@ -595,21 +634,30 @@
                 // Find the selected product data
                 const selectedProduct = productsData.find(p => p.id == productSelect.value);
                 if (selectedProduct) {
-                    // Update data-price attribute
+                    const priceInput = row.querySelector('.price-input');
+                    const quantityInput = row.querySelector('.quantity-input');
+                    const currentQty = quantityInput ? parseFloat(quantityInput.value) || 0 : 0;
+                    const stokValidasi = Math.max(selectedProduct.stok_tersedia, currentQty);
+
+                    // Update option metadata so validation works even when stock is depleted
                     const selectedOption = productSelect.querySelector('option[value="' + productSelect.value + '"]');
                     if (selectedOption) {
                         selectedOption.setAttribute('data-price', selectedProduct.harga_jual);
-                        selectedOption.setAttribute('data-stok', selectedProduct.stok_tersedia);
+                        selectedOption.setAttribute('data-stok', stokValidasi);
                     }
-                    // Set price input value
-                    const priceInput = row.querySelector('.price-input');
+
                     if (priceInput) {
                         priceInput.value = Math.round(selectedProduct.harga_jual); // Display as integer
                     }
-                    // Set max quantity
-                    const quantityInput = row.querySelector('.quantity-input');
+
                     if (quantityInput) {
-                        quantityInput.max = selectedProduct.stok_tersedia;
+                        if (selectedProduct.stok_tersedia > 0) {
+                            quantityInput.max = selectedProduct.stok_tersedia;
+                        } else if (currentQty > 0) {
+                            quantityInput.max = currentQty;
+                        } else {
+                            quantityInput.removeAttribute('max');
+                        }
                     }
                 }
             }
@@ -634,6 +682,26 @@
         const row = select.closest('.item-row');
         const priceInput = row.querySelector('.price-input');
         const quantityInput = row.querySelector('.quantity-input');
+
+        if (!select.value) {
+            priceInput.value = '';
+            quantityInput.value = '';
+            quantityInput.removeAttribute('max');
+            calculateSubtotal(row);
+            calculateTotal();
+            return;
+        }
+
+        if (stokTersedia <= 0) {
+            alert('Produk ini sedang habis stok dan tidak dapat dipilih.');
+            select.value = '';
+            priceInput.value = '';
+            quantityInput.value = '';
+            quantityInput.removeAttribute('max');
+            calculateSubtotal(row);
+            calculateTotal();
+            return;
+        }
 
         priceInput.value = Math.round(price); // Display as integer
         quantityInput.max = stokTersedia; // Set max quantity
@@ -700,14 +768,16 @@
                 isValid = false;
             }
 
-            // Check stock availability
-            const selectedOption = productSelect.options[productSelect.selectedIndex];
-            const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
-            const jumlahDiminta = parseFloat(quantityInput.value) || 0;
+            if (productSelect.value) {
+                // Check stock availability
+                const selectedOption = productSelect.options[productSelect.selectedIndex];
+                const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
+                const jumlahDiminta = parseFloat(quantityInput.value) || 0;
 
-            if (jumlahDiminta > stokTersedia) {
-                alert(`Item ${index + 1}: Jumlah melebihi stok tersedia (${stokTersedia})!`);
-                isValid = false;
+                if (jumlahDiminta > stokTersedia) {
+                    alert(`Item ${index + 1}: Jumlah melebihi stok tersedia (${stokTersedia})!`);
+                    isValid = false;
+                }
             }
 
             if (!priceInput.value || priceInput.value < 0) {

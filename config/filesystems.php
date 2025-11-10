@@ -38,10 +38,10 @@ return [
             'report' => false,
         ],
 
-        'public' => [
+        'produk_foto' => [
             'driver' => 'local',
-            'root' => storage_path('app/public'),
-            'url' => env('APP_URL').'/storage',
+            'root' => public_path('bolopa/pokoknyayangadapadasistem/FotoProduk'),
+            'url' => env('APP_URL').'/bolopa/pokoknyayangadapadasistem/FotoProduk',
             'visibility' => 'public',
             'throw' => false,
             'report' => false,

@@ -49,7 +49,7 @@ class PesananController extends Controller
      */
     public function create()
     {
-        // Get products from operational stock (stok_produks) with available stock
+        // Fetch operational stock grouped by product with summary data
         $produkStoks = StokProduk::with('produk')
             ->selectRaw('produk_id, SUM(sisa_stok) as total_stok')
             ->where('sisa_stok', '>', 0)
@@ -57,13 +57,13 @@ class PesananController extends Controller
             ->having('total_stok', '>', 0)
             ->get();
 
-        // Format data for view with product master prices
+        // Map operational stock to view-friendly structure using master product info
         $produks = $produkStoks->map(function ($stok) {
             return (object) [
                 'id' => $stok->produk_id,
                 'nama_produk' => $stok->produk->nama_produk,
                 'satuan' => $stok->produk->satuan,
-                'harga_jual' => $stok->produk->harga_jual, // Use master product price
+                'harga_jual' => $stok->produk->harga_jual,
                 'stok_tersedia' => $stok->total_stok,
             ];
         });
@@ -192,7 +192,7 @@ class PesananController extends Controller
     {
         $pesanan = Pesanan::with('pesananItems.produk')->findOrFail($id);
 
-        // Get products from operational stock (stok_produks) with available stock
+        // Fetch operational stock grouped by product with summary data
         $produkStoks = StokProduk::with('produk')
             ->selectRaw('produk_id, SUM(sisa_stok) as total_stok')
             ->where('sisa_stok', '>', 0)
@@ -200,16 +200,35 @@ class PesananController extends Controller
             ->having('total_stok', '>', 0)
             ->get();
 
-        // Format data for view with product master prices
+        // Map operational stock to view-friendly structure using master product info
         $produks = $produkStoks->map(function ($stok) {
             return (object) [
                 'id' => $stok->produk_id,
                 'nama_produk' => $stok->produk->nama_produk,
                 'satuan' => $stok->produk->satuan,
-                'harga_jual' => $stok->produk->harga_jual, // Use master product price
+                'harga_jual' => $stok->produk->harga_jual,
                 'stok_tersedia' => $stok->total_stok,
             ];
         });
+
+        // Ensure products already in the order remain selectable even if stock is zero
+        $produkIdsDalamPesanan = $pesanan->pesananItems->pluck('produk_id')->unique();
+        $produkIdsOperasional = $produkStoks->pluck('produk_id');
+        $produkIdsTambahan = $produkIdsDalamPesanan->diff($produkIdsOperasional);
+
+        if ($produkIdsTambahan->isNotEmpty()) {
+            $produkTambahan = Produk::whereIn('id', $produkIdsTambahan)->get()->map(function ($produk) {
+                return (object) [
+                    'id' => $produk->id,
+                    'nama_produk' => $produk->nama_produk,
+                    'satuan' => $produk->satuan,
+                    'harga_jual' => $produk->harga_jual,
+                    'stok_tersedia' => 0,
+                ];
+            });
+
+            $produks = $produks->concat($produkTambahan);
+        }
 
         return view('admin.pages.pesanan.edit-pesanan', compact('pesanan', 'produks'));
     }
