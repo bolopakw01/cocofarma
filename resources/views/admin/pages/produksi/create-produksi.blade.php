@@ -276,6 +276,21 @@
 
     .input-group {
         position: relative;
+        display: flex;
+    }
+
+    .input-group select {
+        flex: 1;
+        border-top-right-radius: 0;
+        border-bottom-right-radius: 0;
+        border-right: none;
+    }
+
+    .input-group .btn {
+        border-top-left-radius: 0;
+        border-bottom-left-radius: 0;
+        border-left: none;
+        white-space: nowrap;
     }
 
     .input-group-text {
@@ -311,6 +326,23 @@
             justify-content: center;
         }
     }
+
+    /* SweetAlert Toast Styling */
+    .swal-toast-warning {
+        background: linear-gradient(135deg, #fff3cd 0%, #ffeaa7 100%) !important;
+        border-left: 4px solid #ffc107 !important;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+    }
+
+    .swal-toast-warning .swal2-title {
+        color: #856404 !important;
+        font-size: 0.9rem !important;
+        font-weight: 500 !important;
+    }
+
+    .swal-toast-warning .swal2-timer-progress-bar {
+        background: #ffc107 !important;
+    }
 </style>
 
 <div class="container">
@@ -333,22 +365,6 @@
             <h3><i class="fas fa-cogs"></i> Informasi Produksi</h3>
 
             <div class="form-row">
-                <div class="form-group">
-                    <label for="batch_produksi_id">Batch Produksi <small>(opsional)</small></label>
-                    <select name="batch_produksi_id" id="batch_produksi_id">
-                        <option value="">Pilih Batch Produksi</option>
-                        @foreach($batchProduksis as $batch)
-                        <option value="{{ $batch->id }}" {{ old('batch_produksi_id') == $batch->id ? 'selected' : '' }}>
-                            {{ $batch->nomor_batch }} - {{ $batch->tungku->nama_tungku ?? 'Tungku tidak ditemukan' }}
-                        </option>
-                        @endforeach
-                    </select>
-                    <small class="form-info" style="margin-top:6px; display:block;">Kosongkan untuk membuat batch otomatis oleh sistem.</small>
-                    @error('batch_produksi_id')
-                        <span class="error-message">{{ $message }}</span>
-                    @enderror
-                </div>
-
                 <div class="form-group">
                     <label for="produk_id">Produk <span class="required">*</span></label>
                     <div class="input-group">
@@ -401,9 +417,9 @@
             </div>
 
             <div class="form-group">
-                <label for="catatan">Catatan</label>
-                <textarea name="catatan" id="catatan" placeholder="Tambahkan catatan jika diperlukan">{{ old('catatan') }}</textarea>
-                @error('catatan')
+                <label for="catatan_produksi">Catatan</label>
+                <textarea name="catatan_produksi" id="catatan_produksi" placeholder="Tambahkan catatan jika diperlukan">{{ old('catatan_produksi') }}</textarea>
+                @error('catatan_produksi')
                     <span class="error-message">{{ $message }}</span>
                 @enderror
             </div>
@@ -651,21 +667,23 @@ function enforceLimitForItem(item) {
 }
 
 function showInlineWarning(item, msg) {
-    let w = item.querySelector('.inline-warning');
-    if (!w) {
-        w = document.createElement('div');
-        w.className = 'inline-warning';
-        w.style.color = '#a94442';
-        w.style.fontSize = '0.85rem';
-        w.style.marginTop = '6px';
-        item.appendChild(w);
-    }
-    w.textContent = msg;
+    // Use SweetAlert toast for better positioning
+    Swal.fire({
+        toast: true,
+        position: 'top-end',
+        showConfirmButton: false,
+        timer: 4000,
+        timerProgressBar: true,
+        icon: 'warning',
+        title: msg,
+        customClass: {
+            popup: 'swal-toast-warning'
+        }
+    });
 }
 
 function clearInlineWarning(item) {
-    const w = item.querySelector('.inline-warning');
-    if (w) w.remove();
+    // No need to clear anything with SweetAlert toast - it auto-dismisses
 }
 
 // Attach listeners to enforce caps live

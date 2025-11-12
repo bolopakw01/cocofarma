@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Produk;
+use App\Models\Pengaturan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -43,7 +44,12 @@ class ProdukController extends Controller
     {
         // Allow optional preview via query param 'nama_produk'
         $preview = $this->generatePreviewKode(null, request()->query('nama_produk'));
-        return view('admin.pages.master-produk.create-master-produk', compact('preview'));
+        $gradeOptions = Pengaturan::getProductGrades();
+
+        return view('admin.pages.master-produk.create-master-produk', [
+            'preview' => $preview,
+            'gradeOptions' => $gradeOptions
+        ]);
     }
 
     /**
@@ -56,6 +62,7 @@ class ProdukController extends Controller
             'nama_produk' => 'required|string|max:255',
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
+            'grade_kualitas' => 'nullable|string|max:25',
             'harga_jual' => 'required|numeric|min:0',
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
@@ -68,6 +75,7 @@ class ProdukController extends Controller
             'nama_produk' => $request->nama_produk,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
+            'grade_kualitas' => $request->grade_kualitas,
             'harga_jual' => $request->harga_jual,
             'stok' => 0, // Default stok 0 untuk produk baru
             'minimum_stok' => $request->minimum_stok,
@@ -151,7 +159,12 @@ class ProdukController extends Controller
      */
     public function edit(Produk $produk)
     {
-        return view('admin.pages.master-produk.edit-master-produk', compact('produk'));
+        $gradeOptions = Pengaturan::getProductGrades();
+
+        return view('admin.pages.master-produk.edit-master-produk', [
+            'produk' => $produk,
+            'gradeOptions' => $gradeOptions
+        ]);
     }
 
     /**
@@ -163,6 +176,7 @@ class ProdukController extends Controller
             'nama_produk' => 'required|string|max:255',
             'kategori' => 'required|string|max:100',
             'satuan' => 'required|string|max:50',
+            'grade_kualitas' => 'nullable|string|max:25',
             'harga_jual' => 'required|numeric|min:0',
             'minimum_stok' => 'required|integer|min:0',
             'deskripsi' => 'nullable|string',
@@ -175,6 +189,7 @@ class ProdukController extends Controller
             'nama_produk' => $request->nama_produk,
             'kategori' => $request->kategori,
             'satuan' => $request->satuan,
+            'grade_kualitas' => $request->grade_kualitas,
             'harga_jual' => $request->harga_jual,
             'minimum_stok' => $request->minimum_stok,
             'deskripsi' => $request->deskripsi,

@@ -384,6 +384,7 @@
             text: 'Apakah Anda yakin ingin membersihkan cache aplikasi?',
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonColor: '#f72585',
             cancelButtonColor: '#4361ee',
             confirmButtonText: 'Ya, Bersihkan',

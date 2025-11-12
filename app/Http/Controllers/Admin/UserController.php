@@ -15,7 +15,7 @@ class UserController extends Controller
      */
     public function index()
     {
-        $perPage = request('per_page', 5); // Default 5, bisa diubah via parameter
+        $perPage = request('per_page', 10); // Default 10, bisa diubah via parameter
 
         if ($perPage === 'all') {
             // Return all results but wrap them in a paginator so the view stays compatible

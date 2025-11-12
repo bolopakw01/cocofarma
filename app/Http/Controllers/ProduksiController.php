@@ -143,7 +143,7 @@ class ProduksiController extends Controller
 
         $bahanTable = Schema::hasTable('bahan_bakus') ? 'bahan_bakus' : 'bahan_baku';
 
-        $request->validate([
+    $request->validate([
             'batch_produksi_id' => 'nullable|exists:batch_produksis,id',
             'produk_id' => 'required|exists:produks,id',
             'tanggal_produksi' => 'required|date',
@@ -153,7 +153,7 @@ class ProduksiController extends Controller
             'bahan_digunakan.*.jumlah' => 'required|numeric|min:0.01',
         ]);
 
-        DB::beginTransaction();
+    DB::beginTransaction();
         try {
             // Generate nomor produksi
             $nomorProduksi = $this->generateNomorProduksi();
@@ -187,7 +187,7 @@ class ProduksiController extends Controller
                 'jumlah_target' => $request->jumlah_target,
                 'biaya_produksi' => $totalBiaya,
                 'status' => 'rencana',
-                'catatan' => $request->catatan,
+                'catatan_produksi' => $request->input('catatan_produksi'),
                 'user_id' => Auth::id(),
             ]);
 
@@ -232,7 +232,7 @@ class ProduksiController extends Controller
         // Validasi dasar
         $rules = [
             'status' => 'required|in:rencana,proses,selesai,gagal',
-            'catatan' => 'nullable|string|max:1000',
+            'catatan_produksi' => 'nullable|string|max:1000',
         ];
 
         // Jika status belum selesai/gagal, tambahkan validasi untuk field produksi
@@ -255,7 +255,7 @@ class ProduksiController extends Controller
         try {
             $updateData = [
                 'status' => $request->status,
-                'catatan' => $request->catatan,
+                'catatan_produksi' => $request->input('catatan_produksi'),
             ];
 
             // Jika status belum selesai/gagal, update field produksi

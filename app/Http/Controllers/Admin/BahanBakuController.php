@@ -8,6 +8,7 @@ use App\Models\BahanBaku;
 use App\Models\MasterBahanBaku;
 use App\Models\StokBahanBaku;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
 
@@ -38,7 +39,7 @@ class BahanBakuController extends Controller
             Log::info('Using BahanBaku model');
         }
 
-        $perPage = request('per_page', 5); // Default 5, bisa diubah via parameter
+        $perPage = request('per_page', 10); // Default 10, bisa diubah via parameter
         Log::info('Per page: ' . $perPage);
 
         if ($perPage === 'all') {
@@ -139,8 +140,20 @@ class BahanBakuController extends Controller
             // Validation untuk operasional bahan
             $request->validate([
                 'master_bahan_id' => 'required|exists:master_bahan_baku,id',
-                'kode_bahan' => 'required|string|max:50|unique:bahan_baku,kode_bahan',
-                'nama_bahan' => 'required|string|max:255',
+                'nama_bahan' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    function ($attribute, $value, $fail) use ($request) {
+                        $exists = BahanBaku::where('master_bahan_id', $request->master_bahan_id)
+                            ->where('nama_bahan', $value)
+                            ->exists();
+                        if ($exists) {
+                            $masterBahan = MasterBahanBaku::find($request->master_bahan_id);
+                            $fail("Nama bahan '{$value}' sudah ada untuk master bahan '{$masterBahan->nama_bahan}'.");
+                        }
+                    },
+                ],
                 'satuan' => 'required|string|max:50',
                 'harga_per_satuan' => 'required|numeric|min:0',
                 'stok' => 'required|numeric|min:0',
@@ -149,17 +162,18 @@ class BahanBakuController extends Controller
                 'status' => 'nullable|string|in:aktif,nonaktif'
             ]);
 
-            BahanBaku::create([
-                'master_bahan_id' => $request->master_bahan_id,
-                'kode_bahan' => $request->kode_bahan,
-                'nama_bahan' => $request->nama_bahan,
-                'satuan' => $request->satuan,
-                'harga_per_satuan' => $request->harga_per_satuan,
-                'stok' => $request->stok,
-                'tanggal_masuk' => $request->tanggal_masuk,
-                'tanggal_kadaluarsa' => $request->tanggal_kadaluarsa,
-                'status' => $request->status ?? 'aktif'
-            ]);
+            // Remove kode_bahan from request so model generates it
+            $requestData = $request->except('kode_bahan');
+            $requestData['master_bahan_id'] = $request->master_bahan_id;
+            $requestData['nama_bahan'] = $request->nama_bahan;
+            $requestData['satuan'] = $request->satuan;
+            $requestData['harga_per_satuan'] = $request->harga_per_satuan;
+            $requestData['stok'] = $request->stok;
+            $requestData['tanggal_masuk'] = $request->tanggal_masuk;
+            $requestData['tanggal_kadaluarsa'] = $request->tanggal_kadaluarsa;
+            $requestData['status'] = $request->status ?? 'aktif';
+
+            BahanBaku::create($requestData);
 
             return redirect()->route($routeName)->with('success', 'Bahan baku berhasil dibuat.');
         }
@@ -178,57 +192,33 @@ class BahanBakuController extends Controller
         return $kode;
     }
 
-    /**
+        /**
      * Generate a unique kode for MasterBahanBaku.
-     * Always auto-generate based on name, ignore requested kode.
-     * Format: BB + YYMMDD + first 3 letters of name (uppercased, padded with X) + 3-digit sequence (001, 002...)
-     * Example: BB250924KOP001
+     * Format: MB- + 10 random alphanumeric characters
+     * Example: MB-A1B2C3D4E5
+     * Ensures uniqueness by checking database for existing codes.
      */
     private function generateUniqueKodeMaster(?string $requestedKode, ?string $nama)
     {
-        // Always generate based on name, ignore requestedKode
-        $today = now();
-        $dateString = $today->format('ymd'); // YYMMDD
+        // Generate random kode bahan (MB-{10 random chars})
+        $prefix = 'MB-';
+        $maxAttempts = 20;
+        $attempt = 0;
 
-        // Clean name to letters only and take first 3 characters (pad with X if needed)
-        $cleanName = $nama ? strtoupper(preg_replace('/[^A-Z]/', '', $nama)) : '';
-        $prefixName = substr($cleanName, 0, 3);
-        $prefixName = str_pad($prefixName, 3, 'X');
+        do {
+            $randomSegment = strtoupper(Str::random(10));
+            $kode = $prefix . $randomSegment;
+            $attempt++;
+        } while (
+            \App\Models\MasterBahanBaku::withTrashed()->where('kode_bahan', $kode)->exists() &&
+            $attempt < $maxAttempts
+        );
 
-        $base = 'BB' . $dateString . $prefixName; // e.g. BB250924KOP
-
-        // Find existing codes that start with this base and extract the numeric suffix
-        $existing = \App\Models\MasterBahanBaku::where('kode_bahan', 'like', $base . '%')->pluck('kode_bahan')->toArray();
-
-        $max = 0;
-        foreach ($existing as $code) {
-            if (preg_match('/(\d{3})$/', $code, $m)) {
-                $num = intval($m[1]);
-                if ($num > $max) $max = $num;
-            }
+        if (\App\Models\MasterBahanBaku::withTrashed()->where('kode_bahan', $kode)->exists()) {
+            throw new \RuntimeException('Gagal menghasilkan kode bahan baku unik setelah beberapa percobaan.');
         }
 
-        $next = $max + 1;
-        if ($next > 999) {
-            // safety if sequence grows beyond 999, use 4 digits
-            $suffix = str_pad($next, 4, '0', STR_PAD_LEFT);
-        } else {
-            $suffix = str_pad($next, 3, '0', STR_PAD_LEFT);
-        }
-
-        $candidate = $base . $suffix; // e.g. BB250924KOP001
-
-        // Final uniqueness check (loop just in case)
-        $safety = 0;
-        while (\App\Models\MasterBahanBaku::where('kode_bahan', $candidate)->exists()) {
-            $next++;
-            $suffix = $next > 999 ? str_pad($next, 4, '0', STR_PAD_LEFT) : str_pad($next, 3, '0', STR_PAD_LEFT);
-            $candidate = $base . $suffix;
-            $safety++;
-            if ($safety > 10000) break; // avoid infinite loop
-        }
-
-        return $candidate;
+        return $kode;
     }
 
     /**
@@ -246,6 +236,86 @@ class BahanBakuController extends Controller
         }
 
         return view($viewPath, compact('bahanBaku'));
+    }
+
+    /**
+     * Return JSON detail for a MasterBahanBaku to be used in SweetAlert popup
+     */
+    public function detail(string $id)
+    {
+        try {
+            // Determine whether the request is for master-bahan or operasional bahan
+            $isMaster = request()->routeIs('backoffice.master-bahan.*');
+
+            if ($isMaster) {
+                $master = MasterBahanBaku::with(['bahanBakus' => function ($q) {
+                    $q->select('id', 'master_bahan_id', 'kode_bahan', 'nama_bahan', 'stok', 'harga_per_satuan');
+                }])->withCount('bahanBakus')->findOrFail($id);
+
+                $bahanList = $master->bahanBakus->map(function ($b) {
+                    return [
+                        'id' => $b->id,
+                        'kode_bahan' => $b->kode_bahan,
+                        'nama_bahan' => $b->nama_bahan,
+                        'stok' => $b->stok,
+                        'harga_per_satuan' => $b->harga_per_satuan ?? null,
+                    ];
+                })->values();
+
+                $data = [
+                    'id' => $master->id,
+                    'kode_bahan' => $master->kode_bahan,
+                    'nama_bahan' => $master->nama_bahan,
+                    'satuan' => $master->satuan,
+                    'harga_per_satuan' => $master->harga_per_satuan,
+                    'stok_minimum' => $master->stok_minimum,
+                    'deskripsi' => $master->deskripsi,
+                    'status' => $master->status,
+                    'bahan_count' => $master->bahan_bakus_count ?? $bahanList->count(),
+                    'bahan_list' => $bahanList,
+                    'total_stok' => $master->bahanBakus->sum('stok'),
+                    'rata_rata_harga' => $bahanList->isNotEmpty() ? $bahanList->avg('harga_per_satuan') : $master->harga_per_satuan,
+                    'created_at' => optional($master->created_at)->toDateTimeString(),
+                    'updated_at' => optional($master->updated_at)->toDateTimeString(),
+                ];
+
+                return response()->json($data);
+            }
+
+            // Operasional bahan detail
+            $bahan = BahanBaku::with('masterBahan')->findOrFail($id);
+
+            $data = [
+                'id' => $bahan->id,
+                'kode_bahan' => $bahan->kode_bahan,
+                'nama_bahan' => $bahan->nama_bahan,
+                'satuan' => $bahan->satuan,
+                'stok' => $bahan->stok,
+                'harga_per_satuan' => $bahan->harga_per_satuan,
+                'deskripsi' => $bahan->deskripsi ?? null,
+                'tanggal_masuk' => optional($bahan->tanggal_masuk)->toDateString(),
+                'tanggal_kadaluarsa' => optional($bahan->tanggal_kadaluarsa)->toDateString(),
+                'status' => $bahan->status,
+                'master' => $bahan->masterBahan ? [
+                    'id' => $bahan->masterBahan->id,
+                    'kode_bahan' => $bahan->masterBahan->kode_bahan,
+                    'nama_bahan' => $bahan->masterBahan->nama_bahan,
+                ] : null,
+                'created_at' => optional($bahan->created_at)->toDateTimeString(),
+                'updated_at' => optional($bahan->updated_at)->toDateTimeString(),
+            ];
+
+            return response()->json($data);
+        } catch (\Exception $e) {
+            // Log full exception for debugging
+            Log::error('Failed to load bahan detail: ' . $e->getMessage(), ['id' => $id, 'exception' => $e]);
+
+            // Return a friendly JSON error message with 500 status
+            return response()->json([
+                'error' => true,
+                'message' => 'Gagal memuat detail bahan. Silakan coba lagi atau hubungi administrator.'
+            ], 500);
+        }
     }
 
     /**
@@ -320,8 +390,21 @@ class BahanBakuController extends Controller
             // Validation untuk operasional bahan
             $request->validate([
                 'master_bahan_id' => 'required|exists:master_bahan_baku,id',
-                'kode_bahan' => 'required|string|max:50|unique:bahan_baku,kode_bahan,' . $id,
-                'nama_bahan' => 'required|string|max:255',
+                'nama_bahan' => [
+                    'required',
+                    'string',
+                    'max:255',
+                    function ($attribute, $value, $fail) use ($request, $id) {
+                        $exists = BahanBaku::where('master_bahan_id', $request->master_bahan_id)
+                            ->where('nama_bahan', $value)
+                            ->where('id', '!=', $id)
+                            ->exists();
+                        if ($exists) {
+                            $masterBahan = MasterBahanBaku::find($request->master_bahan_id);
+                            $fail("Nama bahan '{$value}' sudah ada untuk master bahan '{$masterBahan->nama_bahan}'.");
+                        }
+                    },
+                ],
                 'satuan' => 'required|string|max:50',
                 'harga_per_satuan' => 'required|numeric|min:0',
                 'stok' => 'required|numeric|min:0',
@@ -332,9 +415,9 @@ class BahanBakuController extends Controller
 
             $bahanBaku = BahanBaku::findOrFail($id);
 
+            // Don't update kode_bahan - let the model handle it if needed
             $bahanBaku->update([
                 'master_bahan_id' => $request->master_bahan_id,
-                'kode_bahan' => $request->kode_bahan,
                 'nama_bahan' => $request->nama_bahan,
                 'satuan' => $request->satuan,
                 'harga_per_satuan' => $request->harga_per_satuan,

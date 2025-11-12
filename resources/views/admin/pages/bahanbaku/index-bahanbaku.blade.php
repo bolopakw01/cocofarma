@@ -3,10 +3,17 @@
 @section('title', 'Bahan Baku Produksi')
 
 @section('content')
+@php
+    // Arrow icon paths with fallback to typcn arrows if iconamoon files are missing
+    $arrowUpPath = 'bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg';
+    $arrowDownPath = 'bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg';
+    $arrowUpIcon = file_exists(public_path($arrowUpPath)) ? asset($arrowUpPath) : asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg');
+    $arrowDownIcon = file_exists(public_path($arrowDownPath)) ? asset($arrowDownPath) : asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg');
+@endphp
 <x-admin.data-table>
     <x-slot name="header">
         <div class="bolopa-tabel-header-title">
-            <x-admin.icon name="material" alt="Bahan Baku" size="28" />
+            <x-admin.icon name="product" alt="Bahan Baku" size="28" />
             <span>Bahan Baku Produksi</span>
         </div>
         <div class="bolopa-tabel-header-actions">
@@ -59,57 +66,57 @@
                     <th data-sort="no" style="width: 6%;">
                         No
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="kode" style="width: 12%;">
                         Kode Bahan
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="nama" style="width: 20%;">
                         Nama Bahan
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="master" style="width: 20%;">
                         Master Bahan
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="satuan" style="width: 10%;">
                         Satuan
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="stok" style="width: 12%;">
                         Total Stok
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="harga" style="width: 12%;">
                         Harga
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="status" style="width: 10%;">
                         Status
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th style="width: 13%;">Aksi</th>
@@ -149,7 +156,7 @@
                 @empty
                 <tr>
                     <td colspan="9" class="bolopa-tabel-empty">
-                        <x-admin.icon name="material" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
+                        <x-admin.icon name="product" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
                         <br>
                         Belum ada data bahan baku
                     </td>
@@ -303,6 +310,8 @@
             html: `Apakah Anda yakin ingin menghapus bahan baku <strong>${nama}</strong>?<br><small style="color:#6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
             icon: 'warning',
             showCancelButton: true,
+            // reverseButtons swaps the order of confirm and cancel so delete appears on the left
+            reverseButtons: true,
             confirmButtonColor: '#e63946',
             cancelButtonColor: '#4361ee',
             confirmButtonText: 'Ya, Hapus',
@@ -314,58 +323,80 @@
         });
     }
 
-    function showDetail(id, kode, nama, master, satuan, stok, harga, status) {
-        const statusLabel = status === 'aktif' ? 'Aktif' : 'Nonaktif';
-        const stokFormatted = stok == Math.floor(stok) ? stok.toLocaleString('id-ID') : stok.toLocaleString('id-ID', {minimumFractionDigits: 2, maximumFractionDigits: 2});
-        const hargaFormatted = harga > 0 ? 'Rp ' + harga.toLocaleString('id-ID') : '-';
-        
+    function showDetail(id) {
+        const detailUrl = '{{ url("backoffice/bahanbaku") }}' + '/' + id + '/detail';
         Swal.fire({
-            title: 'Detail Bahan Baku',
-            html: `
-                <div class="detail-box">
-                    <div class="detail-header">
-                        <div class="icon-wrapper">
-                            <img src="{{ asset('bolopa/back/images/icon/material-symbols--category-rounded.svg') }}" alt="Bahan" style="width:32px;height:32px;">
-                        </div>
-                        <div>
-                            <div class="detail-title">${nama}</div>
-                            <div class="detail-sub">${kode}</div>
-                        </div>
-                    </div>
-                    <div class="detail-content">
-                        <div class="detail-item">
-                            <div class="detail-label">Master Bahan</div>
-                            <div class="detail-value">${master}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Satuan</div>
-                            <div class="detail-value">${satuan}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Total Stok</div>
-                            <div class="detail-value">${stokFormatted}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Harga per Satuan</div>
-                            <div class="detail-value">${hargaFormatted}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Status</div>
-                            <div class="detail-value">${statusLabel}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">ID Bahan</div>
-                            <div class="detail-value">${id}</div>
-                        </div>
-                    </div>
-                </div>
-            `,
-            showConfirmButton: false,
-            showCloseButton: true,
-            customClass: {
-                popup: 'swal-detail-popup'
-            }
+            title: 'Memuat detail... ',
+            didOpen: () => {
+                Swal.showLoading();
+            },
+            showConfirmButton: false
         });
+
+        fetch(detailUrl, { headers: { 'X-Requested-With': 'XMLHttpRequest' } })
+            .then(res => {
+                if (!res.ok) throw new Error('Gagal memuat data');
+                return res.json();
+            })
+            .then(data => {
+                const statusLabel = data.status === 'aktif' ? 'Aktif' : 'Nonaktif';
+                const harga = data.harga_per_satuan ? Number(data.harga_per_satuan) : 0;
+                const stok = data.stok !== undefined ? Number(data.stok) : 0;
+
+                const html = `
+                    <div style="text-align:left; max-width:520px;">
+                        <div style="display:flex; gap:12px; align-items:center; margin-bottom:12px;">
+                            @php
+                                $categoryIconPath = 'bolopa/back/images/icon/material-symbols--category-rounded.svg';
+                                $fallbackIcon = asset('bolopa/back/images/icon/fluent-mdl2--product.svg');
+                                $categoryIcon = file_exists(public_path($categoryIconPath)) ? asset($categoryIconPath) : $fallbackIcon;
+                            @endphp
+                            <img src="{{ $categoryIcon }}" alt="Bahan" style="width:36px;height:36px;">
+                            <div>
+                                <div style="font-weight:600; font-size:1.1rem;">${data.nama_bahan}</div>
+                                <div style="color:#6c757d; font-size:0.9rem;">${data.satuan} • Kode: ${data.kode_bahan}</div>
+                                <div style="color:#6c757d; font-size:0.85rem;">Master: ${data.master ? data.master.nama_bahan : '-'}</div>
+                            </div>
+                        </div>
+
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
+                            <div style="background:#f8f9fa; padding:10px; border-radius:8px;">
+                                <div style="font-size:0.8rem; color:#6c757d;">Harga per Satuan</div>
+                                <div style="font-weight:600;">Rp ${Number(harga).toLocaleString('id-ID')}</div>
+                            </div>
+                            <div style="background:#f8f9fa; padding:10px; border-radius:8px;">
+                                <div style="font-size:0.8rem; color:#6c757d;">Total Stok</div>
+                                <div style="font-weight:600;">${stok ? Number(stok).toLocaleString('id-ID') : 0}</div>
+                            </div>
+                        </div>
+
+                        <div style="margin-bottom:10px;">
+                            <div style="font-size:0.8rem; color:#6c757d;">Deskripsi</div>
+                            <div style="margin-top:6px;">
+                                <div style="max-height:140px; overflow:auto; padding:10px; background:#ffffff; border:1px solid #eef0f3; border-radius:6px; line-height:1.4;">
+                                    ${data.deskripsi ? data.deskripsi.replace(/\n/g, '<br>') : '<span style="color:#6c757d;">(tidak ada deskripsi)</span>'}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div style="font-size:0.8rem; color:#6c757d; margin-top:6px;">Dibuat: ${data.created_at ?? '-'} • Terakhir diubah: ${data.updated_at ?? '-'}</div>
+                    </div>
+                `;
+
+                Swal.fire({
+                    title: 'Detail Bahan Baku',
+                    html: html,
+                    width: 600,
+                    showCloseButton: true,
+                    showCancelButton: false,
+                    confirmButtonText: 'Tutup',
+                    customClass: { popup: 'swal-detail-popup' }
+                });
+            })
+            .catch(err => {
+                Swal.fire({ title: 'Error', text: 'Gagal memuat detail bahan.', icon: 'error' });
+                console.error(err);
+            });
     }
 
     function resetPagination() {

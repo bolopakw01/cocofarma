@@ -20,7 +20,10 @@ class Produksi extends Model
         'grade_kualitas',
         'biaya_produksi',
         'status',
-        'catatan',
+        'status_transfer',
+        'tanggal_transfer',
+    'catatan',
+    'catatan_produksi',
         'user_id'
     ];
 
@@ -31,7 +34,10 @@ class Produksi extends Model
         'jumlah_target' => 'decimal:2',
         'jumlah_hasil' => 'decimal:2',
         'biaya_produksi' => 'decimal:2',
-        'status' => 'string'
+        'status' => 'string',
+        'status_transfer' => 'string',
+        'tanggal_transfer' => 'datetime',
+        'catatan_produksi' => 'string'
     ];
 
     protected $dates = ['deleted_at'];
@@ -78,6 +84,19 @@ class Produksi extends Model
         ];
 
         return $labels[$this->status] ?? ucfirst($this->status);
+    }
+
+    public function getStatusTransferLabelAttribute()
+    {
+        $labels = [
+            'pending' => 'Belum Dipindahkan',
+            'held' => 'Ditahan',
+            'transferred' => 'Sudah Dipindahkan',
+        ];
+
+        $current = $this->status_transfer ?? 'pending';
+
+        return $labels[$current] ?? ucfirst($current);
     }
 
     // Accessor untuk grade label

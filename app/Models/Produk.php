@@ -19,6 +19,7 @@ class Produk extends Model
         'nama_produk',
         'kategori',
         'satuan',
+        'grade_kualitas',
         'harga_jual',
         'stok',
         'minimum_stok',
@@ -31,7 +32,8 @@ class Produk extends Model
         'harga_jual' => 'decimal:2',
         'stok' => 'integer',
         'minimum_stok' => 'integer',
-        'status' => 'string'
+        'status' => 'string',
+        'grade_kualitas' => 'string'
     ];
 
     protected $dates = ['deleted_at'];
@@ -46,6 +48,12 @@ class Produk extends Model
     public function transaksiItems()
     {
         return $this->hasMany(TransaksiItem::class, 'produk_id');
+    }
+
+    // Relasi dengan StokProduk (stok operasional)
+    public function stokProduks()
+    {
+        return $this->hasMany(StokProduk::class, 'produk_id');
     }
 
     // Relasi dengan Produksi
@@ -76,6 +84,35 @@ class Produk extends Model
     public function scopeAktif($query)
     {
         return $query->where('status', 'aktif');
+    }
+
+    public function setGradeKualitasAttribute($value)
+    {
+        $this->attributes['grade_kualitas'] = $value ? strtoupper($value) : null;
+    }
+
+    public function getGradeDisplayAttribute()
+    {
+        if (!$this->grade_kualitas) {
+            return '-';
+        }
+
+        try {
+            $grades = \App\Models\Pengaturan::getProductGrades();
+            if (!empty($grades)) {
+                $gradeIndex = ord($this->grade_kualitas) - 65;
+                if (isset($grades[$gradeIndex])) {
+                    $gradeName = $grades[$gradeIndex]['name'] ?? $this->grade_kualitas;
+                    $gradeLabel = $grades[$gradeIndex]['label'] ?? '';
+                    return trim($gradeLabel) ? sprintf('%s (%s)', $gradeName, $gradeLabel) : $gradeName;
+                }
+            }
+
+            $label = \App\Models\Pengaturan::getGradeLabel($this->grade_kualitas);
+            return sprintf('Grade %s (%s)', strtoupper($this->grade_kualitas), $label);
+        } catch (\Throwable $e) {
+            return strtoupper($this->grade_kualitas);
+        }
     }
 
     /**

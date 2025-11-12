@@ -286,13 +286,6 @@
         box-shadow: none !important;
         outline: none !important;
     }
-
-    .text-muted {
-        color: #6c757d;
-        font-size: 0.875rem;
-        margin-top: 4px;
-        display: block;
-    }
 </style>
 
 <div class="container">
@@ -335,7 +328,7 @@
             <div class="form-group">
                 <label for="kode_bahan">Kode Bahan <span style="color: var(--danger);">*</span></label>
                 <input type="text" id="kode_bahan" name="kode_bahan" value="{{ old('kode_bahan') }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
-                <small class="text-muted">Format: MB + YYMMDD + Nama (4 karakter) - Kode akan terisi otomatis berdasarkan nama bahan</small>
+                    <small class="text-muted">Kode akan terisi otomatis saat form dimuat</small>
                 @error('kode_bahan')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
@@ -361,7 +354,7 @@
 
             <div class="form-group">
                 <label for="harga_per_satuan">Harga per Satuan <span style="color: var(--danger);">*</span></label>
-                <input type="number" id="harga_per_satuan" name="harga_per_satuan" value="{{ old('harga_per_satuan') }}" min="0" step="0.01" required>
+                <input type="number" id="harga_per_satuan" name="harga_per_satuan" value="{{ old('harga_per_satuan') }}" min="0" step="1" required>
                 @error('harga_per_satuan')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
@@ -371,7 +364,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="stok_minimum">Stok Minimum</label>
-                <input type="number" id="stok_minimum" name="stok_minimum" value="{{ old('stok_minimum') }}" min="0" step="0.01" placeholder="Masukkan stok minimum (opsional)">
+                <input type="number" id="stok_minimum" name="stok_minimum" value="{{ old('stok_minimum') }}" min="0" step="1" placeholder="Masukkan stok minimum (opsional)">
                 <small class="text-muted">Stok minimum untuk notifikasi ketika stok rendah</small>
                 @error('stok_minimum')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
@@ -410,73 +403,19 @@
 </div>
 
 <script>
-// Enhanced auto-generate kode bahan with date (readonly field)
-document.getElementById('nama_bahan').addEventListener('input', function() {
-    const kodeInput = document.getElementById('kode_bahan');
-    const namaValue = this.value.trim();
-
-    if (namaValue.length > 0) {
-        // Get current date in YYMMDD format
-        const today = new Date();
-        const year = today.getFullYear().toString().slice(-2); // Last 2 digits of year
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month with leading zero
-        const day = String(today.getDate()).padStart(2, '0'); // Day with leading zero
-        const dateString = year + month + day; // YYMMDD format
-
-        // Clean the name and take first 4 characters (since we have date, shorter name is better)
-        const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-        if (cleanName.length > 0) {
-            kodeInput.value = 'MB' + dateString + cleanName;
-        } else {
-            kodeInput.value = 'MB' + dateString;
-        }
-    } else {
-        kodeInput.value = '';
-    }
-});
-
-// Prevent manual editing of kode field
-document.getElementById('kode_bahan').addEventListener('keydown', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_bahan').addEventListener('paste', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_bahan').addEventListener('cut', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_bahan').addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-// Auto-generate kode on page load if nama_bahan has value
+// Auto-generate random kode bahan when form loads
 document.addEventListener('DOMContentLoaded', function() {
-    const namaInput = document.getElementById('nama_bahan');
     const kodeInput = document.getElementById('kode_bahan');
 
-    if (namaInput.value.trim()) {
-        const namaValue = namaInput.value.trim();
-        // Get current date in YYMMDD format
-        const today = new Date();
-        const year = today.getFullYear().toString().slice(-2);
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const dateString = year + month + day;
+    // Generate random kode bahan (same format as backend: MB-{10 random chars})
+    function generateRandomKode() {
+        const randomChars = Math.random().toString(36).substring(2, 12).toUpperCase(); // 10 random chars
+        return 'MB-' + randomChars;
+    }
 
-        // Clean the name and take first 4 characters
-        const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-        if (cleanName.length > 0) {
-            kodeInput.value = 'MB' + dateString + cleanName;
-        } else {
-            kodeInput.value = 'MB' + dateString;
-        }
+    // Set kode bahan on page load
+    if (kodeInput && !kodeInput.value) {
+        kodeInput.value = generateRandomKode();
     }
 });
 
@@ -524,30 +463,6 @@ document.querySelector('form').addEventListener('submit', function(e) {
             }
         }
     });
-
-    // Special validation for kode_bahan (should always be filled due to auto-generate)
-    const kodeInput = document.getElementById('kode_bahan');
-    if (!kodeInput.value.trim()) {
-        // If kode is empty, try to generate it from nama_bahan with date
-        const namaInput = document.getElementById('nama_bahan');
-        if (namaInput.value.trim()) {
-            const namaValue = namaInput.value.trim();
-            // Get current date in YYMMDD format
-            const today = new Date();
-            const year = today.getFullYear().toString().slice(-2);
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const dateString = year + month + day;
-
-            // Clean the name and take first 4 characters
-            const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-            if (cleanName.length > 0) {
-                kodeInput.value = 'MB' + dateString + cleanName;
-            } else {
-                kodeInput.value = 'MB' + dateString;
-            }
-        }
-    }
 
     if (!isValid) {
         e.preventDefault();

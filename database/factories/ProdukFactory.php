@@ -24,6 +24,7 @@ class ProdukFactory extends Factory
             'nama_produk' => fake()->word() . ' Product',
             'kategori' => fake()->randomElement(['Obat', 'Suplemen', 'Kosmetik']),
             'satuan' => fake()->randomElement(['Tablet', 'Kapsul', 'Botol', 'Tube']),
+            'grade_kualitas' => fake()->randomElement(['A', 'B', 'C']),
             'harga_jual' => fake()->numberBetween(10000, 100000),
             'stok' => fake()->numberBetween(0, 100),
             'minimum_stok' => fake()->numberBetween(5, 20),

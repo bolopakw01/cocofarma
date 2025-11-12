@@ -91,6 +91,12 @@
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                         </span>
                     </th>
+                    <th data-sort="grade" class="bolopa-align-left bolopa-align-middle">Grade
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                            <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                        </span>
+                    </th>
                     <th data-sort="harga" class="bolopa-align-right bolopa-align-middle">Harga
                         <span class="bolopa-tabel-sort-wrap">
                             <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
@@ -114,7 +120,7 @@
             </thead>
             <tbody>
                 @forelse($produks ?? [] as $index => $produk)
-                    <tr data-search="{{ strtolower($produk->kode_produk.' '.$produk->nama_produk.' '.$produk->kategori.' '.$produk->satuan) }}">
+                    <tr data-search="{{ strtolower($produk->kode_produk.' '.$produk->nama_produk.' '.$produk->kategori.' '.$produk->satuan.' '.$produk->grade_display) }}">
                         <td data-sort-value="{{ ($produks->currentPage() - 1) * $produks->perPage() + $index + 1 }}" class="bolopa-align-center bolopa-align-middle">
                             {{ ($produks->currentPage() - 1) * $produks->perPage() + $index + 1 }}
                         </td>
@@ -140,6 +146,7 @@
                         </td>
                         <td data-sort-value="{{ strtolower($produk->kategori) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->kategori }}</td>
                         <td data-sort-value="{{ strtolower($produk->satuan) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->satuan }}</td>
+                        <td data-sort-value="{{ strtolower($produk->grade_kualitas ?? '') }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->grade_display }}</td>
                         <td data-sort-value="{{ $produk->harga_jual }}" class="bolopa-align-right bolopa-align-middle">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
                         <td data-sort-value="{{ $produk->minimum_stok }}" class="bolopa-align-right bolopa-align-middle">{{ $produk->minimum_stok }}</td>
                         <td data-sort-value="{{ $produk->status === 'aktif' ? 1 : 0 }}" class="bolopa-align-center bolopa-align-middle">
@@ -156,6 +163,8 @@
                                 data-produk-foto="{{ $produk->foto ? asset('bolopa/pokoknyayangadapadasistem/FotoProduk/' . $produk->foto) : '' }}"
                                 data-produk-kategori="{{ $produk->kategori }}"
                                 data-produk-satuan="{{ $produk->satuan }}"
+                                data-produk-grade="{{ $produk->grade_display }}"
+                                data-produk-grade-key="{{ $produk->grade_kualitas }}"
                                 data-produk-harga="{{ $produk->harga_jual }}"
                                 data-produk-stok="{{ $produk->stok }}"
                                 data-produk-minimum="{{ $produk->minimum_stok }}"
@@ -176,7 +185,7 @@
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="10" class="bolopa-align-center bolopa-align-middle" style="padding:40px;">
+                        <td colspan="11" class="bolopa-align-center bolopa-align-middle" style="padding:40px;">
                             <x-admin.icon name="product" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
                             <br>
                             Tidak ada data produk
@@ -267,10 +276,11 @@
     #dataTable th:nth-child(4), #dataTable td:nth-child(4) { text-align: left; } /* Nama Produk */
     #dataTable th:nth-child(5), #dataTable td:nth-child(5) { text-align: left; } /* Kategori */
     #dataTable th:nth-child(6), #dataTable td:nth-child(6) { text-align: left; } /* Satuan */
-    #dataTable th:nth-child(7), #dataTable td:nth-child(7) { text-align: right; } /* Harga Jual */
-    #dataTable th:nth-child(8), #dataTable td:nth-child(8) { text-align: right; } /* Min Stok */
-    #dataTable th:nth-child(9), #dataTable td:nth-child(9) { text-align: center; } /* Status */
-    #dataTable th:nth-child(10), #dataTable td:nth-child(10) { text-align: center; } /* Aksi */
+    #dataTable th:nth-child(7), #dataTable td:nth-child(7) { text-align: left; } /* Grade */
+    #dataTable th:nth-child(8), #dataTable td:nth-child(8) { text-align: right; } /* Harga Jual */
+    #dataTable th:nth-child(9), #dataTable td:nth-child(9) { text-align: right; } /* Min Stok */
+    #dataTable th:nth-child(10), #dataTable td:nth-child(10) { text-align: center; } /* Status */
+    #dataTable th:nth-child(11), #dataTable td:nth-child(11) { text-align: center; } /* Aksi */
 
 </style>
 @endpush
@@ -364,7 +374,8 @@
             confirmButtonColor: '#e63946',
             cancelButtonColor: '#4361ee',
             confirmButtonText: 'Ya, Hapus',
-            cancelButtonText: 'Batal'
+            cancelButtonText: 'Batal',
+            reverseButtons: true
         }).then((result) => {
             if (result.isConfirmed) {
                 submitDeleteForm(url);
@@ -384,14 +395,17 @@
         const stok = parseInt(button.getAttribute('data-produk-stok'));
         const minimum = parseInt(button.getAttribute('data-produk-minimum'));
         const status = button.getAttribute('data-produk-status') === 'true';
+        const gradeDisplay = button.getAttribute('data-produk-grade');
+        const gradeKey = button.getAttribute('data-produk-grade-key');
 
-        showDetail(id, kode, nama, deskripsi, fotoUrl, kategori, satuan, harga, stok, minimum, status);
+        showDetail(id, kode, nama, deskripsi, fotoUrl, kategori, satuan, gradeDisplay, gradeKey, harga, stok, minimum, status);
     }
 
-    function showDetail(id, kode, nama, deskripsi, fotoUrl, kategori, satuan, harga, stok, minimum, status) {
+    function showDetail(id, kode, nama, deskripsi, fotoUrl, kategori, satuan, gradeDisplay, gradeKey, harga, stok, minimum, status) {
         const statusLabel = status ? 'Aktif' : 'Non-Aktif';
         const statusBadgeClass = status ? 'badge-success' : 'badge-danger';
         const statusDotClass = status ? 'dot-on' : 'dot-off';
+        const formattedGrade = gradeDisplay && gradeDisplay !== '-' ? gradeDisplay : (gradeKey ? `Grade ${gradeKey}` : '-');
 
         // Check if image file actually exists
         const imageExists = fotoUrl && fotoUrl.length > 0;
@@ -482,6 +496,10 @@
                             <div class="field-item">
                                 <div class="label">Satuan</div>
                                 <div class="field">${satuan}</div>
+                            </div>
+                            <div class="field-item">
+                                <div class="label">Grade</div>
+                                <div class="field">${formattedGrade}</div>
                             </div>
                             <div class="field-item">
                                 <div class="label">Harga</div>

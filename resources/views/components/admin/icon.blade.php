@@ -16,16 +16,17 @@
         'delete' => 'line-md--trash.svg',
         'prev' => 'line-md--chevron-small-left.svg',
         'next' => 'line-md--chevron-small-right.svg',
-        'product' => 'f7--cube-box-fill.svg',
+        'product' => 'fluent-mdl2--product.svg',
+        'production' => 'f7--cube-box-fill.svg',
         'transaction' => 'ant-design--wallet-outlined.svg',
         'report' => 'uil--chart-line.svg',
-        'inventory' => 'lets-icons--materials-light.svg',
+        'inventory' => 'fluent-mdl2--product.svg',
         'dashboard' => 'ic--outline-dashboard.svg',
         'lock' => 'mingcute--safe-lock-fill.svg',
-        'materials' => 'lets-icons--materials-light.svg',
         'adjustment' => 'tdesign--adjustment.svg',
         'cart' => 'mdi--cart-heart.svg',
         'switch' => 'ep--switch.svg',
+        'product-fluent' => 'fluent-mdl2--product.svg',
     ];
 
     $fileName = $iconMap[$name] ?? $name;

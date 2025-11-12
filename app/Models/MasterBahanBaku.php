@@ -6,8 +6,6 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Support\Str;
-use Illuminate\Support\Facades\DB;
-use App\Models\CodeCounter;
 
 class MasterBahanBaku extends Model
 {
@@ -51,15 +49,16 @@ class MasterBahanBaku extends Model
         return $this->bahanBakusAktif->sum('stok');
     }
 
-    // Accessor untuk rata-rata harga
-    public function getRataRataHargaAttribute()
+    // Accessor untuk format harga sebagai integer (untuk form input)
+    public function getHargaPerSatuanFormattedAttribute()
     {
-        $bahanBakus = $this->bahanBakusAktif;
-        if ($bahanBakus->isEmpty()) {
-            return $this->harga_per_satuan;
-        }
+        return number_format($this->harga_per_satuan, 0, '', '');
+    }
 
-        return $bahanBakus->avg('harga_per_satuan');
+    // Accessor untuk format stok minimum sebagai integer (untuk form input)
+    public function getStokMinimumFormattedAttribute()
+    {
+        return $this->stok_minimum ? number_format($this->stok_minimum, 0, '', '') : '';
     }
 
     // Scope untuk master bahan aktif
@@ -70,49 +69,32 @@ class MasterBahanBaku extends Model
 
     /**
      * Auto-generate kode_bahan for master bahan when creating.
-     * Format: MB + DDMMYY + 3 letters + global sequence per hari (001, 002...)
-     * Example: MB240925GUL001
-     * If collision, add random 2 digits to ensure uniqueness (including soft-deleted).
+     * Format: MB- + 10 random characters (alphanumeric)
+     * Example: MB-6MMBCO68GE
+     * Ensures uniqueness by checking database for existing codes.
      */
     protected static function booted()
     {
         static::creating(function ($model) {
             if (empty($model->kode_bahan)) {
-                $date = now()->format('dmy'); // DDMMYY
-                $base = 'MB' . $date; // key for counter, per day
+                $prefix = 'MB-';
+                $maxAttempts = 20;
+                $attempt = 0;
 
-                $name = $model->nama_bahan ?? '';
-                $abbr = strtoupper(substr(preg_replace('/[^A-Za-z0-9]/', '', $name), 0, 3));
-                if ($abbr === '') {
-                    $abbr = 'XXX';
+                do {
+                    $randomSegment = strtoupper(Str::random(10));
+                    $kode = $prefix . $randomSegment;
+                    $attempt++;
+                } while (
+                    MasterBahanBaku::withTrashed()->where('kode_bahan', $kode)->exists() &&
+                    $attempt < $maxAttempts
+                );
+
+                if (MasterBahanBaku::withTrashed()->where('kode_bahan', $kode)->exists()) {
+                    throw new \RuntimeException('Gagal menghasilkan kode bahan baku unik setelah beberapa percobaan.');
                 }
 
-                DB::transaction(function () use ($base, $abbr, $model) {
-                    $maxTries = 1000;
-                    $num = 1;
-                    $counter = CodeCounter::where('key', $base)->lockForUpdate()->first();
-                    if ($counter) {
-                        $num = $counter->counter + 1;
-                    }
-                    $found = false;
-                    for ($i = 0; $i < $maxTries; $i++) {
-                        $nextNumber = $num > 999 ? str_pad((string) $num, 4, '0', STR_PAD_LEFT) : str_pad((string) $num, 3, '0', STR_PAD_LEFT);
-                        $kode = $base . $abbr . $nextNumber;
-                        if (!MasterBahanBaku::withTrashed()->where('kode_bahan', $kode)->exists()) {
-                            // Update counter in DB for each attempt
-                            if (! $counter) {
-                                CodeCounter::create(['key' => $base, 'counter' => $num]);
-                            } else {
-                                $counter->counter = $num;
-                                $counter->save();
-                            }
-                            $found = true;
-                            break;
-                        }
-                        $num++;
-                    }
-                    $model->kode_bahan = $kode;
-                });
+                $model->kode_bahan = $kode;
             }
         });
     }

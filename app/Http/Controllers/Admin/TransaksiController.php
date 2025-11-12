@@ -49,7 +49,7 @@ class TransaksiController extends Controller
         }
 
     // Handle per-page entries (support 'all' => 1000). Default to 5 for transaksi page.
-    $perPage = $request->get('per_page', 5);
+    $perPage = $request->get('per_page', 10);
         if ($perPage === 'all') {
             $perPage = 1000;
         } else {

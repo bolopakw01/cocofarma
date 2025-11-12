@@ -309,7 +309,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="kode_bahan">Kode Bahan <span style="color: var(--danger);">*</span></label>
-                    <input type="text" id="kode_bahan" name="kode_bahan" value="{{ old('kode_bahan', $bahanBaku->kode_bahan) }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
+                    <input type="text" id="kode_bahan" value="{{ old('kode_bahan', $bahanBaku->kode_bahan) }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
                     <small class="text-muted">Kode bahan tidak dapat diubah setelah dibuat</small>
                     @error('kode_bahan')
                         <span class="text-danger" data-server-error="true">{{ $message }}</span>
@@ -319,6 +319,7 @@
                 <div class="form-group">
                     <label for="nama_bahan">Nama Bahan <span style="color: var(--danger);">*</span></label>
                     <input type="text" id="nama_bahan" name="nama_bahan" value="{{ old('nama_bahan', $bahanBaku->nama_bahan) }}" required>
+                    <small class="text-muted">Nama bahan harus unik untuk setiap master bahan yang sama</small>
                     @error('nama_bahan')
                         <span class="text-danger" data-server-error="true">{{ $message }}</span>
                     @enderror

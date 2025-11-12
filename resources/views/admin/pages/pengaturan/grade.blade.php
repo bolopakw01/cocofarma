@@ -372,6 +372,7 @@ function attachEventListeners() {
                 text: `Apakah Anda yakin ingin menghapus grade "${grade.name}"?`,
                 icon: 'warning',
                 showCancelButton: true,
+                reverseButtons: true,
                 confirmButtonColor: '#d33',
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Ya, Hapus!',

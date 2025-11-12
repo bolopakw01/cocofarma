@@ -294,6 +294,7 @@
             html: `Apakah Anda yakin ingin menghapus user <strong>${nama}</strong>?<br><small style="color:#6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonColor: '#e63946',
             cancelButtonColor: '#4361ee',
             confirmButtonText: 'Ya, Hapus',

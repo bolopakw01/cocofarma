@@ -1,6 +1,8 @@
 @extends('admin.layouts.app')
 
 @php
+    use Illuminate\Support\Str;
+
     $pageTitle = 'Produk';
 @endphp
 
@@ -53,14 +55,10 @@
 
     <x-slot name="table">
         @php
-            $show = 'stok';
-            if(isset($stokProduks) && $stokProduks->count() > 0) {
-                $show = 'stok';
-            } elseif(isset($produksis) && $produksis->count() > 0) {
-                $show = 'produksi';
-            } elseif(isset($activeProduks) && $activeProduks->count() > 0) {
-                $show = 'master';
-            }
+            $hasMaster = isset($masterProduks) && $masterProduks->count() > 0;
+            $hasStok = isset($stokProduks) && $stokProduks->count() > 0;
+            $hasProduksi = isset($produksis) && $produksis->count() > 0;
+            $show = $hasMaster ? 'master' : ($hasStok ? 'stok' : ($hasProduksi ? 'produksi' : 'master'));
         @endphp
 
         @if($show === 'master')
@@ -92,7 +90,19 @@
                                 <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
                             </span>
                         </th>
+                        <th data-sort="grade" class="bolopa-align-left bolopa-align-middle">Grade
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                            </span>
+                        </th>
                         <th data-sort="harga" class="bolopa-align-right bolopa-align-middle">Harga
+                            <span class="bolopa-tabel-sort-wrap">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
+                                <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
+                            </span>
+                        </th>
+                        <th data-sort="stok" class="bolopa-align-center bolopa-align-middle">Stok
                             <span class="bolopa-tabel-sort-wrap">
                                 <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg') }}" alt="sort up">
                                 <img class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" src="{{ asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg') }}" alt="sort down">
@@ -102,8 +112,8 @@
                     </tr>
                 </thead>
                 <tbody>
-                    @forelse($activeProduks ?? collect() as $produk)
-                        <tr data-search="{{ strtolower($produk->nama_produk.' '.$produk->kategori.' '.$produk->satuan) }}">
+                    @forelse($masterProduks ?? collect() as $produk)
+                        <tr data-search="{{ strtolower($produk->nama_produk.' '.$produk->kategori.' '.$produk->satuan.' '.$produk->grade_display.' '.(($produk->total_operasional_stok ?? 0) > 0 ? 'ada stok' : 'habis')) }}" data-produk-id="{{ $produk->id }}">
                             <td data-sort-value="{{ $loop->iteration }}" class="bolopa-align-center bolopa-align-middle">
                                 {{ $loop->iteration }}
                             </td>
@@ -128,7 +138,16 @@
                             </td>
                             <td data-sort-value="{{ strtolower($produk->kategori) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->kategori }}</td>
                             <td data-sort-value="{{ strtolower($produk->satuan) }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->satuan }}</td>
+                            <td data-sort-value="{{ strtolower($produk->grade_kualitas ?? '') }}" class="bolopa-align-left bolopa-align-middle">{{ $produk->grade_display }}</td>
                             <td data-sort-value="{{ $produk->harga_jual }}" class="bolopa-align-right bolopa-align-middle">Rp {{ number_format($produk->harga_jual, 0, ',', '.') }}</td>
+                            <td data-sort-value="{{ $produk->total_operasional_stok ?? $produk->stokProduks->sum('sisa_stok') }}" class="bolopa-align-center bolopa-align-middle">
+                                @php
+                                    $totalStok = $produk->total_operasional_stok ?? $produk->stokProduks->sum('sisa_stok');
+                                @endphp
+                                <span class="{{ $totalStok > 0 ? 'text-success' : 'text-danger' }} font-weight-bold">
+                                    {{ $totalStok == floor($totalStok) ? number_format($totalStok, 0, ',', '.') : number_format($totalStok, 2, ',', '.') }}
+                                </span>
+                            </td>
                             <td class="bolopa-tabel-actions bolopa-align-center bolopa-align-middle" style="display: flex; align-items: center; justify-content: center; padding: 15px 12px;">
                                 <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action"
                                     onclick="viewMasterProductDetails({{ $produk->id }})"
@@ -146,7 +165,7 @@
                         </tr>
                     @empty
                         <tr>
-                            <td colspan="7" class="bolopa-align-center bolopa-align-middle" style="padding:40px;">
+                            <td colspan="9" class="bolopa-align-center bolopa-align-middle" style="padding:40px;">
                                 <x-admin.icon name="product" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
                                 <br>
                                 Tidak ada data produk
@@ -210,7 +229,7 @@
                                 <td class="bolopa-align-center bolopa-align-middle">{{ $sp->grade_display ?? $sp->grade_kualitas ?? '-' }}</td>
                                 <td class="bolopa-align-center bolopa-align-middle">
                                     <div class="actions">
-                                        <button class="btn btn-info btn-action" onclick="viewDetails({{ $sp->id }}, 'stok')" title="Lihat Detail">
+                                        <button type="button" class="btn btn-info btn-action" onclick="viewDetails({{ $sp->id }}, 'stok')" title="Lihat Detail">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         @if(Auth::check() && Auth::user()->role === 'super_admin')
@@ -271,7 +290,7 @@
                     </thead>
                     <tbody>
                         @forelse($produksis ?? collect() as $p)
-                            <tr>
+                            <tr data-produksi-id="{{ $p->id }}">
                                 <td class="bolopa-align-center bolopa-align-middle">{{ $loop->iteration }}</td>
                                 <td class="bolopa-align-center bolopa-align-middle">{{ optional($p->tanggal_produksi)->format('d/m/Y') ?? '-' }}</td>
                                 <td class="bolopa-align-left bolopa-align-middle">{{ optional($p->produk)->nama_produk ?? '-' }}</td>
@@ -279,7 +298,7 @@
                                 <td class="bolopa-align-center bolopa-align-middle">{{ $p->grade_display ?? $p->grade_kualitas ?? '-' }}</td>
                                 <td class="bolopa-align-center bolopa-align-middle">
                                     <div class="actions">
-                                        <button class="btn btn-info btn-action" onclick="viewDetails({{ $p->id }}, 'produksi')" title="Lihat Detail">
+                                        <button type="button" class="btn btn-info btn-action" onclick="viewDetails({{ $p->id }}, 'produksi')" title="Lihat Detail">
                                             <i class="fas fa-eye"></i>
                                         </button>
                                         @if(Auth::check() && Auth::user()->role === 'super_admin')
@@ -375,12 +394,81 @@
 
     // Action functions
     function viewDetails(id, type) {
+        console.log('viewDetails called with:', id, type);
         if (type === 'stok') {
-            // Show modal with stok details
-            showStokDetails(id);
+            showOperationalDetail(id, 'stok');
         } else if (type === 'produksi') {
-            // Redirect to produksi detail
-            window.location.href = `/backoffice/produksi/${id}`;
+            showOperationalDetail(id, 'produksi');
+        }
+    }
+
+    function showOperationalDetail(id, type) {
+        console.log('showOperationalDetail called with:', id, type);
+        try {
+            const selector = type === 'stok' ? `tr[data-stok-id="${id}"]` : `tr[data-produksi-id="${id}"]`;
+            const row = document.querySelector(selector);
+
+            if (!row) {
+                Swal.fire({
+                    title: 'Detail Tidak Ditemukan',
+                    text: `Detail ${type} dengan ID ${id} tidak ditemukan.`,
+                    icon: 'info'
+                });
+                return;
+            }
+
+            // Extract data from table row
+            const cols = row.querySelectorAll('td');
+            let data = {};
+
+            if (type === 'stok') {
+                // columns: no(0), tanggal(1), nama(2), jumlah(3), harga(4), grade(5), aksi(6)
+                data = {
+                    tanggal: cols[1] ? cols[1].textContent.trim() : '-',
+                    nama: cols[2] ? cols[2].textContent.trim() : '-',
+                    jumlah: cols[3] ? cols[3].textContent.trim() : '-',
+                    harga: cols[4] ? cols[4].textContent.trim() : '-',
+                    grade: cols[5] ? cols[5].textContent.trim() : '-'
+                };
+            } else if (type === 'produksi') {
+                // columns: no(0), tanggal(1), nama(2), jumlah(3), grade(4), aksi(5)
+                data = {
+                    tanggal: cols[1] ? cols[1].textContent.trim() : '-',
+                    nama: cols[2] ? cols[2].textContent.trim() : '-',
+                    jumlah: cols[3] ? cols[3].textContent.trim() : '-',
+                    grade: cols[4] ? cols[4].textContent.trim() : '-'
+                };
+            }
+
+            const title = type === 'stok' ? 'Detail Stok Operasional' : 'Detail Produksi';
+            const typeLabel = type === 'stok' ? 'Stok' : 'Produksi';
+
+            // Simple HTML first
+            let html = `
+                <div style="text-align: left; padding: 20px;">
+                    <h3>${title}</h3>
+                    <p><strong>Tanggal:</strong> ${data.tanggal}</p>
+                    <p><strong>Nama Produk:</strong> ${data.nama}</p>
+                    <p><strong>${type === 'stok' ? 'Jumlah Sisa Stok' : 'Jumlah Hasil'}:</strong> ${data.jumlah}</p>
+                    ${type === 'stok' ? `<p><strong>Harga Satuan:</strong> ${data.harga}</p>` : ''}
+                    <p><strong>Grade Kualitas:</strong> ${data.grade}</p>
+                </div>
+            `;
+
+            Swal.fire({
+                title: title,
+                html: html,
+                width: 600,
+                showCloseButton: true,
+                confirmButtonText: 'Tutup'
+            });
+        } catch (error) {
+            console.error('Error showing detail:', error);
+            Swal.fire({
+                title: 'Error',
+                text: 'Terjadi kesalahan saat menampilkan detail.',
+                icon: 'error'
+            });
         }
     }
 
@@ -401,6 +489,7 @@
             text: 'Yakin ingin menghapus stok operasional ini? Tindakan ini tidak dapat dibatalkan.',
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonText: 'Ya, hapus',
             cancelButtonText: 'Batal',
         }).then((result) => {
@@ -437,6 +526,7 @@
             text: 'Yakin ingin menghapus produksi ini? Pastikan stok produk dan stok operasional sudah kosong.',
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonText: 'Ya, hapus',
             cancelButtonText: 'Batal',
         }).then((result) => {
@@ -460,44 +550,80 @@
         });
     }
 
-    function showStokDetails(id) {
-        const row = document.querySelector('tr[data-stok-id="' + id + '"]');
+    function viewMasterProductDetails(id) {
+        // For operational users, show master product details in popup
+        // since they don't have access to master product show page
+        showMasterProductDetail(id);
+    }
+
+    function showMasterProductDetail(id) {
+        console.log('showMasterProductDetail called with:', id);
+
+        // Find the product row in the master products table
+        const row = document.querySelector(`tr[data-produk-id="${id}"]`);
         if (!row) {
-            Swal.fire({title: 'Detail', text: 'Detail stok tidak ditemukan.', icon: 'info'});
+            Swal.fire({
+                title: 'Detail Tidak Ditemukan',
+                text: 'Detail produk master tidak ditemukan.',
+                icon: 'info'
+            });
             return;
         }
-        // columns: idx, tanggal, nama, jumlah, harga, grade, aksi
-        const cols = row.querySelectorAll('td');
-        const tanggal = cols[1] ? cols[1].textContent.trim() : '-';
-        const nama = cols[2] ? cols[2].textContent.trim() : '-';
-        const jumlah = cols[3] ? cols[3].textContent.trim() : '-';
-        const harga = cols[4] ? cols[4].textContent.trim() : '-';
-        const grade = cols[5] ? cols[5].textContent.trim() : '-';
 
-        const html = `
-            <div style="text-align:left">
-                <p><strong>Tanggal:</strong> ${tanggal}</p>
-                <p><strong>Produk:</strong> ${nama}</p>
-                <p><strong>Jumlah Sisa:</strong> ${jumlah}</p>
-                <p><strong>Harga Satuan:</strong> ${harga}</p>
-                <p><strong>Grade:</strong> ${grade}</p>
+        // Extract data from table row
+        const cols = row.querySelectorAll('td');
+        const imgElement = row.querySelector('img');
+        const imageSrc = imgElement ? imgElement.src : null;
+        const imageAlt = imgElement ? imgElement.alt : 'Tidak ada foto';
+
+        // columns: no(0), gambar(1), nama(2), kategori(3), satuan(4), harga(5), stok(6), aksi(7)
+        const data = {
+            nama: cols[2] ? cols[2].textContent.trim().replace('●', '').trim() : '-',
+            kategori: cols[3] ? cols[3].textContent.trim() : '-',
+            satuan: cols[4] ? cols[4].textContent.trim() : '-',
+            grade: cols[5] ? cols[5].textContent.trim() : '-',
+            harga: cols[6] ? cols[6].textContent.trim() : '-',
+            stok: cols[7] ? cols[7].textContent.trim() : '0',
+            foto: imageSrc,
+            alt: imageAlt
+        };
+
+        // Create HTML for the popup
+        let html = `
+            <div style="text-align: left; padding: 20px;">
+                <div style="text-align: center; margin-bottom: 20px;">
+        `;
+
+        if (data.foto) {
+            html += `<img src="${data.foto}" alt="${data.alt}" style="max-width: 150px; max-height: 150px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1);">`;
+        } else {
+            html += `
+                <div style="width: 100px; height: 100px; background: #f8f9fa; border: 2px dashed #dee2e6; border-radius: 8px; display: inline-flex; align-items: center; justify-content: center; color: #6c757d;">
+                    <i class="fas fa-image" style="font-size: 2rem;"></i>
+                </div>
+            `;
+        }
+
+        html += `
+                </div>
+                <div style="border-top: 1px solid #e9ecef; padding-top: 20px;">
+                    <p><strong>Nama Produk:</strong> ${data.nama}</p>
+                    <p><strong>Kategori:</strong> ${data.kategori}</p>
+                    <p><strong>Satuan:</strong> ${data.satuan}</p>
+                    <p><strong>Grade:</strong> ${data.grade}</p>
+                    <p><strong>Harga Jual:</strong> ${data.harga}</p>
+                    <p><strong>Stok Tersedia:</strong> <span style="color: ${parseFloat(data.stok.replace(/,/g, '')) > 0 ? '#28a745' : '#dc3545'}; font-weight: 600;">${data.stok} ${data.satuan}</span></p>
+                </div>
             </div>
         `;
 
         Swal.fire({
-            title: 'Detail Stok',
+            title: 'Detail Produk Master',
             html: html,
-            width: 600,
+            width: 500,
             showCloseButton: true,
-            focusConfirm: false,
             confirmButtonText: 'Tutup'
         });
-    }
-
-    function viewMasterProductDetails(id) {
-        // For now, redirect to master produk show page
-        // In future, could implement AJAX modal
-        window.location.href = `/backoffice/master-produk/${id}`;
     }
 
     // Helper function to show toast
@@ -519,14 +645,36 @@
 
 @push('styles')
 <style>
+    .swal2-popup-card {
+        background: transparent !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+    .swal2-popup-card .swal-card {
+        background: #ffffff;
+        box-shadow: 0 6px 18px rgba(15,23,42,0.08);
+        border-radius: 12px;
+        margin: 0;
+        text-align: left;
+        position: relative;
+    }
+
     /* Table column alignments sesuai master produk */
     #dataTable th:nth-child(1), #dataTable td:nth-child(1) { text-align: center; } /* No */
     #dataTable th:nth-child(2), #dataTable td:nth-child(2) { text-align: center; } /* Gambar */
     #dataTable th:nth-child(3), #dataTable td:nth-child(3) { text-align: left; } /* Nama */
     #dataTable th:nth-child(4), #dataTable td:nth-child(4) { text-align: left; } /* Kategori */
     #dataTable th:nth-child(5), #dataTable td:nth-child(5) { text-align: left; } /* Satuan */
-    #dataTable th:nth-child(6), #dataTable td:nth-child(6) { text-align: right; } /* Harga */
-    #dataTable th:nth-child(7), #dataTable td:nth-child(7) { text-align: center; } /* Aksi */
+    #dataTable th:nth-child(6), #dataTable td:nth-child(6) { text-align: left; } /* Grade */
+    #dataTable th:nth-child(7), #dataTable td:nth-child(7) { text-align: right; } /* Harga */
+    #dataTable th:nth-child(8), #dataTable td:nth-child(8) { text-align: center; } /* Stok */
+    #dataTable th:nth-child(9), #dataTable td:nth-child(9) { text-align: center; } /* Aksi */
+
+    /* Stock status colors */
+    .text-success { color: #28a745 !important; }
+    .text-danger { color: #dc3545 !important; }
+    .font-weight-bold { font-weight: 600 !important; }
+    #dataTable th:nth-child(8), #dataTable td:nth-child(8) { text-align: center; } /* Aksi */
 
 </style>
 @endpush

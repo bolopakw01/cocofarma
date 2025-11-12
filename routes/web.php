@@ -55,6 +55,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
 
         Route::prefix('bahanbaku')->name('bahanbaku.')->group(function () {
             Route::get('/', [BahanBakuController::class, 'index'])->name('index');
+            // AJAX detail endpoint for operational bahan (rich SweetAlert)
+            Route::get('/{bahanbaku}/detail', [BahanBakuController::class, 'detail'])->name('detail');
             Route::get('/create', [BahanBakuController::class, 'create'])->name('create');
             Route::post('/', [BahanBakuController::class, 'store'])->name('store');
             Route::get('/{bahanbaku}', [BahanBakuController::class, 'show'])->name('show');
@@ -73,35 +75,45 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
             Route::delete('/{produksi}', [MainProduksiController::class, 'destroy'])->name('destroy');
             Route::post('/{produksi}/start', [MainProduksiController::class, 'startProduction'])->name('start');
             Route::post('/{produksi}/complete', [MainProduksiController::class, 'completeProduction'])->name('complete');
+            Route::post('/{produksi}/transfer', [MainProduksiController::class, 'transferToProduk'])->name('transfer');
             // AJAX: get current stok for a list of bahan IDs
             Route::post('/api/bahan-stok', [MainProduksiController::class, 'apiBahanStok'])->name('api.bahan-stok');
         });
 
         // Operational Produk page (simple index view)
         Route::prefix('produk')->name('produk.')->group(function () {
-            // Operational Produk index: show all active master products + their operational stock
+            // Operational Produk index: show master produk list alongside stok operasional dan histori produksi
             Route::get('/', function () {
-                // Get all active products from master produk
-                $activeProduks = \App\Models\Produk::where('status', 'aktif')
+                $masterProduks = \App\Models\Produk::aktif()
+                    ->with(['stokProduks' => function ($query) {
+                        $query->orderByDesc('tanggal')->orderByDesc('id');
+                    }])
                     ->orderBy('nama_produk')
-                    ->get();
+                    ->get()
+                    ->map(function ($produk) {
+                        $produk->total_operasional_stok = $produk->stokProduks->sum(function ($stok) {
+                            return max($stok->sisa_stok, 0);
+                        });
+                        return $produk;
+                    });
 
-                // Fetch recent produced stock entries with relations
                 $stokProduks = \App\Models\StokProduk::with(['produk', 'batchProduksi'])
                     ->orderByDesc('tanggal')
                     ->orderByDesc('id')
                     ->limit(50)
                     ->get();
 
-                // Also fetch recent produksi records that have status 'selesai'
                 $produksis = \App\Models\Produksi::with(['produk', 'batchProduksi'])
-                    ->where('status', 'selesai')
                     ->orderByDesc('tanggal_produksi')
                     ->orderByDesc('id')
                     ->limit(50)
                     ->get();
 
-                return view('admin.pages.produk.index-produk', compact('stokProduks', 'produksis', 'activeProduks'));
+                return view('admin.pages.produk.index-produk', [
+                    'stokProduks' => $stokProduks,
+                    'produksis' => $produksis,
+                    'masterProduks' => $masterProduks,
+                ]);
             })->name('index');
 
             // Stok produk management (super_admin only)
@@ -154,6 +166,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
         Route::prefix('master-bahan')->name('master-bahan.')->group(function () {
             // Add preview route for AJAX preview of kode
             Route::get('/preview-kode', [BahanBakuController::class, 'previewKode'])->name('preview-kode');
+            // AJAX detail endpoint for rich SweetAlert popup
+            Route::get('/{bahanbaku}/detail', [BahanBakuController::class, 'detail'])->name('detail');
             Route::resource('/', BahanBakuController::class)->parameters(['' => 'bahanbaku']);
         });
 

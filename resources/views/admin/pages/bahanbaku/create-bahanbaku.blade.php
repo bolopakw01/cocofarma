@@ -347,8 +347,8 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="kode_bahan">Kode Bahan <span style="color: var(--danger);">*</span></label>
-                    <input type="text" id="kode_bahan" name="kode_bahan" value="{{ old('kode_bahan') }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
-                    <small class="text-muted">Format: BB + YYMMDD + Nama (4 karakter) - Kode akan terisi otomatis berdasarkan nama bahan</small>
+                    <input type="text" id="kode_bahan" value="{{ old('kode_bahan') }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
+                    <small class="text-muted">Kode akan terisi otomatis saat form dimuat</small>
                     @error('kode_bahan')
                         <span class="text-danger" data-server-error="true">{{ $message }}</span>
                     @enderror
@@ -357,6 +357,7 @@
                 <div class="form-group">
                     <label for="nama_bahan">Nama Bahan <span style="color: var(--danger);">*</span></label>
                     <input type="text" id="nama_bahan" name="nama_bahan" value="{{ old('nama_bahan') }}" required>
+                    <small class="text-muted">Nama bahan harus unik untuk setiap master bahan yang sama</small>
                     @error('nama_bahan')
                         <span class="text-danger" data-server-error="true">{{ $message }}</span>
                     @enderror
@@ -464,73 +465,19 @@
 </div>
 
 <script>
-// Enhanced auto-generate kode bahan with date (readonly field)
-document.getElementById('nama_bahan').addEventListener('input', function() {
-    const kodeInput = document.getElementById('kode_bahan');
-    const namaValue = this.value.trim();
-
-    if (namaValue.length > 0) {
-        // Get current date in YYMMDD format
-        const today = new Date();
-        const year = today.getFullYear().toString().slice(-2); // Last 2 digits of year
-        const month = String(today.getMonth() + 1).padStart(2, '0'); // Month with leading zero
-        const day = String(today.getDate()).padStart(2, '0'); // Day with leading zero
-        const dateString = year + month + day; // YYMMDD format
-
-        // Clean the name and take first 4 characters (since we have date, shorter name is better)
-        const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-        if (cleanName.length > 0) {
-            kodeInput.value = 'BB' + dateString + cleanName;
-        } else {
-            kodeInput.value = 'BB' + dateString;
-        }
-    } else {
-        kodeInput.value = '';
-    }
-});
-
-// Prevent manual editing of kode field
-document.getElementById('kode_bahan').addEventListener('keydown', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_bahan').addEventListener('paste', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_bahan').addEventListener('cut', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-document.getElementById('kode_bahan').addEventListener('contextmenu', function(e) {
-    e.preventDefault();
-    return false;
-});
-
-// Auto-generate kode on page load if nama_bahan has value
+// Auto-generate random kode bahan when form loads
 document.addEventListener('DOMContentLoaded', function() {
-    const namaInput = document.getElementById('nama_bahan');
     const kodeInput = document.getElementById('kode_bahan');
 
-    if (namaInput.value.trim()) {
-        const namaValue = namaInput.value.trim();
-        // Get current date in YYMMDD format
-        const today = new Date();
-        const year = today.getFullYear().toString().slice(-2);
-        const month = String(today.getMonth() + 1).padStart(2, '0');
-        const day = String(today.getDate()).padStart(2, '0');
-        const dateString = year + month + day;
+    // Generate random kode bahan (same format as backend: B-{10 random chars})
+    function generateRandomKode() {
+        const randomChars = Math.random().toString(36).substring(2, 12).toUpperCase(); // 10 random chars
+        return 'B-' + randomChars;
+    }
 
-        // Clean the name and take first 4 characters
-        const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-        if (cleanName.length > 0) {
-            kodeInput.value = 'BB' + dateString + cleanName;
-        } else {
-            kodeInput.value = 'BB' + dateString;
-        }
+    // Set kode bahan on page load
+    if (kodeInput && !kodeInput.value) {
+        kodeInput.value = generateRandomKode();
     }
 });
 
@@ -548,7 +495,8 @@ document.getElementById('master_bahan_id').addEventListener('change', function()
         satuanInput.value = satuan ?? '';
     }
     if (hargaInput) {
-        hargaInput.value = harga ?? '';
+        // Copy harga as integer (without decimal places)
+        hargaInput.value = harga ? parseInt(harga) : '';
     }
 });
 
@@ -562,14 +510,13 @@ document.addEventListener('DOMContentLoaded', function() {
         const hargaInput = document.getElementById('harga_per_satuan');
         const satuanInput = document.getElementById('satuan');
         if (satuanInput && !satuanInput.value) satuanInput.value = satuan ?? '';
-        if (hargaInput && !hargaInput.value) hargaInput.value = harga ?? '';
+        if (hargaInput && !hargaInput.value) hargaInput.value = harga ? parseInt(harga) : '';
     }
 });
 
 // Form validation and submission with enhanced visual feedback
 document.querySelector('form').addEventListener('submit', function(e) {
-    const requiredFields = ['nama_bahan', 'satuan'];
-    let isValid = true;
+    const requiredFields = ['nama_bahan', 'satuan']; // Removed 'kode_bahan' since it's auto-generated server-side
 
     // Reset previous error states
     document.querySelectorAll('.form-group input, .form-group select').forEach(element => {
@@ -611,28 +558,13 @@ document.querySelector('form').addEventListener('submit', function(e) {
         }
     });
 
-    // Special validation for kode_bahan (should always be filled due to auto-generate)
-    const kodeInput = document.getElementById('kode_bahan');
-    if (!kodeInput.value.trim()) {
-        // If kode is empty, try to generate it from nama_bahan with date
-        const namaInput = document.getElementById('nama_bahan');
-        if (namaInput.value.trim()) {
-            const namaValue = namaInput.value.trim();
-            // Get current date in YYMMDD format
-            const today = new Date();
-            const year = today.getFullYear().toString().slice(-2);
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const dateString = year + month + day;
+    // Additional validation: Check for duplicate nama_bahan under same master_bahan
+    const masterBahanSelect = document.getElementById('master_bahan_id');
+    const namaBahanInput = document.getElementById('nama_bahan');
 
-            // Clean the name and take first 4 characters
-            const cleanName = namaValue.toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 4);
-            if (cleanName.length > 0) {
-                kodeInput.value = 'BB' + dateString + cleanName;
-            } else {
-                kodeInput.value = 'BB' + dateString;
-            }
-        }
+    if (masterBahanSelect && namaBahanInput && masterBahanSelect.value && namaBahanInput.value.trim()) {
+        // This would require an AJAX call to check duplicates, but for now we'll rely on server-side validation
+        // The server will catch duplicates and show appropriate error messages
     }
 
     if (!isValid) {

@@ -181,6 +181,10 @@
         gap: 20px;
     }
 
+    .form-row.form-row--three {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
     .form-row .form-group {
         margin-bottom: 0;
     }
@@ -461,6 +465,24 @@
     }
 </style>
 
+@php
+    $availableGrades = $gradeOptions ?? [];
+    $fallbackGrades = [];
+    if (empty($availableGrades)) {
+        $fallbackGrades = [
+            ['name' => 'Grade A', 'label' => 'Premium'],
+            ['name' => 'Grade B', 'label' => 'Standard'],
+            ['name' => 'Grade C', 'label' => 'Below Standard']
+        ];
+    }
+    $renderGrades = !empty($availableGrades) ? $availableGrades : $fallbackGrades;
+    $gradeKeys = [];
+    foreach ($renderGrades as $index => $grade) {
+        $gradeKeys[] = chr(65 + $index);
+    }
+    $selectedGrade = old('grade_kualitas', $produk->grade_kualitas);
+@endphp
+
 <div class="container">
     <div class="page-header">
         <h1><i class="fas fa-edit"></i> Edit Master Produk</h1>
@@ -575,13 +597,41 @@
 
         <div class="form-row">
             <div class="form-group">
+                <label for="grade_kualitas">Grade Kualitas</label>
+                <select id="grade_kualitas" name="grade_kualitas">
+                    <option value="">Pilih grade (opsional)</option>
+                    @foreach($renderGrades as $index => $grade)
+                        @php
+                            $gradeKey = chr(65 + $index);
+                            $gradeName = $grade['name'] ?? ('Grade ' . $gradeKey);
+                            $gradeLabel = $grade['label'] ?? '';
+                            $selected = $selectedGrade === $gradeKey;
+                        @endphp
+                        <option value="{{ $gradeKey }}" {{ $selected ? 'selected' : '' }}>
+                            {{ $gradeName }}{{ $gradeLabel ? ' — ' . $gradeLabel : '' }}
+                        </option>
+                    @endforeach
+                    @if($selectedGrade && !in_array($selectedGrade, $gradeKeys, true))
+                        <option value="{{ $selectedGrade }}" selected>
+                            Grade {{ strtoupper($selectedGrade) }}
+                        </option>
+                    @endif
+                </select>
+                @error('grade_kualitas')
+                    <span class="text-danger" data-server-error="true">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="form-group">
                 <label for="harga_jual">Harga Jual <span style="color: var(--danger);">*</span></label>
                 <input type="number" id="harga_jual" name="harga_jual" value="{{ old('harga_jual', $produk->harga_jual) }}" min="0" step="0.01" required>
                 @error('harga_jual')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
             </div>
+        </div>
 
+        <div class="form-row">
             <div class="form-group">
                 <label for="minimum_stok">Minimum Stok <span style="color: var(--danger);">*</span></label>
                 <input type="number" id="minimum_stok" name="minimum_stok" value="{{ old('minimum_stok', $produk->minimum_stok) }}" min="0" required>
@@ -589,9 +639,7 @@
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
             </div>
-        </div>
 
-        <div class="form-row">
             <div class="form-group">
                 <label for="status">Status <span style="color: var(--danger);">*</span></label>
                 <select id="status" name="status" required>
@@ -602,7 +650,9 @@
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
             </div>
+        </div>
 
+        <div class="form-row">
             <div class="form-group">
                 <label for="foto">Foto Produk</label>
                 @if($produk->foto)
@@ -725,6 +775,7 @@ function initializeFileUpload() {
             title: 'Potong Gambar Produk',
             html: cropperHTML,
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonText: 'Potong & Simpan',
             cancelButtonText: 'Batal',
             customClass: {

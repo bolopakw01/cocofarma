@@ -392,7 +392,7 @@
 
             <div class="form-group">
                 <label for="harga_per_satuan">Harga per Satuan <span style="color: var(--danger);">*</span></label>
-                <input type="number" id="harga_per_satuan" name="harga_per_satuan" value="{{ old('harga_per_satuan', $bahanBaku->harga_per_satuan) }}" min="0" step="0.01" required>
+                <input type="number" id="harga_per_satuan" name="harga_per_satuan" value="{{ old('harga_per_satuan', $bahanBaku->harga_per_satuan_formatted) }}" min="0" step="1" required>
                 @error('harga_per_satuan')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
@@ -402,7 +402,7 @@
         <div class="form-row">
             <div class="form-group">
                 <label for="stok_minimum">Stok Minimum</label>
-                <input type="number" id="stok_minimum" name="stok_minimum" value="{{ old('stok_minimum', $bahanBaku->stok_minimum) }}" min="0" step="0.01" placeholder="Masukkan stok minimum (opsional)">
+                <input type="number" id="stok_minimum" name="stok_minimum" value="{{ old('stok_minimum', $bahanBaku->stok_minimum_formatted) }}" min="0" step="1" placeholder="Masukkan stok minimum (opsional)">
                 <small class="text-muted">Stok minimum untuk notifikasi ketika stok rendah</small>
                 @error('stok_minimum')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>

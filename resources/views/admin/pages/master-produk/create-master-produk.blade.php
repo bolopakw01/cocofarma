@@ -181,6 +181,10 @@
         gap: 20px;
     }
 
+    .form-row.form-row--three {
+        grid-template-columns: repeat(3, 1fr);
+    }
+
     .form-row .form-group {
         margin-bottom: 0;
     }
@@ -433,6 +437,24 @@
     }
 </style>
 
+@php
+    $availableGrades = $gradeOptions ?? [];
+    $fallbackGrades = [];
+    if (empty($availableGrades)) {
+        $fallbackGrades = [
+            ['name' => 'Grade A', 'label' => 'Premium'],
+            ['name' => 'Grade B', 'label' => 'Standard'],
+            ['name' => 'Grade C', 'label' => 'Below Standard']
+        ];
+    }
+    $renderGrades = !empty($availableGrades) ? $availableGrades : $fallbackGrades;
+    $gradeKeys = [];
+    foreach ($renderGrades as $index => $grade) {
+        $gradeKeys[] = chr(65 + $index);
+    }
+    $selectedGrade = old('grade_kualitas');
+@endphp
+
 <div class="container">
     <div class="page-header">
         <h1><i class="fas fa-plus"></i> Tambah Master Produk</h1>
@@ -469,7 +491,7 @@
     <form class="form-container" action="{{ route('backoffice.master-produk.store') }}" method="POST" enctype="multipart/form-data">
         @csrf
 
-        <div class="form-row">
+    <div class="form-row form-row--three">
             <div class="form-group">
                 <label for="kode_produk">Kode Produk <span style="color: var(--danger);">*</span></label>
                 <input type="text" id="kode_produk" name="kode_produk" value="{{ old('kode_produk') }}" readonly required style="background-color: #f8f9fa; cursor: not-allowed;">
@@ -501,6 +523,31 @@
                 <label for="satuan">Satuan <span style="color: var(--danger);">*</span></label>
                 <input type="text" id="satuan" name="satuan" value="{{ old('satuan') }}" placeholder="Contoh: tablet, kapsul, botol, tube" required>
                 @error('satuan')
+                    <span class="text-danger" data-server-error="true">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="form-group">
+                <label for="grade_kualitas">Grade Kualitas</label>
+                <select id="grade_kualitas" name="grade_kualitas">
+                    <option value="">Pilih grade (opsional)</option>
+                    @foreach($renderGrades as $index => $grade)
+                        @php
+                            $gradeKey = chr(65 + $index);
+                            $gradeName = $grade['name'] ?? ('Grade ' . $gradeKey);
+                            $gradeLabel = $grade['label'] ?? '';
+                        @endphp
+                        <option value="{{ $gradeKey }}" {{ old('grade_kualitas') === $gradeKey ? 'selected' : '' }}>
+                            {{ $gradeName }}{{ $gradeLabel ? ' — ' . $gradeLabel : '' }}
+                        </option>
+                    @endforeach
+                    @if($selectedGrade && !in_array($selectedGrade, $gradeKeys, true))
+                        <option value="{{ $selectedGrade }}" selected>
+                            Grade {{ strtoupper($selectedGrade) }}
+                        </option>
+                    @endif
+                </select>
+                @error('grade_kualitas')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror
             </div>
@@ -687,6 +734,7 @@ function initializeFileUpload() {
             title: 'Crop Gambar Produk',
             html: cropperContainer.innerHTML,
             showCancelButton: true,
+            reverseButtons: true,
             showConfirmButton: true,
             confirmButtonText: 'Crop & Gunakan',
             cancelButtonText: 'Batal',

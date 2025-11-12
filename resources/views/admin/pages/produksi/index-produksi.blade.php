@@ -3,6 +3,12 @@
 @section('title', 'Manajemen Produksi')
 
 @section('content')
+@php
+    $arrowUpPath = 'bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg';
+    $arrowDownPath = 'bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg';
+    $arrowUpIcon = file_exists(public_path($arrowUpPath)) ? asset($arrowUpPath) : asset('bolopa/back/images/icon/typcn--arrow-sorted-up.svg');
+    $arrowDownIcon = file_exists(public_path($arrowDownPath)) ? asset($arrowDownPath) : asset('bolopa/back/images/icon/typcn--arrow-sorted-down.svg');
+@endphp
 <x-admin.data-table>
     <x-slot name="header">
         <div class="bolopa-tabel-header-title">
@@ -59,64 +65,64 @@
                     <th data-sort="no" style="width: 5%;">
                         No
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="nomor_produksi" style="width: 15%;">
-                        Nomor Produksi
+                        Kode Produksi
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
-                        </span>
-                    </th>
-                    <th data-sort="batch" style="width: 15%;">
-                        Batch Produksi
-                        <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="produk" style="width: 10%;">
                         Produk
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="tanggal" style="width: 15%;">
                         Tanggal Produksi
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="target" style="width: 10%;">
                         Target
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="hasil" style="width: 10%;">
                         Hasil
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="biaya" style="width: 10%;">
                         Biaya
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th data-sort="status" style="width: 10%;">
                         Status
                         <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-up-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ asset('bolopa/back/images/icon/iconamoon--arrow-down-2-duotone.svg') }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
+                        </span>
+                    </th>
+                    <th data-sort="transfer" style="width: 12%;">
+                        Transfer
+                        <span class="bolopa-tabel-sort-wrap">
+                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
+                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
                     <th style="width: 10%;">Aksi</th>
@@ -124,10 +130,17 @@
             </thead>
             <tbody>
                 @forelse($produksis ?? [] as $index => $produksi)
-                <tr data-search="{{ strtolower($produksi->nomor_produksi . ' ' . ($produksi->batchProduksi->nomor_batch ?? '') . ' ' . ($produksi->produk->nama_produk ?? '') . ' ' . $produksi->status_label) }}">
+                <tr data-search="{{ strtolower($produksi->nomor_produksi . ' ' . ($produksi->produk->nama_produk ?? '') . ' ' . $produksi->status_label . ' ' . $produksi->status_transfer_label) }}">
+                    @php
+                        $transferBadgeMap = [
+                            'transferred' => 'bolopa-tabel-badge-success',
+                            'held' => 'bolopa-tabel-badge-warning',
+                            'pending' => 'bolopa-tabel-badge-info',
+                        ];
+                        $transferBadgeClass = $transferBadgeMap[$produksi->status_transfer ?? 'pending'] ?? 'bolopa-tabel-badge-info';
+                    @endphp
                     <td data-sort-value="{{ $produksis->firstItem() + $index }}">{{ $produksis->firstItem() + $index }}</td>
                     <td data-sort-value="{{ strtolower($produksi->nomor_produksi) }}">{{ $produksi->nomor_produksi }}</td>
-                    <td data-sort-value="{{ strtolower($produksi->batchProduksi->nomor_batch ?? '-') }}">{{ $produksi->batchProduksi->nomor_batch ?? '-' }}</td>
                     <td data-sort-value="{{ strtolower($produksi->produk->nama_produk ?? '-') }}">{{ $produksi->produk->nama_produk ?? '-' }}</td>
                     <td data-sort-value="{{ $produksi->tanggal_produksi->format('Y-m-d') }}">{{ $produksi->tanggal_produksi->format('d/m/Y') }}</td>
                     <td data-sort-value="{{ $produksi->jumlah_target }}">{{ number_format($produksi->jumlah_target, 0) }}</td>
@@ -138,12 +151,20 @@
                             {{ $produksi->status_label }}
                         </span>
                     </td>
+                    <td data-sort-value="{{ $produksi->status_transfer ?? 'pending' }}">
+                        <span class="bolopa-tabel-badge {{ $transferBadgeClass }}">
+                            {{ $produksi->status_transfer_label }}
+                        </span>
+                    </td>
                     <td class="bolopa-tabel-actions" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px;">
                         <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action"
-                            onclick="showDetail({{ $produksi->id }}, '{{ addslashes($produksi->nomor_produksi) }}', '{{ addslashes($produksi->batchProduksi->nomor_batch ?? '-') }}', '{{ addslashes($produksi->produk->nama_produk ?? '-') }}', '{{ $produksi->tanggal_produksi->format('d/m/Y') }}', {{ $produksi->jumlah_target }}, {{ $produksi->jumlah_hasil }}, {{ $produksi->biaya_produksi }}, '{{ $produksi->status_label }}')"
+                            onclick="showDetail({{ $produksi->id }}, '{{ addslashes($produksi->nomor_produksi) }}', '{{ addslashes($produksi->produk->nama_produk ?? '-') }}', '{{ $produksi->tanggal_produksi->format('d/m/Y') }}', {{ $produksi->jumlah_target }}, {{ $produksi->jumlah_hasil }}, {{ $produksi->biaya_produksi }}, '{{ $produksi->status_label }}', '{{ addslashes($produksi->status_transfer_label) }}')"
                             aria-label="Lihat detail {{ $produksi->nomor_produksi }}">
                             <x-admin.icon name="view" alt="Detail" size="16" />
                         </button>
+                        <a href="{{ route('backoffice.produksi.show', $produksi->id) }}" class="bolopa-tabel-btn bolopa-tabel-btn-primary bolopa-tabel-btn-action" aria-label="Tampilkan {{ $produksi->nomor_produksi }}">
+                            <img src="{{ asset('bolopa/back/images/icon/line-md--clipboard-list.svg') }}" alt="Show" style="width: 16px; height: 16px;">
+                        </a>
                         <a href="{{ route('backoffice.produksi.edit', $produksi->id) }}" class="bolopa-tabel-btn bolopa-tabel-btn-warning bolopa-tabel-btn-action" aria-label="Edit {{ $produksi->nomor_produksi }}">
                             <x-admin.icon name="edit" alt="Edit" size="16" />
                         </a>
@@ -311,6 +332,7 @@
             html: `Apakah Anda yakin ingin menghapus produksi <strong>${nomor}</strong>?<br><small style="color:#6c757d;">Tindakan ini tidak dapat dibatalkan.</small>`,
             icon: 'warning',
             showCancelButton: true,
+            reverseButtons: true,
             confirmButtonColor: '#e63946',
             cancelButtonColor: '#4361ee',
             confirmButtonText: 'Ya, Hapus',
@@ -322,18 +344,18 @@
         });
     }
 
-    function showDetail(id, nomor, batch, produk, tanggal, target, hasil, biaya, status) {
+    function showDetail(id, nomor, produk, tanggal, target, hasil, biaya, status, transferStatus) {
         Swal.fire({
             title: 'Detail Produksi',
             html: `
                 <div class="detail-box">
                     <div class="detail-header">
                         <div class="icon-wrapper">
-                            <img src="{{ asset('bolopa/back/images/icon/carbon--production.svg') }}" alt="Produksi" style="width:32px;height:32px;">
+                            <x-admin.icon name="production" alt="Produksi" size="32" />
                         </div>
                         <div>
                             <div class="detail-title">${nomor}</div>
-                            <div class="detail-sub">${batch}</div>
+                            <div class="detail-sub">Kode Produksi</div>
                         </div>
                     </div>
                     <div class="detail-content">
@@ -360,6 +382,10 @@
                         <div class="detail-item">
                             <div class="detail-label">Status</div>
                             <div class="detail-value">${status}</div>
+                        </div>
+                        <div class="detail-item">
+                            <div class="detail-label">Status Transfer</div>
+                            <div class="detail-value">${transferStatus}</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">ID Produksi</div>
