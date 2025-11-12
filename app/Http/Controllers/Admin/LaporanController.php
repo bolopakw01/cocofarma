@@ -83,39 +83,39 @@ class LaporanController extends Controller
             ];
         }
 
-        // Recent Reports Summary (last 10 entries from different report types within selected period)
-        $recentReports = collect();
-
-        // Recent Productions within period
-        $productions = Produksi::with('produk')
+        $productionHistory = Produksi::with('produk')
             ->whereBetween('tanggal_produksi', [$startDate, $endDate])
             ->orderBy('tanggal_produksi', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function($p) {
+            ->limit(10)
+            ->get();
+
+        $salesHistory = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
+            ->where('jenis_transaksi', 'penjualan')
+            ->orderBy('tanggal_transaksi', 'desc')
+            ->limit(10)
+            ->get();
+
+        $recentReports = $productionHistory->map(function($p) {
+                $productName = $p->produk->nama_produk ?? 'Produk';
+                $unit = $p->produk->satuan ?? 'unit';
+                $batchCode = $p->nomor_produksi ?: '-';
                 return [
                     'type' => 'Produksi',
                     'tanggal' => $p->tanggal_produksi,
-                    'keterangan' => 'Produksi ' . ($p->produk->nama_produk ?? 'Unknown'),
-                    'jumlah' => $p->jumlah_hasil . ' ' . ($p->produk->satuan ?? 'unit')
+                    'keterangan' => "Batch {$batchCode} - {$productName}",
+                    'jumlah' => number_format((float) $p->jumlah_hasil, 0, ',', '.') . ' ' . $unit,
                 ];
-            });
-
-        // Recent Transactions within period
-        $transactions = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
-            ->orderBy('tanggal_transaksi', 'desc')
-            ->limit(5)
-            ->get()
-            ->map(function($t) {
+            })
+            ->concat($salesHistory->map(function($t) {
                 return [
-                    'type' => ucfirst($t->jenis_transaksi),
+                    'type' => 'Penjualan',
                     'tanggal' => $t->tanggal_transaksi,
                     'keterangan' => $t->keterangan ?? 'Transaksi ' . $t->kode_transaksi,
-                    'jumlah' => 'Rp ' . number_format($t->total, 0, ',', '.')
+                    'jumlah' => 'Rp ' . number_format((float) $t->total, 0, ',', '.'),
                 ];
-            });
-
-        $recentReports = $productions->concat($transactions)->sortByDesc('tanggal')->take(10);
+            }))
+            ->sortByDesc('tanggal')
+            ->take(10);
 
         return view('admin.pages.laporan.index-laporan', compact(
             'totalProduksi',
@@ -124,7 +124,9 @@ class LaporanController extends Controller
             'chartData',
             'recentReports',
             'periodLabel',
-            'period'
+            'period',
+            'productionHistory',
+            'salesHistory'
         ));
     }
 
