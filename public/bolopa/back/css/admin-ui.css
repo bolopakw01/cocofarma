@@ -16,8 +16,8 @@
   --sidebar-collapsed-width: 78px;
   --sidebar-expanded-width: 250px;
   --sidebar-width: var(--sidebar-collapsed-width);
-  --page-max-width: 1280px;
   --page-gutter: clamp(16px, 2vw, 32px);
+  --page-max-width: clamp(0px, calc(100vw - var(--sidebar-width) - (var(--page-gutter) * 2)), 1600px);
 }
 
 body.sidebar-open{
@@ -83,6 +83,7 @@ html, body {
 
 .page-shell{
   width: min(var(--page-max-width), 100%);
+  max-width: 100%;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -242,7 +243,8 @@ html, body {
 }
 
 .bolopa-tabel-container{
-  max-width: 1200px;
+  width: min(var(--page-max-width), 100%);
+  max-width: 100%;
   margin: 0 auto;
   background: #fff;
   border-radius: 12px;
@@ -795,7 +797,7 @@ table.bolopa-tabel th{
 table.bolopa-tabel th[data-sort]{
   position: relative;
   /* Ensure text doesn't overflow into sort icon area */
-  padding-right: 36px;
+  padding-right: 40px;
 }
 
 /* Ensure text content doesn't overlap with sort icons */

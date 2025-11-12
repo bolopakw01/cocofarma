@@ -414,12 +414,20 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="alamat">Alamat <span style="color: var(--danger);">*</span></label>
-                        <textarea id="alamat" name="alamat" required>{{ old('alamat') }}</textarea>
-                        @error('alamat')
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="{{ old('email') }}">
+                        @error('email')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="alamat">Alamat <span style="color: var(--danger);">*</span></label>
+                    <textarea id="alamat" name="alamat" required>{{ old('alamat') }}</textarea>
+                    @error('alamat')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -490,6 +498,7 @@
         // Event listeners
         document.getElementById('addItemBtn').addEventListener('click', addItem);
         document.getElementById('itemsBody').addEventListener('change', handleItemChange);
+        document.getElementById('itemsBody').addEventListener('input', handleItemInput);
         document.getElementById('itemsBody').addEventListener('click', handleRemoveItem);
         document.getElementById('orderForm').addEventListener('submit', validateForm);
     });
@@ -522,7 +531,8 @@
             option.setAttribute('data-price', produk.harga_jual);
             option.setAttribute('data-stok', produk.stok_tersedia);
             
-            const stockText = produk.stok_tersedia > 0 ? `Stok: ${produk.stok_tersedia}` : 'Stok: Habis (Pre-order)';
+            const stockValue = Math.round(produk.stok_tersedia);
+            const stockText = produk.stok_tersedia > 0 ? `Stok: ${stockValue}` : 'Stok: Habis (Pre-order)';
             option.textContent = `${produk.nama_produk} (${produk.satuan}) - ${stockText}`;
             
             // Allow selection even if out of stock (pre-order capability)
@@ -592,7 +602,13 @@
 
         if (target.classList.contains('product-select')) {
             handleProductChange(target);
-        } else if (target.classList.contains('quantity-input') || target.classList.contains('price-input')) {
+        }
+    }
+
+    function handleItemInput(e) {
+        const target = e.target;
+
+        if (target.classList.contains('quantity-input')) {
             calculateSubtotal(target.closest('.item-row'));
             calculateTotal();
         }
@@ -623,6 +639,11 @@
             quantityInput.max = stokTersedia;
         } else {
             quantityInput.removeAttribute('max');
+        }
+
+        // Set default quantity to 1 if empty
+        if (!quantityInput.value || quantityInput.value == 0) {
+            quantityInput.value = 1;
         }
         
         calculateSubtotal(row);

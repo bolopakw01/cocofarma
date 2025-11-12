@@ -415,12 +415,20 @@
                     </div>
 
                     <div class="form-group">
-                        <label for="alamat">Alamat <span style="color: var(--danger);">*</span></label>
-                        <textarea id="alamat" name="alamat" required>{{ old('alamat', $pesanan->alamat) }}</textarea>
-                        @error('alamat')
+                        <label for="email">Email</label>
+                        <input type="email" id="email" name="email" value="{{ old('email', $pesanan->email) }}">
+                        @error('email')
                             <span class="error-message">{{ $message }}</span>
                         @enderror
                     </div>
+                </div>
+
+                <div class="form-group">
+                    <label for="alamat">Alamat <span style="color: var(--danger);">*</span></label>
+                    <textarea id="alamat" name="alamat" required>{{ old('alamat', $pesanan->alamat) }}</textarea>
+                    @error('alamat')
+                        <span class="error-message">{{ $message }}</span>
+                    @enderror
                 </div>
             </div>
 
@@ -514,6 +522,7 @@
         // Event listeners
         document.getElementById('addItemBtn').addEventListener('click', addItem);
         document.getElementById('itemsBody').addEventListener('change', handleItemChange);
+        document.getElementById('itemsBody').addEventListener('input', handleItemInput);
         document.getElementById('itemsBody').addEventListener('click', handleRemoveItem);
         document.getElementById('orderForm').addEventListener('submit', validateForm);
 
@@ -660,7 +669,13 @@
 
         if (target.classList.contains('product-select')) {
             handleProductChange(target);
-        } else if (target.classList.contains('quantity-input') || target.classList.contains('price-input')) {
+        }
+    }
+
+    function handleItemInput(e) {
+        const target = e.target;
+
+        if (target.classList.contains('quantity-input')) {
             calculateSubtotal(target.closest('.item-row'));
             calculateTotal();
         }
@@ -691,6 +706,11 @@
             quantityInput.max = stokTersedia;
         } else {
             quantityInput.removeAttribute('max');
+        }
+
+        // Set default quantity to 1 if empty
+        if (!quantityInput.value || quantityInput.value == 0) {
+            quantityInput.value = 1;
         }
         
         calculateSubtotal(row);

@@ -139,7 +139,7 @@
                 @empty
                 <tr>
                     <td colspan="7" class="bolopa-tabel-empty">
-                        <x-admin.icon name="order" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
+                        <x-admin.icon name="cart" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
                         <br>
                         Tidak ada data pesanan
                     </td>

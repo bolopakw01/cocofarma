@@ -56,47 +56,86 @@
     transform: translateY(-1px);
   }
 
-  .breadcrumb {
+  .breadcrumb-nav {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+
+  .breadcrumb-list {
     display: flex;
     align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: #555;
-    flex-wrap: nowrap;
-    min-width: 0;
-    flex: 1 1 auto;
-    line-height: 1.3;
+    gap: 12px;
+    margin: 0;
+    padding: 8px 16px;
+    list-style: none;
+    background: linear-gradient(135deg, rgba(37, 99, 235, 0.08), rgba(14, 165, 233, 0.08));
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
   }
 
   .breadcrumb-item {
-    display: inline-block;
-    max-width: clamp(120px, 45vw, 220px);
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-width: 0;
+    font-size: 13px;
+    color: #0f172a;
+  }
+
+  .breadcrumb-item + .breadcrumb-item::before {
+    content: '›';
+    color: #94a3b8;
+    font-size: 12px;
+  }
+
+  .breadcrumb-link {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: inherit;
+    text-decoration: none;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    transition: color 0.2s ease;
   }
 
-  .breadcrumb-item:first-of-type {
-    max-width: clamp(100px, 30vw, 160px);
-  }
-
-  .breadcrumb-item a {
-    color: inherit;
-    text-decoration: none;
-    display: inline-block;
-    max-width: 100%;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .breadcrumb-item.active {
-    font-weight: 600;
+  .breadcrumb-link:hover {
     color: #2563eb;
   }
 
-  .breadcrumb-separator {
+  .breadcrumb-link.is-active {
+    color: #2563eb;
+    font-weight: 600;
+    cursor: default;
+  }
+
+  .breadcrumb-link.is-active .breadcrumb-home-icon {
+    background: #dbeafe;
+    color: #2563eb;
+  }
+
+  .breadcrumb-label {
+    display: inline-block;
+    max-width: clamp(120px, 30vw, 220px);
+    overflow: hidden;
+    text-overflow: ellipsis;
     white-space: nowrap;
-    color: rgba(85, 85, 85, 0.75);
+  }
+
+  .breadcrumb-home-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    border-radius: 50%;
+    background: #eff6ff;
+    color: #2563eb;
+    box-shadow: 0 1px 2px rgba(37, 99, 235, 0.2);
+    flex-shrink: 0;
   }
 
   /* Right - Info */
@@ -237,7 +276,7 @@
       display: none;
     }
 
-    .breadcrumb {
+    .breadcrumb-nav {
       display: none;
     }
   }
@@ -274,47 +313,56 @@
       <i class="bx bx-menu"></i>
     </button>
     <!-- Breadcrumb -->
-    <div class="breadcrumb">
-      <span>🏠</span>
-        @php
-          $breadcrumbData = isset($breadcrumb) && is_array($breadcrumb) ? $breadcrumb : generate_breadcrumb();
-          // Compute first name and initial for user display
-          $fullName = trim(auth()->user()->name ?? 'Admin');
-          $parts = preg_split('/\s+/', $fullName);
-          $firstName = $parts[0] ?? $fullName;
-          $firstInitial = strtoupper(substr($firstName, 0, 1) ?: 'A');
-
-          // Map role values to nicer display labels
-          $rawRole = auth()->user()->role ?? 'admin';
-          $roleKey = strtolower(trim($rawRole));
-          if ($roleKey === 'admin' || $roleKey === 'administrator') {
-            $displayRole = 'Administrator';
-          } elseif (in_array($roleKey, ['super admin', 'super_admin', 'superadmin', 'super-admin'], true)) {
-            $displayRole = 'Super Admin';
-          } else {
-            // Fallback: make it readable (replace underscores/dashes and title-case)
-            $displayRole = ucwords(str_replace(['_', '-'], ' ', $roleKey));
-          }
-        @endphp
-      @foreach($breadcrumbData as $item)
-        @if($loop->first)
-          <span class="breadcrumb-item"><a href="{{ $item['url'] ?? '#' }}">{{ $item['title'] }}</a></span>
-        @else
-          <span class="breadcrumb-separator">/</span>
-          @if($loop->last)
-            <span class="breadcrumb-item active" aria-current="page">{{ $item['title'] }}</span>
-          @else
-            <span class="breadcrumb-item">
+    <nav class="breadcrumb-nav" aria-label="Breadcrumb">
+      @php
+        $breadcrumbData = isset($breadcrumb) && is_array($breadcrumb) ? $breadcrumb : generate_breadcrumb();
+        $fullName = trim(auth()->user()->name ?? 'Admin');
+        $parts = preg_split('/\s+/', $fullName);
+        $firstName = $parts[0] ?? $fullName;
+        $firstInitial = strtoupper(substr($firstName, 0, 1) ?: 'A');
+        $rawRole = auth()->user()->role ?? 'admin';
+        $roleKey = strtolower(trim($rawRole));
+        if ($roleKey === 'admin' || $roleKey === 'administrator') {
+          $displayRole = 'Administrator';
+        } elseif (in_array($roleKey, ['super admin', 'super_admin', 'superadmin', 'super-admin'], true)) {
+          $displayRole = 'Super Admin';
+        } else {
+          $displayRole = ucwords(str_replace(['_', '-'], ' ', $roleKey));
+        }
+      @endphp
+      <ol class="breadcrumb-list">
+        @foreach($breadcrumbData as $item)
+          <li class="breadcrumb-item">
+            @php $isActive = $loop->last; @endphp
+            @if($loop->first)
               @if(isset($item['url']))
-                <a href="{{ $item['url'] }}">{{ $item['title'] }}</a>
+                <a href="{{ $item['url'] }}" class="breadcrumb-link{{ $isActive ? ' is-active' : '' }}">
+                  <span class="breadcrumb-home-icon"><i class="bx bx-home-smile"></i></span>
+                  <span class="breadcrumb-label">{{ $item['title'] }}</span>
+                </a>
               @else
-                {{ $item['title'] }}
+                <span class="breadcrumb-link is-active" aria-current="page">
+                  <span class="breadcrumb-home-icon"><i class="bx bx-home-smile"></i></span>
+                  <span class="breadcrumb-label">{{ $item['title'] }}</span>
+                </span>
               @endif
-            </span>
-          @endif
-        @endif
-      @endforeach
-    </div>
+            @elseif($isActive)
+              <span class="breadcrumb-link is-active" aria-current="page">
+                <span class="breadcrumb-label">{{ $item['title'] }}</span>
+              </span>
+            @elseif(isset($item['url']))
+              <a href="{{ $item['url'] }}" class="breadcrumb-link">
+                <span class="breadcrumb-label">{{ $item['title'] }}</span>
+              </a>
+            @else
+              <span class="breadcrumb-link">
+                <span class="breadcrumb-label">{{ $item['title'] }}</span>
+              </span>
+            @endif
+          </li>
+        @endforeach
+      </ol>
+    </nav>
   </div>
 
   <!-- Right Info -->

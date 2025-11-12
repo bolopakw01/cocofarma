@@ -20,14 +20,18 @@ class TransaksiController extends Controller
     {
         $query = Transaksi::with(['transaksiItems.produk', 'transaksiItems.bahanBaku']);
 
-        // Filter berdasarkan jenis transaksi
+        // Secara default hanya tampilkan transaksi penjualan dari pesanan selesai
         if ($request->filled('jenis')) {
             $query->where('jenis_transaksi', $request->jenis);
+        } else {
+            $query->where('jenis_transaksi', 'penjualan');
         }
 
         // Filter berdasarkan status
         if ($request->filled('status')) {
             $query->where('status', $request->status);
+        } else {
+            $query->where('status', 'selesai');
         }
 
         // Pencarian berdasarkan kode transaksi atau keterangan

@@ -393,6 +393,11 @@
                     <div class="detail-value">{{ $pesanan->no_telepon }}</div>
                 </div>
 
+                <div class="detail-item">
+                    <div class="detail-label">Email</div>
+                    <div class="detail-value">{{ $pesanan->email ?: '-' }}</div>
+                </div>
+
                 <div class="detail-item" style="grid-column: 1 / -1;">
                     <div class="detail-label">Alamat</div>
                     <div class="detail-value">{{ $pesanan->alamat }}</div>

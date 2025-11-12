@@ -101,6 +101,7 @@ class PesananController extends Controller
             'nama_pelanggan' => 'required|string|max:255',
             'alamat' => 'required|string',
             'no_telepon' => 'required|string|max:20',
+            'email' => 'nullable|email|max:255',
             'items' => 'required|array|min:1',
             'items.*.produk_id' => 'required|exists:produks,id',
             'items.*.jumlah' => 'required|numeric|min:0.01'
@@ -113,90 +114,40 @@ class PesananController extends Controller
         $kode_pesanan = 'PSN' . $tanggal . $timestamp . $random;
 
         DB::transaction(function () use ($request, $kode_pesanan) {
-            // Validate stock availability for each item (allow products with 0 stock to be ordered)
+            $itemsData = [];
+            $totalHarga = 0;
+
             foreach ($request->items as $item) {
-                $produkId = $item['produk_id'];
-                $jumlahDibutuhkan = $item['jumlah'];
+                $produk = Produk::findOrFail($item['produk_id']);
+                $jumlah = (float) $item['jumlah'];
+                $subtotal = $jumlah * $produk->harga_jual;
 
-                // Check total available stock
-                $totalStok = StokProduk::where('produk_id', $produkId)
-                    ->where('sisa_stok', '>', 0)
-                    ->sum('sisa_stok');
-
-                // Allow ordering even if stock is 0, but warn if insufficient stock
-                if ($totalStok < $jumlahDibutuhkan) {
-                    // For now, allow ordering but stock will be reduced when production is completed
-                    // In a real scenario, you might want to handle pre-orders differently
-                }
+                $totalHarga += $subtotal;
+                $itemsData[] = [
+                    'produk_id' => $produk->id,
+                    'jumlah' => $jumlah,
+                    'harga_satuan' => $produk->harga_jual,
+                    'subtotal' => $subtotal,
+                ];
             }
 
-            // Hitung total harga
-            $total_harga = 0;
-            foreach ($request->items as $item) {
-                $produk = \App\Models\Produk::find($item['produk_id']);
-                $total_harga += $item['jumlah'] * $produk->harga_jual;
-            }
-
-            // Buat pesanan
             $pesanan = Pesanan::create([
                 'kode_pesanan' => $kode_pesanan,
                 'tanggal_pesanan' => $request->tanggal_pesanan,
                 'nama_pelanggan' => $request->nama_pelanggan,
                 'alamat' => $request->alamat,
                 'no_telepon' => $request->no_telepon,
+                'email' => $request->email,
                 'status' => 'pending',
-                'total_harga' => $total_harga
+                'total_harga' => $totalHarga,
             ]);
 
-            // Process each item and reduce stock (FIFO) - only reduce if stock is available
-            foreach ($request->items as $item) {
-                $produkId = $item['produk_id'];
-                $jumlahDibutuhkan = $item['jumlah'];
-
-                // Get product price from master
-                $produk = \App\Models\Produk::find($produkId);
-                $hargaSatuan = $produk->harga_jual;
-
-                // Get stock entries ordered by date (FIFO)
-                $stokEntries = StokProduk::where('produk_id', $produkId)
-                    ->where('sisa_stok', '>', 0)
-                    ->orderBy('tanggal')
-                    ->orderBy('id')
-                    ->get();
-
-                $sisaDibutuhkan = $jumlahDibutuhkan;
-
-                // Only reduce stock if available, otherwise leave as pending
-                foreach ($stokEntries as $stokEntry) {
-                    if ($sisaDibutuhkan <= 0) break;
-
-                    $stokTersedia = $stokEntry->sisa_stok;
-
-                    if ($stokTersedia >= $sisaDibutuhkan) {
-                        // Enough stock in this entry
-                        $stokEntry->increment('jumlah_keluar', $sisaDibutuhkan);
-                        $stokEntry->decrement('sisa_stok', $sisaDibutuhkan);
-                        $sisaDibutuhkan = 0;
-                    } else {
-                        // Not enough, take all from this entry
-                        $stokEntry->increment('jumlah_keluar', $stokTersedia);
-                        $stokEntry->decrement('sisa_stok', $stokTersedia);
-                        $sisaDibutuhkan -= $stokTersedia;
-                    }
-                }
-
-                // Buat pesanan item
-                PesananItem::create([
-                    'pesanan_id' => $pesanan->id,
-                    'produk_id' => $produkId,
-                    'jumlah' => $jumlahDibutuhkan,
-                    'harga_satuan' => $hargaSatuan,
-                    'subtotal' => $jumlahDibutuhkan * $hargaSatuan
-                ]);
+            foreach ($itemsData as $itemData) {
+                $pesanan->pesananItems()->create($itemData);
             }
         });
 
-        return redirect()->route('backoffice.pesanan.index')->with('success', 'Pesanan berhasil dibuat dan stok telah dikurangi.');
+        return redirect()->route('backoffice.pesanan.index')->with('success', 'Pesanan berhasil dibuat dan menunggu proses.');
     }
 
     /**
@@ -281,139 +232,75 @@ class PesananController extends Controller
      */
     public function update(Request $request, string $id)
     {
-        $pesanan = Pesanan::findOrFail($id);
+        $pesanan = Pesanan::with('pesananItems')->findOrFail($id);
+        $originalStatus = $pesanan->status;
 
         $request->validate([
             'tanggal_pesanan' => 'required|date',
             'nama_pelanggan' => 'required|string|max:255',
             'alamat' => 'required|string',
             'no_telepon' => 'required|string|max:20',
+            'email' => 'nullable|email|max:255',
             'status' => 'required|in:pending,diproses,selesai,dibatalkan',
             'items' => 'required|array|min:1',
             'items.*.produk_id' => 'required|exists:produks,id',
             'items.*.jumlah' => 'required|numeric|min:0.01'
         ]);
 
-        DB::transaction(function () use ($request, $pesanan) {
-            // Validate stock availability for each item (allow products with 0 stock to be ordered)
+        DB::transaction(function () use ($request, $pesanan, $originalStatus) {
+            $pesanan->load('pesananItems');
+
+            if (in_array($originalStatus, ['diproses', 'selesai'])) {
+                $produkIds = $pesanan->pesananItems->pluck('produk_id')->unique()->toArray();
+                $this->returnStock($produkIds, $pesanan->pesananItems);
+            }
+
+            $pesanan->pesananItems()->delete();
+
+            $totalHarga = 0;
+            $itemsData = [];
+
             foreach ($request->items as $item) {
-                $produkId = $item['produk_id'];
-                $jumlahDibutuhkan = $item['jumlah'];
+                $produk = Produk::findOrFail($item['produk_id']);
+                $jumlah = (float) $item['jumlah'];
+                $subtotal = $jumlah * $produk->harga_jual;
 
-                // Check total available stock
-                $totalStok = StokProduk::where('produk_id', $produkId)
-                    ->where('sisa_stok', '>', 0)
-                    ->sum('sisa_stok');
-
-                // Allow ordering even if stock is 0, but warn if insufficient stock
-                if ($totalStok < $jumlahDibutuhkan) {
-                    // For now, allow ordering but stock will be reduced when production is completed
-                    // In a real scenario, you might want to handle pre-orders differently
-                }
+                $totalHarga += $subtotal;
+                $itemsData[] = [
+                    'produk_id' => $produk->id,
+                    'jumlah' => $jumlah,
+                    'harga_satuan' => $produk->harga_jual,
+                    'subtotal' => $subtotal,
+                ];
             }
 
-            // Return stock from old order items (simplified approach)
-            foreach ($pesanan->pesananItems as $oldItem) {
-                $produkId = $oldItem->produk_id;
-                $jumlahDikembalikan = $oldItem->jumlah;
-
-                // Get stock entries ordered by date (LIFO for returns)
-                $stokEntries = StokProduk::where('produk_id', $produkId)
-                    ->where('jumlah_keluar', '>', 0)
-                    ->orderBy('tanggal', 'desc')
-                    ->orderBy('id', 'desc')
-                    ->get();
-
-                $sisaDikembalikan = $jumlahDikembalikan;
-
-                foreach ($stokEntries as $stokEntry) {
-                    if ($sisaDikembalikan <= 0) break;
-
-                    $stokDikeluarkan = $stokEntry->jumlah_keluar;
-
-                    if ($stokDikeluarkan >= $sisaDikembalikan) {
-                        // Enough to return
-                        $stokEntry->decrement('jumlah_keluar', $sisaDikembalikan);
-                        $stokEntry->increment('sisa_stok', $sisaDikembalikan);
-                        $sisaDikembalikan = 0;
-                    } else {
-                        // Return all from this entry
-                        $stokEntry->decrement('jumlah_keluar', $stokDikeluarkan);
-                        $stokEntry->increment('sisa_stok', $stokDikeluarkan);
-                        $sisaDikembalikan -= $stokDikeluarkan;
-                    }
-                }
-            }
-
-            // Hitung total harga
-            $total_harga = 0;
-            foreach ($request->items as $item) {
-                $produk = \App\Models\Produk::find($item['produk_id']);
-                $total_harga += $item['jumlah'] * $produk->harga_jual;
-            }
-
-            // Update pesanan
             $pesanan->update([
                 'tanggal_pesanan' => $request->tanggal_pesanan,
                 'nama_pelanggan' => $request->nama_pelanggan,
                 'alamat' => $request->alamat,
                 'no_telepon' => $request->no_telepon,
+                'email' => $request->email,
                 'status' => $request->status,
-                'total_harga' => $total_harga
+                'total_harga' => $totalHarga,
             ]);
 
-            // Hapus pesanan items lama
-            $pesanan->pesananItems()->delete();
+            foreach ($itemsData as $itemData) {
+                $pesanan->pesananItems()->create($itemData);
+            }
 
-            // Process each new item and reduce stock (FIFO) - only reduce if stock is available
-            foreach ($request->items as $item) {
-                $produkId = $item['produk_id'];
-                $jumlahDibutuhkan = $item['jumlah'];
-                
-                // Get product price from master
-                $produk = \App\Models\Produk::find($produkId);
-                $hargaSatuan = $produk->harga_jual;
+            $pesanan->load('pesananItems');
 
-                // Get stock entries ordered by date (FIFO)
-                $stokEntries = StokProduk::where('produk_id', $produkId)
-                    ->where('sisa_stok', '>', 0)
-                    ->orderBy('tanggal')
-                    ->orderBy('id')
-                    ->get();
-
-                $sisaDibutuhkan = $jumlahDibutuhkan;
-
-                // Only reduce stock if available, otherwise leave as pending
-                foreach ($stokEntries as $stokEntry) {
-                    if ($sisaDibutuhkan <= 0) break;
-
-                    $stokTersedia = $stokEntry->sisa_stok;
-
-                    if ($stokTersedia >= $sisaDibutuhkan) {
-                        // Enough stock in this entry
-                        $stokEntry->increment('jumlah_keluar', $sisaDibutuhkan);
-                        $stokEntry->decrement('sisa_stok', $sisaDibutuhkan);
-                        $sisaDibutuhkan = 0;
-                    } else {
-                        // Not enough, take all from this entry
-                        $stokEntry->increment('jumlah_keluar', $stokTersedia);
-                        $stokEntry->decrement('sisa_stok', $stokTersedia);
-                        $sisaDibutuhkan -= $stokTersedia;
-                    }
-                }
-
-                // Buat pesanan item baru
-                PesananItem::create([
-                    'pesanan_id' => $pesanan->id,
-                    'produk_id' => $produkId,
-                    'jumlah' => $jumlahDibutuhkan,
-                    'harga_satuan' => $hargaSatuan,
-                    'subtotal' => $jumlahDibutuhkan * $hargaSatuan
-                ]);
+            if (in_array($request->status, ['diproses', 'selesai'])) {
+                $produkIdsBaru = $pesanan->pesananItems->pluck('produk_id')->unique()->toArray();
+                $this->reduceStock($produkIdsBaru, $pesanan->pesananItems);
             }
         });
 
-        return redirect()->route('backoffice.pesanan.index')->with('success', 'Pesanan berhasil diperbarui dan stok telah disesuaikan.');
+        if ($request->status === 'selesai' && $originalStatus !== 'selesai') {
+            $this->createSalesTransaction($pesanan->fresh('pesananItems'));
+        }
+
+        return redirect()->route('backoffice.pesanan.index')->with('success', 'Pesanan berhasil diperbarui.');
     }
 
     /**
@@ -424,47 +311,44 @@ class PesananController extends Controller
         $pesanan = Pesanan::findOrFail($id);
 
         DB::transaction(function () use ($pesanan) {
-            // Return stock from order items
-            foreach ($pesanan->pesananItems as $item) {
-                $produkId = $item->produk_id;
-                $jumlahDikembalikan = $item->jumlah;
+            if (in_array($pesanan->status, ['diproses', 'selesai'])) {
+                foreach ($pesanan->pesananItems as $item) {
+                    $produkId = $item->produk_id;
+                    $jumlahDikembalikan = $item->jumlah;
 
-                // Get stock entries ordered by date (LIFO for returns)
-                $stokEntries = StokProduk::where('produk_id', $produkId)
-                    ->where('jumlah_keluar', '>', 0)
-                    ->orderBy('tanggal', 'desc')
-                    ->orderBy('id', 'desc')
-                    ->get();
+                    $stokEntries = StokProduk::where('produk_id', $produkId)
+                        ->where('jumlah_keluar', '>', 0)
+                        ->orderBy('tanggal', 'desc')
+                        ->orderBy('id', 'desc')
+                        ->get();
 
-                $sisaDikembalikan = $jumlahDikembalikan;
+                    $sisaDikembalikan = $jumlahDikembalikan;
 
-                foreach ($stokEntries as $stokEntry) {
-                    if ($sisaDikembalikan <= 0) break;
+                    foreach ($stokEntries as $stokEntry) {
+                        if ($sisaDikembalikan <= 0) {
+                            break;
+                        }
 
-                    $stokDikeluarkan = $stokEntry->jumlah_keluar;
+                        $stokDikeluarkan = $stokEntry->jumlah_keluar;
 
-                    if ($stokDikeluarkan >= $sisaDikembalikan) {
-                        // Enough to return
-                        $stokEntry->decrement('jumlah_keluar', $sisaDikembalikan);
-                        $stokEntry->increment('sisa_stok', $sisaDikembalikan);
-                        $sisaDikembalikan = 0;
-                    } else {
-                        // Return all from this entry
-                        $stokEntry->decrement('jumlah_keluar', $stokDikeluarkan);
-                        $stokEntry->increment('sisa_stok', $stokDikeluarkan);
-                        $sisaDikembalikan -= $stokDikeluarkan;
+                        if ($stokDikeluarkan >= $sisaDikembalikan) {
+                            $stokEntry->decrement('jumlah_keluar', $sisaDikembalikan);
+                            $stokEntry->increment('sisa_stok', $sisaDikembalikan);
+                            $sisaDikembalikan = 0;
+                        } else {
+                            $stokEntry->decrement('jumlah_keluar', $stokDikeluarkan);
+                            $stokEntry->increment('sisa_stok', $stokDikeluarkan);
+                            $sisaDikembalikan -= $stokDikeluarkan;
+                        }
                     }
                 }
             }
 
-            // Hapus pesanan items terlebih dahulu
             $pesanan->pesananItems()->delete();
-
-            // Hapus pesanan
             $pesanan->delete();
         });
 
-        return redirect()->route('backoffice.pesanan.index')->with('success', 'Pesanan berhasil dihapus dan stok telah dikembalikan.');
+    return redirect()->route('backoffice.pesanan.index')->with('success', 'Pesanan berhasil dihapus.');
     }
 
     /**
@@ -569,7 +453,7 @@ class PesananController extends Controller
     {
         $stockTransitions = [
             'pending' => ['diproses', 'selesai'],
-            'diproses' => ['selesai', 'dibatalkan'],
+            'diproses' => ['dibatalkan'],
             'selesai' => ['dibatalkan']
         ];
 
