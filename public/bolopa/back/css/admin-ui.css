@@ -972,6 +972,12 @@ table.bolopa-tabel tbody td{
   color: #0c5460;
 }
 
+.bolopa-tabel-badge-secondary,
+.bolopa-badge-secondary{
+  background: #6c757d;
+  color: #ffffff;
+}
+
 .bolopa-tabel-status-indicator{
   width: 8px;
   height: 8px;

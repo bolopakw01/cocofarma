@@ -624,7 +624,7 @@
 
             <div class="form-group">
                 <label for="harga_jual">Harga Jual <span style="color: var(--danger);">*</span></label>
-                <input type="number" id="harga_jual" name="harga_jual" value="{{ old('harga_jual', $produk->harga_jual) }}" min="0" step="0.01" required>
+                <input type="number" id="harga_jual" name="harga_jual" value="{{ old('harga_jual', (int)$produk->harga_jual) }}" min="0" step="0.01" required>
                 @error('harga_jual')
                     <span class="text-danger" data-server-error="true">{{ $message }}</span>
                 @enderror

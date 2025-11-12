@@ -370,6 +370,17 @@
                             </div>
                         </div>
 
+                        <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:10px;">
+                            <div style="background:#f8f9fa; padding:10px; border-radius:8px;">
+                                <div style="font-size:0.8rem; color:#6c757d;">Tanggal Masuk</div>
+                                <div style="font-weight:600;">${data.tanggal_masuk ? new Date(data.tanggal_masuk).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</div>
+                            </div>
+                            <div style="background:#f8f9fa; padding:10px; border-radius:8px;">
+                                <div style="font-size:0.8rem; color:#6c757d;">Tanggal Kadaluarsa</div>
+                                <div style="font-weight:600;">${data.tanggal_kadaluarsa ? new Date(data.tanggal_kadaluarsa).toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' }) : '-'}</div>
+                            </div>
+                        </div>
+
                         <div style="margin-bottom:10px;">
                             <div style="font-size:0.8rem; color:#6c757d;">Deskripsi</div>
                             <div style="margin-top:6px;">

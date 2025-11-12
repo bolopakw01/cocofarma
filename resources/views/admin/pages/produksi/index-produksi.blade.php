@@ -118,19 +118,12 @@
                             <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
                         </span>
                     </th>
-                    <th data-sort="transfer" style="width: 12%;">
-                        Transfer
-                        <span class="bolopa-tabel-sort-wrap">
-                            <img src="{{ $arrowUpIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-up" alt="Sort ascending">
-                            <img src="{{ $arrowDownIcon }}" class="bolopa-tabel-sort-icon bolopa-tabel-sort-down" alt="Sort descending">
-                        </span>
-                    </th>
                     <th style="width: 10%;">Aksi</th>
                 </tr>
             </thead>
             <tbody>
                 @forelse($produksis ?? [] as $index => $produksi)
-                <tr data-search="{{ strtolower($produksi->nomor_produksi . ' ' . ($produksi->produk->nama_produk ?? '') . ' ' . $produksi->status_label . ' ' . $produksi->status_transfer_label) }}">
+                <tr data-search="{{ strtolower($produksi->nomor_produksi . ' ' . ($produksi->produk->nama_produk ?? '') . ' ' . $produksi->status_label) }}">
                     @php
                         $transferBadgeMap = [
                             'transferred' => 'bolopa-tabel-badge-success',
@@ -146,19 +139,22 @@
                     <td data-sort-value="{{ $produksi->jumlah_target }}">{{ number_format($produksi->jumlah_target, 0) }}</td>
                     <td data-sort-value="{{ $produksi->jumlah_hasil }}">{{ number_format($produksi->jumlah_hasil, 0) }}</td>
                     <td data-sort-value="{{ $produksi->biaya_produksi }}">Rp {{ number_format($produksi->biaya_produksi, 0, ',', '.') }}</td>
+                    @php
+                        $statusBadgeClass = 'bolopa-tabel-badge-danger'; // default
+                        if ($produksi->status === 'selesai') {
+                            $statusBadgeClass = ($produksi->status_transfer === 'transferred') ? 'bolopa-tabel-badge-secondary' : 'bolopa-tabel-badge-success';
+                        } elseif ($produksi->status === 'proses') {
+                            $statusBadgeClass = 'bolopa-tabel-badge-success';
+                        }
+                    @endphp
                     <td data-sort-value="{{ $produksi->status }}">
-                        <span class="bolopa-tabel-badge {{ in_array($produksi->status, ['selesai', 'proses']) ? 'bolopa-tabel-badge-success' : 'bolopa-tabel-badge-danger' }}">
+                        <span class="bolopa-tabel-badge {{ $statusBadgeClass }}">
                             {{ $produksi->status_label }}
-                        </span>
-                    </td>
-                    <td data-sort-value="{{ $produksi->status_transfer ?? 'pending' }}">
-                        <span class="bolopa-tabel-badge {{ $transferBadgeClass }}">
-                            {{ $produksi->status_transfer_label }}
                         </span>
                     </td>
                     <td class="bolopa-tabel-actions" style="display: flex; align-items: center; justify-content: center; padding: 8px 12px;">
                         <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action"
-                            onclick="showDetail({{ $produksi->id }}, '{{ addslashes($produksi->nomor_produksi) }}', '{{ addslashes($produksi->produk->nama_produk ?? '-') }}', '{{ $produksi->tanggal_produksi->format('d/m/Y') }}', {{ $produksi->jumlah_target }}, {{ $produksi->jumlah_hasil }}, {{ $produksi->biaya_produksi }}, '{{ $produksi->status_label }}', '{{ addslashes($produksi->status_transfer_label) }}')"
+                            onclick="showDetail({{ $produksi->id }}, '{{ addslashes($produksi->nomor_produksi) }}', '{{ addslashes($produksi->produk->nama_produk ?? '-') }}', '{{ $produksi->tanggal_produksi->format('d/m/Y') }}', {{ $produksi->jumlah_target }}, {{ $produksi->jumlah_hasil }}, {{ $produksi->biaya_produksi }}, '{{ $produksi->status_label }}')"
                             aria-label="Lihat detail {{ $produksi->nomor_produksi }}">
                             <x-admin.icon name="view" alt="Detail" size="16" />
                         </button>
@@ -177,7 +173,7 @@
                 </tr>
                 @empty
                 <tr>
-                    <td colspan="10" class="bolopa-tabel-empty">
+                    <td colspan="9" class="bolopa-tabel-empty">
                         <x-admin.icon name="production" alt="Tidak ada data" size="48" style="opacity:0.6;margin-bottom:12px;" />
                         <br>
                         Belum ada data produksi
@@ -344,7 +340,7 @@
         });
     }
 
-    function showDetail(id, nomor, produk, tanggal, target, hasil, biaya, status, transferStatus) {
+    function showDetail(id, nomor, produk, tanggal, target, hasil, biaya, status) {
         Swal.fire({
             title: 'Detail Produksi',
             html: `
@@ -382,10 +378,6 @@
                         <div class="detail-item">
                             <div class="detail-label">Status</div>
                             <div class="detail-value">${status}</div>
-                        </div>
-                        <div class="detail-item">
-                            <div class="detail-label">Status Transfer</div>
-                            <div class="detail-value">${transferStatus}</div>
                         </div>
                         <div class="detail-item">
                             <div class="detail-label">ID Produksi</div>

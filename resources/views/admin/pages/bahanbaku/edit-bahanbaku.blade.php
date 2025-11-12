@@ -356,7 +356,7 @@
             <div class="form-row">
                 <div class="form-group">
                     <label for="harga_per_satuan">Harga per Satuan <span style="color: var(--danger);">*</span></label>
-                    <input type="number" id="harga_per_satuan" name="harga_per_satuan" value="{{ old('harga_per_satuan', $bahanBaku->harga_per_satuan) }}" min="0" step="0.01" required>
+                    <input type="number" id="harga_per_satuan" name="harga_per_satuan" value="{{ old('harga_per_satuan', (int)$bahanBaku->harga_per_satuan) }}" min="0" step="0.01" required>
                     @error('harga_per_satuan')
                         <span class="text-danger" data-server-error="true">{{ $message }}</span>
                     @enderror
@@ -364,7 +364,7 @@
 
                 <div class="form-group">
                     <label for="stok">Stok <span style="color: var(--danger);">*</span></label>
-                    <input type="number" id="stok" name="stok" value="{{ old('stok', $bahanBaku->stok) }}" min="0" step="0.01" required>
+                    <input type="number" id="stok" name="stok" value="{{ old('stok', (int)$bahanBaku->stok) }}" min="0" step="0.01" required>
                     @error('stok')
                         <span class="text-danger" data-server-error="true">{{ $message }}</span>
                     @enderror
