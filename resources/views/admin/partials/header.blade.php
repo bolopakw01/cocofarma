@@ -184,6 +184,16 @@
     justify-content: center;
     color: white;
     font-weight: bold;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .user-avatar-img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
   }
 
   .user-info {
@@ -329,6 +339,11 @@
         } else {
           $displayRole = ucwords(str_replace(['_', '-'], ' ', $roleKey));
         }
+        $avatarPath = auth()->user()->avatar_path ?? null;
+        $avatarUrl = null;
+        if ($avatarPath && \Illuminate\Support\Facades\Storage::disk('public')->exists($avatarPath)) {
+          $avatarUrl = asset('storage/' . ltrim($avatarPath, '/'));
+        }
       @endphp
       <ol class="breadcrumb-list">
         @foreach($breadcrumbData as $item)
@@ -375,7 +390,13 @@
       Online
     </div>
     <div class="user" id="userMenu">
-      <div class="user-avatar">{{ $firstInitial }}</div>
+      <div class="user-avatar" aria-hidden="true">
+        @if($avatarUrl)
+          <img src="{{ $avatarUrl }}" alt="" class="user-avatar-img" loading="lazy">
+        @else
+          {{ $firstInitial }}
+        @endif
+      </div>
       <div class="user-info">
         <span>{{ $firstName }}</span>
   <span class="role">{{ $displayRole }}</span>
@@ -383,7 +404,7 @@
 
       <!-- Dropdown -->
       <div class="dropdown" id="dropdownMenu">
-        <a href="#">👤 Profile</a>
+  <a href="{{ route('backoffice.profile.edit') }}">👤 Profile</a>
         <a href="#" class="logout" onclick="event.preventDefault(); document.getElementById('logout-form').submit();">🚪 Logout</a>
       </div>
     </div>

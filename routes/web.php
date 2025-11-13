@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\TransaksiController;
 use App\Http\Controllers\Admin\LaporanController;
 use App\Http\Controllers\Admin\UserController;
 use App\Http\Controllers\Admin\PengaturanController;
+use App\Http\Controllers\Admin\AdminProfileController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -42,6 +43,9 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
 
     // Operasional routes (accessible by both super_admin and admin)
     Route::middleware('role:super_admin,admin')->group(function () {
+        Route::get('/profile', [AdminProfileController::class, 'edit'])->name('profile.edit');
+        Route::put('/profile', [AdminProfileController::class, 'update'])->name('profile.update');
+
         Route::prefix('pesanan')->name('pesanan.')->group(function () {
             Route::get('/', [PesananController::class, 'index'])->name('index');
             Route::get('/create', [PesananController::class, 'create'])->name('create');

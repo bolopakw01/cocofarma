@@ -9,8 +9,8 @@ use App\Models\BatchProduksi;
 use App\Models\StokProduk;
 use App\Models\StokBahanBaku;
 use App\Models\ProduksiBahan;
+use App\Models\Transaksi;
 use Carbon\Carbon;
-use PDF;
 
 class LaporanController extends Controller
 {
@@ -24,11 +24,6 @@ class LaporanController extends Controller
                 $startDate = Carbon::today();
                 $endDate = Carbon::today()->endOfDay();
                 $periodLabel = 'Hari Ini';
-                break;
-            case 'minggu':
-                $startDate = Carbon::now()->startOfWeek();
-                $endDate = Carbon::now()->endOfWeek();
-                $periodLabel = 'Minggu Ini';
                 break;
             case 'tahun':
                 $startDate = Carbon::now()->startOfYear();
@@ -49,7 +44,7 @@ class LaporanController extends Controller
             ->sum('jumlah_hasil');
 
         // Total Sales for selected period
-        $totalPenjualan = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
+        $totalPenjualan = Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
             ->where('jenis_transaksi', 'penjualan')
             ->where('status', 'selesai')
             ->sum('total');
@@ -59,29 +54,8 @@ class LaporanController extends Controller
         $totalStokBahanBaku = StokBahanBaku::sum('sisa_stok');
         $totalStok = $totalStokProduk + $totalStokBahanBaku;
 
-        // Chart Data - Production and Sales for last 6 months (this stays the same for overview)
-        $chartData = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $monthStart = $date->copy()->startOfMonth();
-            $monthEnd = $date->copy()->endOfMonth();
-            $monthName = $date->format('M');
-
-            $produksi = Produksi::whereBetween('tanggal_produksi', [$monthStart, $monthEnd])
-                ->where('status', 'selesai')
-                ->sum('jumlah_hasil');
-
-            $penjualan = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$monthStart, $monthEnd])
-                ->where('jenis_transaksi', 'penjualan')
-                ->where('status', 'selesai')
-                ->sum('total');
-
-            $chartData[] = [
-                'month' => $monthName,
-                'produksi' => (int)$produksi,
-                'penjualan' => (float)$penjualan
-            ];
-        }
+        // Chart data aligned with selected period
+        $chartData = $this->buildChartData($period);
 
         $productionHistory = Produksi::with('produk')
             ->whereBetween('tanggal_produksi', [$startDate, $endDate])
@@ -89,7 +63,7 @@ class LaporanController extends Controller
             ->limit(10)
             ->get();
 
-        $salesHistory = \App\Models\Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
+    $salesHistory = Transaksi::whereBetween('tanggal_transaksi', [$startDate, $endDate])
             ->where('jenis_transaksi', 'penjualan')
             ->orderBy('tanggal_transaksi', 'desc')
             ->limit(10)
@@ -323,17 +297,238 @@ class LaporanController extends Controller
         ];
     }
 
+    private function buildChartData(string $period): array
+    {
+        if ($period === 'hari') {
+            $chartData = [];
+
+            for ($i = 6; $i >= 0; $i--) {
+                $date = Carbon::today()->subDays($i);
+                $rangeStart = $date->copy()->startOfDay();
+                $rangeEnd = $date->copy()->endOfDay();
+
+                $chartData[] = [
+                    'label' => $date->format('d M'),
+                    'produksi' => (float) Produksi::whereBetween('tanggal_produksi', [$rangeStart, $rangeEnd])
+                        ->where('status', 'selesai')
+                        ->sum('jumlah_hasil'),
+                    'penjualan' => (float) Transaksi::whereBetween('tanggal_transaksi', [$rangeStart, $rangeEnd])
+                        ->where('jenis_transaksi', 'penjualan')
+                        ->where('status', 'selesai')
+                        ->sum('total'),
+                ];
+            }
+
+            return $chartData;
+        }
+
+        $chartData = [];
+        $monthsRange = $period === 'tahun' ? 11 : 5;
+
+        for ($i = $monthsRange; $i >= 0; $i--) {
+            $date = Carbon::now()->subMonths($i);
+            $rangeStart = $date->copy()->startOfMonth();
+            $rangeEnd = $date->copy()->endOfMonth();
+
+            $chartData[] = [
+                'label' => $date->format('M Y'),
+                'produksi' => (float) Produksi::whereBetween('tanggal_produksi', [$rangeStart, $rangeEnd])
+                    ->where('status', 'selesai')
+                    ->sum('jumlah_hasil'),
+                'penjualan' => (float) Transaksi::whereBetween('tanggal_transaksi', [$rangeStart, $rangeEnd])
+                    ->where('jenis_transaksi', 'penjualan')
+                    ->where('status', 'selesai')
+                    ->sum('total'),
+            ];
+        }
+
+        return $chartData;
+    }
+
+    private function buildFullReportExportData(): array
+    {
+        $productions = Produksi::with('produk')
+            ->orderBy('tanggal_produksi', 'desc')
+            ->get();
+
+    $sales = Transaksi::with('transaksiItems')
+            ->where('jenis_transaksi', 'penjualan')
+            ->orderBy('tanggal_transaksi', 'desc')
+            ->get();
+
+        $generatedAt = Carbon::now();
+
+        $productionTotals = [
+            'count' => $productions->count(),
+            'completed' => $productions->where('status', 'selesai')->count(),
+            'total_target' => (float) $productions->sum('jumlah_target'),
+            'total_output' => (float) $productions->sum('jumlah_hasil'),
+            'total_cost' => (float) $productions->sum('biaya_produksi'),
+        ];
+
+        $salesTotals = [
+            'count' => $sales->count(),
+            'completed' => $sales->where('status', 'selesai')->count(),
+            'total_value' => (float) $sales->sum('total'),
+        ];
+
+        $rangeStartValue = collect([
+            $productions->min('tanggal_produksi'),
+            $sales->min('tanggal_transaksi'),
+        ])->filter()->min();
+
+        $rangeEndValue = collect([
+            $productions->max('tanggal_produksi'),
+            $sales->max('tanggal_transaksi'),
+        ])->filter()->max();
+
+        $rangeStart = $rangeStartValue ? Carbon::parse($rangeStartValue) : null;
+        $rangeEnd = $rangeEndValue ? Carbon::parse($rangeEndValue) : null;
+
+        return [
+            'productions' => $productions,
+            'sales' => $sales,
+            'generatedAt' => $generatedAt,
+            'productionTotals' => $productionTotals,
+            'salesTotals' => $salesTotals,
+            'rangeStart' => $rangeStart,
+            'rangeEnd' => $rangeEnd,
+        ];
+    }
+
     public function exportPdf($type)
     {
-        // TODO: Implement PDF export
-        // return response()->download($filePath);
-        return back()->with('info', 'PDF export belum diimplementasi.');
+        abort(404, 'Export PDF tidak tersedia untuk laporan operasional.');
     }
 
     public function exportExcel($type)
     {
-        // TODO: Implement Excel export
-        // return response()->download($filePath);
-        return back()->with('info', 'Excel export belum diimplementasi.');
+        $data = $this->buildFullReportExportData();
+        $timestamp = $data['generatedAt']->format('Ymd_His');
+        $filename = 'laporan-operasional-' . $timestamp . '.csv';
+
+        return response()->streamDownload(function () use ($data) {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM for spreadsheet compatibility
+            fprintf($handle, "\xEF\xBB\xBF");
+
+            $columns = [
+                'dataset',
+                'sub_dataset',
+                'date',
+                'reference',
+                'entity',
+                'target_quantity',
+                'result_quantity',
+                'grade',
+                'production_cost',
+                'transaction_total',
+                'status',
+                'notes',
+            ];
+            fputcsv($handle, $columns);
+
+            fputcsv($handle, [
+                'metadata',
+                'generated_at',
+                $data['generatedAt']->toIso8601String(),
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                'Waktu pembuatan laporan (ISO8601)'
+            ]);
+
+            if ($data['rangeStart'] && $data['rangeEnd']) {
+                fputcsv($handle, [
+                    'metadata',
+                    'data_range',
+                    $data['rangeStart']->format('Y-m-d') . '|' . $data['rangeEnd']->format('Y-m-d'),
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    '',
+                    'Rentang tanggal data produksi & penjualan'
+                ]);
+            }
+
+            fputcsv($handle, [
+                'summary',
+                'production_total',
+                '',
+                '',
+                '',
+                $data['productionTotals']['total_target'],
+                $data['productionTotals']['total_output'],
+                '',
+                $data['productionTotals']['total_cost'],
+                '',
+                'selesai:' . $data['productionTotals']['completed'] . '/' . $data['productionTotals']['count'],
+                'Ringkasan agregat produksi'
+            ]);
+
+            fputcsv($handle, [
+                'summary',
+                'sales_total',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                '',
+                $data['salesTotals']['total_value'],
+                'selesai:' . $data['salesTotals']['completed'] . '/' . $data['salesTotals']['count'],
+                'Ringkasan agregat penjualan'
+            ]);
+
+            foreach ($data['productions'] as $production) {
+                fputcsv($handle, [
+                    'production_detail',
+                    'record',
+                    optional($production->tanggal_produksi)->format('Y-m-d'),
+                    $production->nomor_produksi,
+                    optional($production->produk)->nama_produk,
+                    $production->jumlah_target !== null ? (float) $production->jumlah_target : null,
+                    $production->jumlah_hasil !== null ? (float) $production->jumlah_hasil : null,
+                    $production->grade_kualitas,
+                    $production->biaya_produksi !== null ? (float) $production->biaya_produksi : null,
+                    null,
+                    $production->status,
+                    $production->status_label,
+                ]);
+            }
+
+            foreach ($data['sales'] as $sale) {
+                fputcsv($handle, [
+                    'sales_detail',
+                    'record',
+                    optional($sale->tanggal_transaksi)->format('Y-m-d'),
+                    $sale->kode_transaksi,
+                    $sale->keterangan ?? 'Penjualan',
+                    null,
+                    null,
+                    null,
+                    null,
+                    $sale->total !== null ? (float) $sale->total : null,
+                    $sale->status,
+                    $sale->status_label,
+                ]);
+            }
+
+            fclose($handle);
+        }, $filename, [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+            'Cache-Control' => 'no-store, no-cache',
+        ]);
     }
 }

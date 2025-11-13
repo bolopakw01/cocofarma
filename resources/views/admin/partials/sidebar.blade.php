@@ -9,7 +9,7 @@
     <!-- Menu group switch: toggle between Operasional and Master -->
     <div class="menu-group-switch" aria-hidden="false">
         <button type="button" id="menuGroupOperational"
-            class="group-btn {{ request()->routeIs('backoffice.pesanan.*') || request()->routeIs('backoffice.produksi.*') || request()->routeIs('backoffice.transaksi.*') || request()->routeIs('backoffice.laporan.*') ? 'active' : '' }}"
+            class="group-btn {{ request()->routeIs('backoffice.pesanan.*') || request()->routeIs('backoffice.produksi.*') || request()->routeIs('backoffice.transaksi.*') ? 'active' : '' }}"
             title="Tampilkan Operasional">
             <img class="group-icon" src="{{ asset('bolopa/back/images/icon/line-md--home-md.svg') }}" alt="operasional"
                 style="width:18px;height:18px;filter: invert(100%) sepia(100%) saturate(0%) hue-rotate(63deg) brightness(108%) contrast(103%);" />
@@ -17,7 +17,7 @@
         </button>
         @if (Auth::check() && Auth::user()->role === 'super_admin')
             <button type="button" id="menuGroupMaster"
-                class="group-btn {{ request()->routeIs('backoffice.master-produk.*') || request()->routeIs('backoffice.master-user.*') || request()->routeIs('backoffice.pengaturan.*') || request()->routeIs('backoffice.bahanbaku.*') ? 'active' : '' }}"
+                class="group-btn {{ request()->routeIs('backoffice.master-produk.*') || request()->routeIs('backoffice.master-user.*') || request()->routeIs('backoffice.pengaturan.*') || request()->routeIs('backoffice.bahanbaku.*') || request()->routeIs('backoffice.laporan.*') ? 'active' : '' }}"
                 title="Tampilkan Master">
                 <img class="group-icon" src="{{ asset('bolopa/back/images/icon/line-md--monitor-screenshot.svg') }}"
                     alt="master"
@@ -29,16 +29,16 @@
 
     {{-- Ensure the correct menu group is selected on first load based on the current route (without overwriting an existing user preference) --}}
     @if (request()->routeIs('backoffice.pesanan.*') ||
-            request()->routeIs('backoffice.produksi.*') ||
-            request()->routeIs('backoffice.transaksi.*') ||
-            request()->routeIs('backoffice.laporan.*'))
+        request()->routeIs('backoffice.produksi.*') ||
+        request()->routeIs('backoffice.transaksi.*'))
         <script>
             if (!localStorage.getItem('sidebar-group')) localStorage.setItem('sidebar-group', 'operational');
         </script>
     @elseif(request()->routeIs('backoffice.master-produk.*') ||
             request()->routeIs('backoffice.master-user.*') ||
             request()->routeIs('backoffice.pengaturan.*') ||
-            request()->routeIs('backoffice.bahanbaku.*'))
+        request()->routeIs('backoffice.bahanbaku.*') ||
+        request()->routeIs('backoffice.laporan.*'))
         @if (Auth::check() && Auth::user()->role === 'super_admin')
             <script>
                 if (!localStorage.getItem('sidebar-group')) localStorage.setItem('sidebar-group', 'master');
@@ -105,15 +105,6 @@
             </a>
             <span class="tooltip">Penjualan</span>
         </li>
-        <li data-group="operational">
-            <a href="{{ Route::has('backoffice.laporan.index') ? route('backoffice.laporan.index') : '#' }}"
-                class="{{ request()->routeIs('backoffice.laporan.*') ? 'active' : '' }}">
-                <i class="bx bx-line-chart"></i>
-                <span class="links_name">Laporan</span>
-            </a>
-            <span class="tooltip">Laporan</span>
-        </li>
-
         @if (Auth::check() && Auth::user()->role === 'super_admin')
             <!-- Master Group -->
             <li class="menu-group-title" data-group="master">
@@ -145,6 +136,14 @@
                     <span class="links_name">User & Hak Akses</span>
                 </a>
                 <span class="tooltip">User & Hak Akses</span>
+            </li>
+            <li data-group="master">
+                <a href="{{ Route::has('backoffice.laporan.index') ? route('backoffice.laporan.index') : '#' }}"
+                    class="{{ request()->routeIs('backoffice.laporan.*') ? 'active' : '' }}">
+                    <i class="bx bx-line-chart"></i>
+                    <span class="links_name">Laporan</span>
+                </a>
+                <span class="tooltip">Laporan</span>
             </li>
             <li data-group="master">
                 <a href="{{ Route::has('backoffice.pengaturan.index') ? route('backoffice.pengaturan.index') : '#' }}"

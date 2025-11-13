@@ -36,12 +36,7 @@
 
 	.report-actions { display:flex; align-items:center; gap:12px; }
 
-	.export-dropdown { position:relative; }
 	.export-btn { display:inline-flex; align-items:center; gap:8px; padding:8px 12px; border-radius:10px; background:var(--accent); color:#fff; font-weight:600; text-decoration:none; border:none; cursor:pointer; }
-	.export-menu { position:absolute; right:0; top:calc(100% + 8px); background:var(--card-bg); border-radius:10px; box-shadow:0 12px 36px rgba(15,23,42,0.12); border:1px solid rgba(15,23,42,0.06); display:none; min-width:180px; overflow:hidden; z-index:60; }
-	.export-menu.show { display:block; }
-	.export-menu a { display:block; padding:10px 14px; color:var(--text); text-decoration:none; font-weight:600; }
-	.export-menu a:hover { background: #f1f5f9; }
 
 	.report-filter-form { display:flex; align-items:center; gap:12px; padding:8px; background:transparent; }
 	.report-filter-form label { font-size:13px; color:var(--muted); font-weight:600; }
@@ -94,7 +89,6 @@
 	@media (max-width:768px) {
 		.report-stats-grid { grid-template-columns: 1fr; }
 		.history-grid { grid-template-columns: 1fr; }
-		.export-menu { right:8px; left:auto; }
 	}
 </style>
 @endpush
@@ -108,22 +102,16 @@
 			</div>
 
 			<div class="right">
-				<div class="export-dropdown">
-					<button type="button" class="export-btn" id="exportToggle"><i class="bx bx-export"></i> Ekspor
-						<i class="bx bx-chevron-down" style="opacity:.8"></i>
-					</button>
-					<div class="export-menu" id="exportMenu" role="menu" aria-hidden="true">
-						<a href="{{ route('backoffice.laporan.export-pdf', ['type' => 'ringkasan']) }}">Unduh PDF</a>
-						<a href="{{ route('backoffice.laporan.export-excel', ['type' => 'ringkasan']) }}">Unduh Excel</a>
-						<a href="#" id="printReport">Cetak</a>
-					</div>
+				<div class="report-actions">
+					<a href="{{ route('backoffice.laporan.export-excel', ['type' => 'full']) }}" class="export-btn">
+						<i class="bx bx-download"></i> Export CSV
+					</a>
 				</div>
 
 				<form method="GET" action="{{ route('backoffice.laporan.index') }}" class="report-filter-form">
 					<label for="period">Periode</label>
 					<select id="period" name="period" onchange="this.form.submit()">
 						<option value="hari" {{ $period === 'hari' ? 'selected' : '' }}>Harian</option>
-						<option value="minggu" {{ $period === 'minggu' ? 'selected' : '' }}>Mingguan</option>
 						<option value="bulan" {{ $period === 'bulan' ? 'selected' : '' }}>Bulanan</option>
 						<option value="tahun" {{ $period === 'tahun' ? 'selected' : '' }}>Tahunan</option>
 					</select>
@@ -131,47 +119,17 @@
 			</div>
 		</div>
 
-		<div class="report-stats-grid">
-					<div class="report-card">
-						<div class="report-card-header">
-							<div class="card-title-left">
-								<p class="title">Total Produksi</p>
-								<span class="badge">{{ $periodLabel }}</span>
-							</div>
-							<div class="card-icon"><i class="bx bx-package"></i></div>
-						</div>
-						<p class="metric-value">{{ number_format((float) $totalProduksi, 0, ',', '.') }} <small style="font-size:12px;color:var(--muted);font-weight:700;">Unit</small></p>
-						<p class="metric-subtext">Akumulasi produksi selesai yang tercatat pada periode ini.</p>
-					</div>
-
-					<div class="report-card">
-						<div class="report-card-header">
-							<div class="card-title-left">
-								<p class="title">Total Penjualan</p>
-								<span class="badge">{{ $periodLabel }}</span>
-							</div>
-							<div class="card-icon"><i class="bx bx-wallet"></i></div>
-						</div>
-						<p class="metric-value">Rp {{ number_format((float) $totalPenjualan, 0, ',', '.') }}</p>
-						<p class="metric-subtext">Nilai transaksi penjualan berstatus selesai.</p>
-					</div>
-
-					<div class="report-card">
-						<div class="report-card-header">
-							<div class="card-title-left">
-								<p class="title">Ketersediaan Stok</p>
-								<span class="badge">Rekap</span>
-							</div>
-							<div class="card-icon"><i class="bx bx-layer"></i></div>
-						</div>
-						<p class="metric-value">{{ number_format((float) $totalStok, 0, ',', '.') }} <small style="font-size:12px;color:var(--muted);font-weight:700;">Unit</small></p>
-						<p class="metric-subtext">Total stok produk dan bahan baku aktif.</p>
-					</div>
-		</div>
-
 		<div class="chart-card">
 			<div class="chart-card-header">
-				<h2>Perbandingan Produksi & Penjualan (6 Bulan Terakhir)</h2>
+				<h2>
+					@if($period === 'hari')
+						Perbandingan Produksi & Penjualan (7 Hari Terakhir)
+					@elseif($period === 'bulan')
+						Perbandingan Produksi & Penjualan (6 Bulan Terakhir)
+					@else
+						Perbandingan Produksi & Penjualan (12 Bulan Terakhir)
+					@endif
+				</h2>
 				<span class="badge">Trend</span>
 			</div>
 			<div id="report-performance-chart" style="min-height: 320px;"></div>
@@ -268,7 +226,7 @@
 <script>
 	document.addEventListener('DOMContentLoaded', function () {
 		const rawChartData = @json($chartData);
-		const categories = rawChartData.map(item => item.month);
+		const categories = rawChartData.map(item => item.label ?? item.month);
 		const produksiSeries = rawChartData.map(item => Number(item.produksi || 0));
 		const penjualanSeries = rawChartData.map(item => Number(item.penjualan || 0));
 
@@ -375,33 +333,4 @@
 		chart.render();
 	});
 </script>
-	<script>
-		// Export dropdown toggle and print
-		(function() {
-			const toggle = document.getElementById('exportToggle');
-			const menu = document.getElementById('exportMenu');
-			const printBtn = document.getElementById('printReport');
-
-			if (!toggle || !menu) return;
-
-			toggle.addEventListener('click', function(e) {
-				e.stopPropagation();
-				menu.classList.toggle('show');
-				menu.setAttribute('aria-hidden', String(!menu.classList.contains('show')));
-			});
-
-			printBtn && printBtn.addEventListener('click', function(e) {
-				e.preventDefault();
-				window.print();
-			});
-
-			// Close on outside click
-			document.addEventListener('click', function(e) {
-				if (!menu.contains(e.target) && !toggle.contains(e.target)) {
-					menu.classList.remove('show');
-					menu.setAttribute('aria-hidden', 'true');
-				}
-			});
-		})();
-	</script>
 @endpush
