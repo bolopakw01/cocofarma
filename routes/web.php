@@ -40,6 +40,7 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
     
     // Dashboard (accessible by both super_admin and admin)
     Route::get('/dashboard', [AdminController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard/chart-data', [AdminController::class, 'chartData'])->name('dashboard.chart-data');
 
     // Operasional routes (accessible by both super_admin and admin)
     Route::middleware('role:super_admin,admin')->group(function () {
@@ -184,6 +185,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
                 Route::post('/backup-database', [PengaturanController::class, 'backupDatabase'])->name('backup-database');
                 Route::post('/save-dashboard-goal', [PengaturanController::class, 'saveDashboardGoal'])->name('save-dashboard-goal');
                 Route::get('/goals', [PengaturanController::class, 'goals'])->name('goals');
+                Route::get('/dashboard-metrics', [PengaturanController::class, 'dashboardMetrics'])->name('dashboard-metrics');
+                Route::post('/dashboard-metrics', [PengaturanController::class, 'saveDashboardMetrics'])->name('dashboard-metrics.save');
                 Route::post('/save-goals', [PengaturanController::class, 'saveGoalsList'])->name('save-goals');
                 Route::post('/save-grades', [PengaturanController::class, 'saveGradesList'])->name('save-grades');
                 Route::get('/alerts', [PengaturanController::class, 'alerts'])->name('alerts');

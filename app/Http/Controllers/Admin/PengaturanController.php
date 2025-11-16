@@ -286,6 +286,51 @@ class PengaturanController extends Controller
     }
 
     /**
+     * Display the form for editing dashboard metric targets.
+     */
+    public function dashboardMetrics()
+    {
+        $metrics = [
+            'total_pendapatan' => setting('total_pendapatan_target', ''),
+            'total_biaya' => setting('total_biaya_target', ''),
+            'total_laba' => setting('total_laba_target', ''),
+        ];
+        return view('admin.pages.pengaturan.dashboard-metrics', compact('metrics'));
+    }
+
+    /**
+     * Persist dashboard metric targets from the pengaturan form.
+     */
+    public function saveDashboardMetrics(Request $request)
+    {
+        $data = $request->validate([
+            'total_pendapatan' => 'nullable|numeric|min:0',
+            'total_biaya' => 'nullable|numeric|min:0',
+            'total_laba' => 'nullable|numeric|min:0',
+        ]);
+
+        if (array_key_exists('total_pendapatan', $data)) {
+            set_setting('total_pendapatan_target', (string) $data['total_pendapatan'], 'decimal');
+        }
+        if (array_key_exists('total_biaya', $data)) {
+            set_setting('total_biaya_target', (string) $data['total_biaya'], 'decimal');
+        }
+        if (array_key_exists('total_laba', $data)) {
+            set_setting('total_laba_target', (string) $data['total_laba'], 'decimal');
+        }
+
+        if (function_exists('cache')) {
+            try {
+                cache()->forget('app_settings');
+            } catch (\Exception $e) {
+                /* ignore */
+            }
+        }
+
+        return redirect()->route('backoffice.pengaturan.dashboard-metrics')->with('success', 'Target dashboard metrics berhasil disimpan.');
+    }
+
+    /**
      * Show form to manage a list of dashboard goals (stored as JSON in pengaturans.dashboard_goals)
      */
     public function goals()
@@ -315,6 +360,14 @@ class PengaturanController extends Controller
         ]);
 
         $goals = $data['goals'] ?? [];
+
+        // Check for duplicate categories
+        $categories = array_column($goals, 'key');
+        $uniqueCategories = array_unique($categories);
+        if (count($categories) !== count($uniqueCategories)) {
+            return redirect()->back()->withErrors(['goals' => 'Setiap kategori hanya dapat digunakan untuk satu goal saja.'])->withInput();
+        }
+
         // Persist as JSON string
         set_setting('dashboard_goals', json_encode(array_values($goals)), 'json');
 

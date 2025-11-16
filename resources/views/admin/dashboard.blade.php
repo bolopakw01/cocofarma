@@ -1,236 +1,66 @@
 @extends('admin.layouts.app')
 
-@php
-    $pageTitle = 'Dashboard';
-    // Data dinamis untuk kartu
-    $totalPesananBaru = \App\Models\Pesanan::where('status', 'baru')->count() ?? 0;
-    $produkTerjual = \App\Models\TransaksiItem::sum('jumlah') ?? 0; // Asumsikan TransaksiItem memiliki jumlah terjual
-    $totalProduksi = \App\Models\Produksi::count() ?? 0;
-    $totalUser = \App\Models\User::count() ?? 0;
-
-    // Data untuk bulan terakhir (bulan lalu)
-    $lastMonth = now()->subMonth();
-    $lastMonthYear = $lastMonth->year;
-    $lastMonthMonth = $lastMonth->month;
-
-    // Total Pendapatan bulan terakhir (penjualan)
-    $totalPendapatanLastMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $lastMonthYear)
-        ->whereMonth('tanggal_transaksi', $lastMonthMonth)
-        ->where('jenis_transaksi', 'penjualan')
-        ->where('status', 'selesai')
-        ->sum('total') ?? 0;
-
-    // Total Biaya bulan terakhir (pembelian bahan baku atau biaya produksi)
-    $totalBiayaLastMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $lastMonthYear)
-        ->whereMonth('tanggal_transaksi', $lastMonthMonth)
-        ->where('jenis_transaksi', 'pembelian')
-        ->where('status', 'selesai')
-        ->sum('total') ?? 0;
-
-    // Jika tidak ada pembelian, gunakan biaya produksi
-    if ($totalBiayaLastMonth == 0) {
-        $totalBiayaLastMonth = \App\Models\Produksi::whereYear('tanggal_produksi', $lastMonthYear)
-            ->whereMonth('tanggal_produksi', $lastMonthMonth)
-            ->where('status', 'selesai')
-            ->sum('biaya_produksi') ?? 0;
-    }
-
-    // Total Laba bulan terakhir
-    $totalLabaLastMonth = $totalPendapatanLastMonth - $totalBiayaLastMonth;
-
-    // Hitung persentase perubahan dari bulan sebelumnya
-    $prevMonth = $lastMonth->subMonth();
-    $prevMonthYear = $prevMonth->year;
-    $prevMonthMonth = $prevMonth->month;
-
-    $totalPendapatanPrevMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $prevMonthYear)
-        ->whereMonth('tanggal_transaksi', $prevMonthMonth)
-        ->where('jenis_transaksi', 'penjualan')
-        ->where('status', 'selesai')
-        ->sum('total') ?? 0;
-
-    $totalBiayaPrevMonth = \App\Models\Transaksi::whereYear('tanggal_transaksi', $prevMonthYear)
-        ->whereMonth('tanggal_transaksi', $prevMonthMonth)
-        ->where('jenis_transaksi', 'pembelian')
-        ->where('status', 'selesai')
-        ->sum('total') ?? 0;
-
-    if ($totalBiayaPrevMonth == 0) {
-        $totalBiayaPrevMonth = \App\Models\Produksi::whereYear('tanggal_produksi', $prevMonthYear)
-            ->whereMonth('tanggal_produksi', $prevMonthMonth)
-            ->where('status', 'selesai')
-            ->sum('biaya_produksi') ?? 0;
-    }
-
-    $totalLabaPrevMonth = $totalPendapatanPrevMonth - $totalBiayaPrevMonth;
-
-    // Persentase
-    $pctPendapatan = $totalPendapatanPrevMonth > 0 ? round((($totalPendapatanLastMonth - $totalPendapatanPrevMonth) / $totalPendapatanPrevMonth) * 100) : 0;
-    $pctBiaya = $totalBiayaPrevMonth > 0 ? round((($totalBiayaLastMonth - $totalBiayaPrevMonth) / $totalBiayaPrevMonth) * 100) : 0;
-    $pctLaba = $totalLabaPrevMonth > 0 ? round((($totalLabaLastMonth - $totalLabaPrevMonth) / $totalLabaPrevMonth) * 100) : 0;
-
-    // Ambil goals dari pengaturan
-    $goalsSetting = \App\Models\Pengaturan::where('nama_pengaturan', 'dashboard_goals')->first();
-    $goals = [];
-    if ($goalsSetting) {
-        $decoded = json_decode($goalsSetting->nilai, true);
-        if (is_array($decoded) && !empty($decoded)) $goals = $decoded;
-    }
-    // Jika tidak ada goals, gunakan default kosong untuk placeholder
-    if (empty($goals)) {
-        $goals = []; // Kosongkan agar tampil placeholder
-    }
-
-    // Helper function untuk mapping hex color ke CSS class
-    function mapColorToClass($hexColor) {
-        $colorMap = [
-            '#007bff' => 'blue',
-            '#ff0000' => 'red',
-            '#dc3545' => 'red',
-            '#28a745' => 'green',
-            '#2ecc71' => 'green',
-            '#ffc107' => 'yellow',
-            '#f39c12' => 'yellow',
-            '#9b59b6' => 'purple',
-            '#8e44ad' => 'purple',
-            '#e67e22' => 'orange',
-            '#d35400' => 'orange',
-        ];
-        return $colorMap[$hexColor] ?? 'blue'; // Default ke blue jika tidak ditemukan
-    }
-
-    // Hitung value untuk setiap goal
-    foreach ($goals as &$goal) {
-        $key = $goal['key'] ?? '';
-        $value = 0;
-        switch ($key) {
-            case 'produk':
-                $value = \App\Models\Produk::count() ?? 0;
-                break;
-            case 'penjualan':
-                // Total penjualan bulan terakhir
-                $value = \App\Models\Transaksi::whereYear('tanggal_transaksi', $lastMonthYear)
-                    ->whereMonth('tanggal_transaksi', $lastMonthMonth)
-                    ->where('jenis_transaksi', 'penjualan')
-                    ->where('status', 'selesai')
-                    ->sum('total') ?? 0;
-                break;
-            case 'bahan_baku':
-                $value = \App\Models\MasterBahanBaku::count() ?? 0;
-                break;
-            case 'produksi':
-                // Total produksi bulan terakhir
-                $value = \App\Models\Produksi::whereYear('tanggal_produksi', $lastMonthYear)
-                    ->whereMonth('tanggal_produksi', $lastMonthMonth)
-                    ->where('status', 'selesai')
-                    ->sum('jumlah_hasil') ?? 0;
-                break;
-            case 'pesanan':
-                // Total pesanan bulan terakhir
-                $value = \App\Models\Pesanan::whereYear('tanggal_pesanan', $lastMonthYear)
-                    ->whereMonth('tanggal_pesanan', $lastMonthMonth)
-                    ->count() ?? 0;
-                break;
-            case 'user':
-                // Total user terdaftar
-                $value = \App\Models\User::count() ?? 0;
-                break;
-            case 'packing':
-                // Asumsikan packing adalah bagian dari produksi yang sudah selesai
-                $value = \App\Models\Produksi::where('status', 'selesai')->whereDate('created_at', today())->count() ?? 0;
-                break;
-            case 'qc':
-                $value = \App\Models\Produksi::where('status', 'proses')->whereDate('created_at', today())->count() ?? 0;
-                break;
-            // Tambahkan case lain jika perlu
-        }
-        $goal['value'] = $value;
-        $goal['pct'] = $goal['target'] > 0 ? round(($value / $goal['target']) * 100) : 0;
-    }
-
-    // Filter range untuk grafik
-    $range = request('range', 'weekly');
-    switch ($range) {
-        case 'monthly':
-            $start = now()->startOfMonth();
-            $end = now()->endOfMonth();
-            $days = $end->diffInDays($start) + 1;
-            $penjualanData = [];
-            $produksiData = [];
-            $pesananData = [];
-            for ($i = 0; $i < $days; $i++) {
-                $date = $start->copy()->addDays($i);
-                $penjualanData[] = \App\Models\Transaksi::whereDate('tanggal_transaksi', $date)->sum('total') ?? 0;
-                $produksiData[] = \App\Models\Produksi::whereDate('created_at', $date)->count() ?? 0;
-                $pesananData[] = \App\Models\Pesanan::whereDate('created_at', $date)->where('status', 'baru')->count() ?? 0;
-            }
-            $categories = range(1, $days);
-            $title = 'Ringkasan Bulanan: Penjualan, Produksi & Pesanan';
-            break;
-        case 'yearly':
-            $penjualanData = [];
-            $produksiData = [];
-            $pesananData = [];
-            $categories = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-            for ($i = 0; $i < 12; $i++) {
-                $month = $i + 1;
-                $penjualanData[] = \App\Models\Transaksi::whereYear('tanggal_transaksi', now()->year)->whereMonth('tanggal_transaksi', $month)->sum('total') ?? 0;
-                $produksiData[] = \App\Models\Produksi::whereYear('created_at', now()->year)->whereMonth('created_at', $month)->count() ?? 0;
-                $pesananData[] = \App\Models\Pesanan::whereYear('created_at', now()->year)->whereMonth('created_at', $month)->where('status', 'baru')->count() ?? 0;
-            }
-            $title = 'Ringkasan Tahunan: Penjualan, Produksi & Pesanan';
-            break;
-        default: // weekly
-            $penjualanData = [];
-            $produksiData = [];
-            $pesananData = [];
-            for ($i = 6; $i >= 0; $i--) {
-                $date = now()->subDays($i)->toDateString();
-                $penjualanData[] = \App\Models\Transaksi::whereDate('tanggal_transaksi', $date)->sum('total') ?? 0;
-                $produksiData[] = \App\Models\Produksi::whereDate('created_at', $date)->count() ?? 0;
-                $pesananData[] = \App\Models\Pesanan::whereDate('created_at', $date)->where('status', 'baru')->count() ?? 0;
-            }
-            $categories = ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
-            $title = 'Ringkasan Harian: Penjualan, Produksi & Pesanan';
-            break;
-    }
-
-    // Data untuk last orders
-    $lastOrders = \App\Models\Pesanan::latest()->take(10)->get()->map(function($order) {
-        return [
-            'id' => $order->kode_pesanan ?? '#ORD-' . $order->id,
-            'customer' => $order->nama_pelanggan ?? 'N/A',
-            'amount' => 'Rp ' . number_format($order->total_harga ?? 0, 0, ',', '.'),
-            'time' => $order->created_at->diffForHumans(),
-            'status' => $order->status,
-            'status_label' => $order->status_label
-        ];
-    });
-
-    // Data bahan baku terbaru
-    $bahanBaku = \App\Models\MasterBahanBaku::latest()->take(5)->get();
-@endphp
+@php($pageTitle = $pageTitle ?? 'Dashboard')
 
 @section('styles')
 <link rel="stylesheet" href="{{ asset('bolopa/back/css/admin-dashboard.css') }}">
+<style>
+.bolopa-btn-filter .btn {
+  border: none !important;
+  position: relative;
+  z-index: 1;
+}
+
+.bolopa-btn-filter .btn:hover:not(.active) {
+  background-color: rgba(113, 128, 150, 0.3) !important;
+  color: #e2e8f0 !important;
+  transform: none;
+  box-shadow: none !important;
+}
+
+.bolopa-btn-filter .btn-outline-secondary:not(.active) {
+  background: rgba(45, 55, 72, 0.8);
+  color: #a0aec0 !important;
+  border-color: rgba(113, 128, 150, 0.3) !important;
+}
+
+.bolopa-btn-filter .btn-outline-secondary:not(.active):hover {
+  background: rgba(113, 128, 150, 0.3) !important;
+  color: #e2e8f0 !important;
+  border-color: rgba(113, 128, 150, 0.5) !important;
+}
+
+.bolopa-btn-filter .btn-primary.active {
+  background: linear-gradient(135deg, #87ceeb 0%, #00bfff 100%) !important;
+  color: white !important;
+  font-weight: 700;
+  border-color: transparent !important;
+  transform: translateY(-1px);
+}
+
+.bolopa-btn-filter .btn-primary.active:hover {
+  background: linear-gradient(135deg, #00bfff 0%, #1e90ff 100%) !important;
+  transform: translateY(-2px);
+}
+</style>
 @endsection
 
 @section('content')
 <div class="container py-4">
   <div class="row g-3">
-    <!-- Card 1 -->
+    @foreach($summaryCards as $card)
     <div class="col-12 col-sm-6 col-md-3">
-      <div class="card text-white bolopa-bg-teal h-100 overflow-hidden" role="region" aria-labelledby="card1-title">
+      <div class="card {{ $card['text_class'] }} {{ $card['background_class'] }} h-100 overflow-hidden" role="region" aria-labelledby="{{ $card['id'] }}">
         <div class="card-body d-flex align-items-start justify-content-between">
           <div>
-            <h2 id="card1-title" class="fw-bold display-6 mb-0" aria-label="{{ number_format($totalPesananBaru, 0) }} pesanan baru">{{ number_format($totalPesananBaru, 0) }}</h2>
-            <div class="small opacity-85">Pesanan Baru</div>
+            <h2 id="{{ $card['id'] }}" class="fw-bold display-6 mb-0" aria-label="{{ $card['aria_label'] }}">{{ $card['formatted'] }}</h2>
+            <div class="small opacity-85">{{ $card['label'] }}</div>
           </div>
-          <div class="bolopa-card-icon">
-            <i class="fas fa-shopping-bag fa-3x" aria-hidden="true"></i>
+          <div class="{{ $card['icon_wrapper_class'] }}">
+            <i class="{{ $card['icon'] }} fa-3x" aria-hidden="true"></i>
           </div>
         </div>
-        <a href="#" class="card-footer text-white-50 text-decoration-none" aria-label="Informasi lebih lanjut tentang Pesanan Baru">
+        <a href="{{ $card['link'] ?? '#' }}" class="card-footer {{ $card['footer_text_class'] ?? 'text-white-50' }} text-decoration-none" aria-label="Informasi lebih lanjut tentang {{ $card['label'] }}">
           <div class="d-flex justify-content-between align-items-center px-3 py-2">
             <span>Informasi lebih lanjut</span>
             <i class="fas fa-arrow-circle-right" aria-hidden="true"></i>
@@ -238,175 +68,44 @@
         </a>
       </div>
     </div>
+    @endforeach
 
-    <!-- Card 2 -->
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="card text-white bolopa-bg-success-variant h-100 overflow-hidden" role="region" aria-labelledby="card2-title">
-        <div class="card-body d-flex align-items-start justify-content-between">
-          <div>
-            <h2 id="card2-title" class="fw-bold display-6 mb-0" aria-label="{{ number_format($produkTerjual, 0) }} produk terjual">{{ number_format($produkTerjual, 0) }}</h2>
-            <div class="small opacity-85">Produk Terjual</div>
-          </div>
-          <div class="bolopa-card-icon">
-            <i class="fas fa-box fa-3x" aria-hidden="true"></i>
-          </div>
-        </div>
-        <a href="#" class="card-footer text-white-50 text-decoration-none" aria-label="Informasi lebih lanjut tentang Produk Terjual">
-          <div class="d-flex justify-content-between align-items-center px-3 py-2">
-            <span>Informasi lebih lanjut</span>
-            <i class="fas fa-arrow-circle-right" aria-hidden="true"></i>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <!-- Card 3 -->
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="card text-dark bolopa-bg-warning-variant h-100 overflow-hidden" role="region" aria-labelledby="card3-title">
-        <div class="card-body d-flex align-items-start justify-content-between">
-          <div>
-            <h2 id="card3-title" class="fw-bold display-6 mb-0" aria-label="{{ $totalProduksi }} produksi">{{ $totalProduksi }}</h2>
-            <div class="small opacity-85">Produksi</div>
-          </div>
-          <div class="bolopa-card-icon text-dark">
-            <i class="fas fa-cogs fa-3x" aria-hidden="true"></i>
-          </div>
-        </div>
-        <a href="#" class="card-footer text-dark-50 text-decoration-none" aria-label="Informasi lebih lanjut tentang Produksi">
-          <div class="d-flex justify-content-between align-items-center px-3 py-2">
-            <span>Informasi lebih lanjut</span>
-            <i class="fas fa-arrow-circle-right" aria-hidden="true"></i>
-          </div>
-        </a>
-      </div>
-    </div>
-
-    <!-- Card 4 -->
-    <div class="col-12 col-sm-6 col-md-3">
-      <div class="card text-white bolopa-bg-danger-variant h-100 overflow-hidden" role="region" aria-labelledby="card4-title">
-        <div class="card-body d-flex align-items-start justify-content-between">
-          <div>
-            <h2 id="card4-title" class="fw-bold display-6 mb-0" aria-label="{{ $totalUser }} user">{{ $totalUser }}</h2>
-            <div class="small opacity-85">User Aktif</div>
-          </div>
-          <div class="bolopa-card-icon">
-            <i class="fas fa-users fa-3x" aria-hidden="true"></i>
-          </div>
-        </div>
-        <a href="#" class="card-footer text-white-50 text-decoration-none" aria-label="Informasi lebih lanjut tentang User Aktif">
-          <div class="d-flex justify-content-between align-items-center px-3 py-2">
-            <span>Informasi lebih lanjut</span>
-            <i class="fas fa-arrow-circle-right" aria-hidden="true"></i>
-          </div>
-        </a>
-      </div>
-    </div>
-
-  </div>
-</div>
-
-<!-- Financial Summary Cards -->
-<div class="container py-4">
-  <div class="row g-3">
-    <!-- TOTAL PENDAPATAN -->
-    <div class="col-12 col-sm-6 col-md-4">
-      <div class="card text-white bolopa-bg-success h-100 overflow-hidden">
-        <div class="card-body d-flex align-items-start justify-content-between">
-          <div>
-            <div class="small opacity-85">TOTAL PENDAPATAN</div>
-            <div class="fw-bold">{{ $pctPendapatan }}%</div>
-            <h4 class="fw-bold mb-0">Rp {{ number_format($totalPendapatanLastMonth, 0, ',', '.') }}</h4>
-          </div>
-          <div class="bolopa-card-icon">
-            <i class="fas fa-dollar-sign fa-3x" aria-hidden="true"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOTAL BIAYA -->
-    <div class="col-12 col-sm-6 col-md-4">
-      <div class="card text-white bolopa-bg-danger h-100 overflow-hidden">
-        <div class="card-body d-flex align-items-start justify-content-between">
-          <div>
-            <div class="small opacity-85">TOTAL BIAYA</div>
-            <div class="fw-bold">{{ $pctBiaya }}%</div>
-            <h4 class="fw-bold mb-0">Rp {{ number_format($totalBiayaLastMonth, 0, ',', '.') }}</h4>
-          </div>
-          <div class="bolopa-card-icon">
-            <i class="fas fa-money-bill-wave fa-3x" aria-hidden="true"></i>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <!-- TOTAL LABA -->
-    <div class="col-12 col-sm-6 col-md-4">
-      <div class="card text-white bolopa-bg-primary h-100 overflow-hidden">
-        <div class="card-body d-flex align-items-start justify-content-between">
-          <div>
-            <div class="small opacity-85">TOTAL LABA</div>
-            <div class="fw-bold">{{ $pctLaba }}%</div>
-            <h4 class="fw-bold mb-0">{{ number_format($totalLabaLastMonth, 0) }}</h4>
-          </div>
-          <div class="bolopa-card-icon">
-            <i class="fas fa-chart-line fa-3x" aria-hidden="true"></i>
-          </div>
-        </div>
-      </div>
-    </div>
   </div>
 </div>
 
 <!-- Main chart section with right-side Goals Completion card -->
-<div class="container py-4">
+<div class="container">
   <div class="row g-3">
     <div class="col-12 col-lg-8">
       <div class="card mb-4 no-hover-card">
         <div class="card-body">
             <div class="d-flex justify-content-between align-items-center mb-3">
             <h5 class="mb-0">Grafik Utama</h5>
-            <div class="btn-group bolopa-btn-filter" role="group" aria-label="Filter grafik">
-              <button type="button" class="btn btn-sm btn-outline-primary {{ $range == 'weekly' ? 'active' : '' }}" data-range="weekly">Harian</button>
-              <button type="button" class="btn btn-sm btn-outline-primary {{ $range == 'monthly' ? 'active' : '' }}" data-range="monthly">Bulanan</button>
-              <button type="button" class="btn btn-sm btn-outline-primary {{ $range == 'yearly' ? 'active' : '' }}" data-range="yearly">Tahunan</button>
+            <div class="btn-group bolopa-btn-filter shadow-sm" role="group" aria-label="Filter grafik" style="border-radius: 25px; overflow: hidden; background: linear-gradient(135deg, #2d3748 0%, #1a202c 100%); padding: 3px;">
+              <button type="button" class="btn btn-sm {{ $range === 'weekly' ? 'btn-active active' : 'btn-outline-secondary' }} position-relative" data-range="weekly" style="border-radius: 20px; font-weight: 600; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); {{ $range === 'weekly' ? 'background: linear-gradient(135deg, #87ceeb 0%, #00bfff 100%); color: white;' : 'color: #a0aec0;' }}">
+                <i class="fas fa-calendar-day me-1" aria-hidden="true"></i>Harian
+              </button>
+              <button type="button" class="btn btn-sm {{ $range === 'monthly' ? 'btn-active active' : 'btn-outline-secondary' }} position-relative" data-range="monthly" style="border-radius: 20px; font-weight: 600; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); {{ $range === 'monthly' ? 'background: linear-gradient(135deg, #87ceeb 0%, #00bfff 100%); color: white;' : 'color: #a0aec0;' }}">
+                <i class="fas fa-calendar-alt me-1" aria-hidden="true"></i>Bulanan
+              </button>
+              <button type="button" class="btn btn-sm {{ $range === 'yearly' ? 'btn-active active' : 'btn-outline-secondary' }} position-relative" data-range="yearly" style="border-radius: 20px; font-weight: 600; transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1); {{ $range === 'yearly' ? 'background: linear-gradient(135deg, #87ceeb 0%, #00bfff 100%); color: white;' : 'color: #a0aec0;' }}">
+                <i class="fas fa-calendar me-1" aria-hidden="true"></i>Tahunan
+              </button>
             </div>
           </div>
           <div id="main-chart"></div>
           <div class="stats-strip-wrapper mt-3">
             <div class="stats-strip">
-              <div class="stats-item" data-dir="up">
+              @foreach($statsStrip as $stat)
+              <div class="stats-item" data-dir="{{ $stat['direction'] }}">
                 <div class="stat-top">
                   <img class="stat-icon" aria-hidden="true" src="{{ asset('bolopa/back/images/icon/line-md--hazard-lights-loop.svg') }}" width="16" height="16" alt="indikator">
-                  <div class="pct text-success">17%</div>
+                  <div class="pct {{ $stat['pct_class'] }}">{{ number_format($stat['pct'], 1, ',', '.') }}%</div>
                 </div>
-                <div class="amount">Rp 35.210.43</div>
-                <div class="label">TOTAL PENDAPATAN</div>
+                <div class="amount">{{ $stat['amount'] }}</div>
+                <div class="label">{{ $stat['label'] }}</div>
               </div>
-              <div class="stats-item" data-dir="same">
-                <div class="stat-top">
-                  <img class="stat-icon" aria-hidden="true" src="{{ asset('bolopa/back/images/icon/line-md--hazard-lights-loop.svg') }}" width="16" height="16" alt="indikator">
-                  <div class="pct text-warning">0%</div>
-                </div>
-                <div class="amount">Rp 10.390.90</div>
-                <div class="label">TOTAL BIAYA</div>
-              </div>
-              <div class="stats-item" data-dir="up">
-                <div class="stat-top">
-                  <img class="stat-icon" aria-hidden="true" src="{{ asset('bolopa/back/images/icon/line-md--hazard-lights-loop.svg') }}" width="16" height="16" alt="indikator">
-                  <div class="pct text-success">20%</div>
-                </div>
-                <div class="amount">Rp 24.813.53</div>
-                <div class="label">TOTAL LABA</div>
-              </div>
-              <div class="stats-item" data-dir="down">
-                <div class="stat-top">
-                  <img class="stat-icon" aria-hidden="true" src="{{ asset('bolopa/back/images/icon/line-md--hazard-lights-loop.svg') }}" width="16" height="16" alt="indikator">
-                  <div class="pct text-danger">18%</div>
-                </div>
-                <div class="amount">1200</div>
-                <div class="label">PENYELESAIAN TUJUAN</div>
-              </div>
+              @endforeach
             </div>
           </div>
         </div>
@@ -430,46 +129,46 @@
                 <p class="text-white">Belum ada tujuan yang ditetapkan</p>
               </div>
               @else
-              @foreach($goals as $goal)
-              @php
-                $pct = $goal['pct'] ?? 0;
-                $goalClass = '';
-                if ($pct >= 100) {
-                  $goalClass = 'at-target';
-                } elseif ($pct >= 80) {
-                  $goalClass = 'nearing-target';
-                }
-                $colorClass = mapColorToClass($goal['color'] ?? '#007bff');
-              @endphp
-              <div class="bolopa-goal-item mb-3 {{ $goalClass }}">
-                <div class="d-flex justify-content-between">
-                  <div class="small">{{ $goal['label'] }}</div>
-                  <div class="fw-bold">{{ number_format($goal['value'] ?? 0, 0) }} / {{ number_format($goal['target'], 0) }}</div>
+              <div class="bolopa-goals-list" style="height: 100px; max-height: 100px; overflow-y: auto; overflow-x: hidden; scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.3) transparent; flex-shrink: 0;">
+                <style>
+                  .bolopa-goals-list::-webkit-scrollbar {
+                    width: 6px;
+                  }
+                  .bolopa-goals-list::-webkit-scrollbar-track {
+                    background: rgba(255,255,255,0.1);
+                    border-radius: 3px;
+                  }
+                  .bolopa-goals-list::-webkit-scrollbar-thumb {
+                    background: rgba(255,255,255,0.3);
+                    border-radius: 3px;
+                  }
+                  .bolopa-goals-list::-webkit-scrollbar-thumb:hover {
+                    background: rgba(255,255,255,0.5);
+                  }
+                </style>
+                @foreach($goals as $goal)
+                @php($pct = (int) ($goal['pct'] ?? 0))
+                <div class="bolopa-goal-item mb-2 {{ $goal['state_class'] ?? '' }}">
+                  <div class="d-flex flex-column">
+                    <div class="d-flex justify-content-between align-items-start mb-1">
+                      <div class="small fw-medium text-truncate flex-grow-1 me-2" style="min-width: 0;" title="{{ $goal['label'] }}">{{ $goal['label'] }}</div>
+                      <div class="fw-bold small text-nowrap">{{ number_format((float) ($goal['value'] ?? 0), 0, ',', '.') }} / {{ number_format((float) ($goal['target'] ?? 0), 0, ',', '.') }}</div>
+                    </div>
+                    <div class="progress mt-1" style="height: 8px;">
+                      <div class="bolopa-goal-bar bolopa-bar-{{ $goal['color_class'] ?? 'blue' }}" role="progressbar" data-value="{{ $goal['value'] ?? 0 }}" data-target="{{ $goal['target'] ?? 0 }}" data-pct="{{ $pct }}" style="width:{{ min(max($pct, 0), 100) }}%"></div>
+                    </div>
+                  </div>
                 </div>
-                <div class="progress mt-2">
-                  <div class="bolopa-goal-bar bolopa-bar-{{ $colorClass }}" role="progressbar" data-value="{{ $goal['value'] ?? 0 }}" data-target="{{ $goal['target'] }}" data-pct="{{ $pct }}" style="width:{{ $pct }}%"></div>
-                </div>
-                @if($pct >= 80)
-                <div class="mt-1 text-center">
-                  <small class="text-warning fw-bold">
-                    @if($pct >= 100)
-                      <i class="fas fa-trophy text-success"></i> Target Tercapai!
-                    @else
-                      <i class="fas fa-exclamation-triangle"></i> Hampir Tercapai!
-                    @endif
-                  </small>
-                </div>
-                @endif
+                @endforeach
               </div>
-              @endforeach
               @endif
             </div>
 
             <div class="bolopa-goals-inner bolopa-last-orders">
               <h6 class="mb-3">Pesanan Terakhir</h6>
-              <div class="bolopa-last-orders-wrapper">
-                <div id="last-orders-list" class="bolopa-last-orders-list" aria-live="polite" role="list"></div>
-                <div id="more-orders-wrap" class="text-center mt-2 bolopa-more-orders-wrap">
+              <div class="bolopa-last-orders-wrapper" style="min-height: 300px; display: flex; flex-direction: column;">
+                <div id="last-orders-list" class="bolopa-last-orders-list" aria-live="polite" role="list" style="flex: 1;"></div>
+                <div id="more-orders-wrap" class="text-center bolopa-more-orders-wrap" style="margin-top: auto; padding-top: 10px;">
                   <button id="load-more-orders" class="btn btn-sm btn-outline-light" type="button">
                     <i class="fas fa-external-link-alt me-1"></i>Lihat Semua Pesanan
                   </button>
@@ -560,37 +259,7 @@
 <script>
 // main.js - initializes ApexCharts and handles filter buttons
 (function(){
-  function rand(max=100){ return Math.floor(Math.random()*max); }
-
-  // sample dataset generators
-  function generateDaily(){
-    // 24 points (hours)
-    return Array.from({length:24}, ()=>rand(200));
-  }
-  function generateWeekly(){
-    // 7 days
-    return Array.from({length:7}, ()=>rand(800));
-  }
-  function generateMonthly(){
-    // 30 days
-    return Array.from({length:30}, ()=>rand(1000));
-  }
-  function generateYearly(){
-    // 12 months
-    return Array.from({length:12}, ()=>rand(5000));
-  }
-
-  // labels generator
-  function labelsFor(range){
-    if(range==='daily') return Array.from({length:24}, (_,i)=>i+':00');
-    if(range==='weekly') return ['Sen','Sel','Rab','Kam','Jum','Sab','Min'];
-    if(range==='monthly') return Array.from({length:30}, (_,i)=>String(i+1));
-    if(range==='yearly') return ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Ags','Sep','Okt','Nov','Des'];
-    return [];
-  }
-
   // create chart with improved styling and two series
-  var palette = { visits: '#0d6efd', conv: '#20c997' };
   // Data dari PHP
   var penjualanData = @json($penjualanData);
   var produksiData = @json($produksiData);
@@ -613,14 +282,14 @@
     ],
     colors: ['#007bff', '#28a745', '#ffc107'],
     stroke: { curve: 'smooth', width: 4, lineCap: 'round' },
-    markers: { size: 5, colors: ['#007bff'], strokeColors: '#fff', strokeWidth: 3, hover: { size: 8 } },
+    markers: { size: 5, colors: ['#007bff', '#28a745', '#ffc107'], strokeColors: '#fff', strokeWidth: 3, hover: { size: 8 } },
     fill: {
       type: 'gradient',
       gradient: {
         shade: 'light',
         type: 'vertical',
         shadeIntensity: 0.5,
-        gradientToColors: ['#28a745'],
+        gradientToColors: ['#4dabf7', '#34d399', '#ffda6a'],
         inverseColors: false,
         opacityFrom: 0.6,
         opacityTo: 0.1,
@@ -634,7 +303,7 @@
       axisTicks: { show: false }
     },
     yaxis: {
-      labels: { style: { colors: '#6c757d', fontSize: '12px' }, formatter: function(val) { return 'Rp ' + (val / 1000).toFixed(0) + 'k'; } },
+      labels: { style: { colors: '#6c757d', fontSize: '12px' }, formatter: function(val) { return val.toLocaleString('id-ID'); } },
       tickAmount: 5
     },
     tooltip: {
@@ -646,9 +315,11 @@
         formatter: function(val, opts) {
           if (opts.seriesIndex === 0) {
             return 'Rp ' + val.toLocaleString('id-ID');
-          } else {
-            return val + ' unit';
           }
+          if (opts.seriesIndex === 1) {
+            return val.toLocaleString('id-ID') + ' produksi';
+          }
+          return val.toLocaleString('id-ID') + ' pesanan';
         }
       },
       marker: { show: true }
@@ -656,7 +327,7 @@
     grid: { borderColor: '#e9ecef', strokeDashArray: 2, xaxis: { lines: { show: false } }, yaxis: { lines: { show: true } } },
     dataLabels: { enabled: false },
     legend: { show: true, position: 'bottom', horizontalAlign: 'center', offsetY: 10, markers: { width: 12, height: 12, radius: 6 } },
-    title: { text: '{{ $title }}', align: 'left', style: { fontSize: '18px', fontWeight: 700, color: '#495057' } },
+    title: { text: '{{ $chartTitle }}', align: 'left', style: { fontSize: '18px', fontWeight: 700, color: '#495057' } },
     responsive: [{
       breakpoint: 1200,
       options: {
@@ -750,94 +421,69 @@
   var btnGroup = document.querySelector('.btn-filter') || document.querySelector('.bolopa-btn-filter');
   var btns = btnGroup ? btnGroup.querySelectorAll('button') : document.querySelectorAll('.btn-filter button');
   function setActive(btn){
-    btns.forEach(b=>b.classList.remove('active'));
-    btn.classList.add('active');
+    btns.forEach(b=>{
+      b.classList.remove('active', 'btn-primary');
+      b.classList.add('btn-outline-secondary');
+      b.style.background = 'rgba(45, 55, 72, 0.8)';
+      b.style.color = '#a0aec0';
+    });
+    btn.classList.remove('btn-outline-secondary');
+    btn.classList.add('active', 'btn-primary');
+    btn.style.background = 'linear-gradient(135deg, #87ceeb 0%, #00bfff 100%)';
+    btn.style.color = 'white';
+  }
+
+  function updateChart(range) {
+    fetch('{{ route("backoffice.dashboard.chart-data") }}?range=' + range)
+      .then(response => response.json())
+      .then(data => {
+        // Update series data
+        chart.updateSeries([
+          { name: 'Penjualan', data: data.penjualanData },
+          { name: 'Produksi', data: data.produksiData },
+          { name: 'Pesanan Baru', data: data.pesananData }
+        ]);
+
+        // Update xaxis categories and title
+        chart.updateOptions({
+          xaxis: { categories: data.categories },
+          title: { text: data.chartTitle }
+        });
+      })
+      .catch(error => console.error('Error fetching chart data:', error));
   }
 
   btns.forEach(b=>{
     b.addEventListener('click', function(e){
       var range = this.getAttribute('data-range');
       setActive(this);
-      window.location.href = '?range=' + range;
+      updateChart(range);
     });
   });
 
-  // update stats icon orientation based on percent changes
-  function parseNumber(text){
-    if(!text) return 0;
-    // remove non-digit and non-dot
-    var n = text.replace(/[^0-9.\-]/g,'');
-    return parseFloat(n) || 0;
-  }
-
-  function updateStatsDirection(){
-    var items = document.querySelectorAll('.stats-item');
-    items.forEach(function(it){
-      var pctEl = it.querySelector('.pct');
-      if(!pctEl) return;
-      var cur = parseNumber(pctEl.textContent || pctEl.innerText);
-      var prevAttr = it.getAttribute('data-prev');
-      var prev = parseNumber(prevAttr);
-      if(prevAttr === null || prevAttr === undefined || prevAttr === ''){
-        // no previous value: initialize data-prev but do not override a manual data-dir
-        it.setAttribute('data-prev', String(cur));
-        return;
-      }
-      var dir = 'same';
-      if(cur > prev) dir = 'up';
-      if(cur < prev) dir = 'down';
-      it.setAttribute('data-dir', dir);
-      it.setAttribute('data-prev', String(cur));
-    });
-  }
-
-  // call once on load to ensure icons match initial data
-  setTimeout(updateStatsDirection, 150);
-
-  // Goals data from PHP
-  var goals = @json($goals);
-
   function animateGoals(){
-    // animate goal bar elements according to data-value/data-target (show value/target)
-    // support both original class names and bolopa-prefixed ones
     var bars = Array.from(document.querySelectorAll('.goals-panel .goal-bar'))
       .concat(Array.from(document.querySelectorAll('.bolopa-goals-panel .bolopa-goal-bar')));
-    bars.forEach((bar, idx)=>{
-      // prefer explicit value/target attributes
+    bars.forEach(function(bar){
       var valAttr = bar.getAttribute('data-value');
       var tgtAttr = bar.getAttribute('data-target');
       var pctAttr = bar.getAttribute('data-pct');
 
-      var value = (valAttr !== null) ? parseFloat(valAttr) : null;
-      var target = (tgtAttr !== null) ? parseFloat(tgtAttr) : null;
+      var value = valAttr !== null ? parseFloat(valAttr) : null;
+      var target = tgtAttr !== null ? parseFloat(tgtAttr) : null;
 
       var pct = 0;
-      if(value !== null && target !== null && target > 0){
+      if (value !== null && target !== null && target > 0) {
         pct = Math.round((value / target) * 100);
-      } else if(pctAttr !== null){
+      } else if (pctAttr !== null) {
         pct = parseInt(pctAttr || '0', 10);
       }
 
-      // clamp
-      if(pct < 0) pct = 0;
-      if(pct > 100) pct = 100;
-
-      bar.style.width = pct + '%';
-      bar.setAttribute('aria-valuenow', pct);
-
-      // update the displayed text to show value / target if available
-      // find the closest container, accomodating both class naming schemes
-      var container = bar.closest('.goal-item') || bar.closest('.bolopa-goal-item');
-      if(container){
-        var labelEl = container.querySelector('.fw-bold');
-        if(labelEl){
-          if(value !== null && target !== null){
-            labelEl.textContent = value + ' / ' + target;
-          } else if(pctAttr !== null){
-            labelEl.textContent = pct + '%';
-          }
-        }
-      }
+      var width = Math.min(Math.max(pct, 0), 100);
+      bar.style.width = width + '%';
+      bar.setAttribute('aria-valuenow', String(width));
+      bar.setAttribute('aria-valuemin', '0');
+      bar.setAttribute('aria-valuemax', '100');
     });
   }
 
@@ -861,79 +507,79 @@
   var loadMoreBtn = document.getElementById('load-more-orders');
 
   if(listEl && moreWrap && loadMoreBtn){
-  var rendered = 0;
-  var pageSize = 5; // render 5 orders per page as requested
+    var rendered = 0;
+    var pageSize = 5; // render 5 orders per page as requested
 
     function renderNext(){
       var end = Math.min(rendered + pageSize, allOrders.length);
-      for(var j=rendered;j<end;j++){
-        var o = allOrders[j];
-          var row = document.createElement('div');
-          // use bolopa-prefixed role when inside bolopa-last-orders-list, but keep generic class for styling compatibility
-          var rowClass = 'order-row';
-          // Add alternating colors
-          if (j % 2 === 0) {
-            rowClass += ' order-row-even';
-          } else {
-            rowClass += ' order-row-odd';
-          }
-          row.className = rowClass;
-        // avatar initial from customer name
-        var initial = (o.customer && o.customer.length > 0) ? o.customer.charAt(0).toUpperCase() : 'O';
-        // status badge color
-        var statusClass = 'badge-secondary';
-        if(o.status === 'selesai') statusClass = 'badge-success';
-        else if(o.status === 'diproses') statusClass = 'badge-warning';
-        else if(o.status === 'dibatalkan') statusClass = 'badge-danger';
+      for(var j = rendered; j < end; j++){
+        var o = allOrders[j] || {};
+        var row = document.createElement('div');
+        var rowClass = 'order-row' + (j % 2 === 0 ? ' order-row-even' : ' order-row-odd');
+        row.className = rowClass;
 
-        row.innerHTML = '<div class="order-compact">'
-          + '<div class="order-number">' + (j + 1) + '</div>'
-          + '<div class="order-name">' + o.id + '</div>'
-          + '<div class="order-details">'
-            + '<span class="order-date">' + o.time + '</span>'
-            + '<span class="order-price">' + o.amount + '</span>'
-          + '</div>'
-        + '</div>';
-  listEl.appendChild(row);
+        var wrapper = document.createElement('div');
+        wrapper.className = 'order-compact';
+
+        var number = document.createElement('div');
+        number.className = 'order-number';
+        number.textContent = String(j + 1);
+
+        var nameEl = document.createElement('div');
+        nameEl.className = 'order-name';
+        nameEl.textContent = o.id || '-';
+
+        var details = document.createElement('div');
+        details.className = 'order-details';
+
+        var customer = document.createElement('span');
+        customer.className = 'order-customer';
+        customer.textContent = o.customer || 'N/A';
+
+        var date = document.createElement('span');
+        date.className = 'order-date';
+        date.textContent = o.time || '-';
+
+        var price = document.createElement('span');
+        price.className = 'order-price';
+        price.textContent = o.amount || 'Rp 0';
+
+        details.appendChild(customer);
+        details.appendChild(date);
+        details.appendChild(price);
+
+        var statusWrap = document.createElement('div');
+        statusWrap.className = 'order-status';
+
+        var fallbackClass = 'badge-secondary';
+        if (o.status === 'selesai') fallbackClass = 'badge-success';
+        else if (o.status === 'diproses') fallbackClass = 'badge-warning';
+        else if (o.status === 'dibatalkan') fallbackClass = 'badge-danger';
+
+        var statusBadge = document.createElement('span');
+        statusBadge.className = 'badge ' + (o.badge_class || fallbackClass);
+        statusBadge.textContent = o.status_label || o.status || '-';
+
+        statusWrap.appendChild(statusBadge);
+
+        wrapper.appendChild(number);
+        wrapper.appendChild(nameEl);
+        wrapper.appendChild(details);
+        wrapper.appendChild(statusWrap);
+
+        row.appendChild(wrapper);
+        listEl.appendChild(row);
       }
       rendered = end;
-      // Always show the "View All Orders" button
     }
 
     loadMoreBtn.addEventListener('click', function(){
-      // Redirect to orders page instead of loading more
       window.location.href = '{{ route("backoffice.pesanan.index") }}';
     });
 
     // initial render
     renderNext();
   }
-
-  // enhance goals table: add percent badges beside goal labels
-  var goalRows = document.querySelectorAll('.goals-table tbody tr');
-  goalRows.forEach(function(r, idx){
-    if(idx % 2 === 0){
-      // label row
-      var lbl = r.querySelector('td');
-      if(lbl){
-        var bar = r.nextElementSibling ? r.nextElementSibling.querySelector('.goal-bar') : null;
-        var pct = bar ? bar.getAttribute('data-pct') : null;
-        if(pct){
-          // mark this label row for easier styling
-          r.classList.add('goal-row');
-          var span = document.createElement('span');
-          span.className = 'goal-pct';
-          // color-code badge according to bar class
-          var barClass = bar.className || '';
-          if(barClass.indexOf('bg-success') !== -1) span.classList.add('badge-success');
-          if(barClass.indexOf('bg-info') !== -1) span.classList.add('badge-info');
-          if(barClass.indexOf('bg-warning') !== -1) span.classList.add('badge-warning');
-          span.textContent = pct + '%';
-          lbl.appendChild(span);
-        }
-      }
-    }
-  });
 
 })();
 

@@ -228,11 +228,13 @@
                     </div>
                 </div>
                 <p class="setting-description">
-                    Pantau progress pencapaian target dashboard. Lihat statistik penjualan, produksi, dan pesanan terkini.
+                    Atur target rata-rata total pendapatan, total biaya, dan total laba agar dashboard menampilkan tolok ukur yang konsisten.
                 </p>
-                <a href="{{ route('backoffice.dashboard') }}" class="btn btn-info">
-                    <i class="fas fa-eye"></i> Lihat Dashboard
+                @if(Auth::check() && Auth::user()->role === 'super_admin')
+                <a href="{{ route('backoffice.pengaturan.dashboard-metrics') }}" class="btn btn-info">
+                    <i class="fas fa-cog"></i> Atur Dashboard Metrics
                 </a>
+                @endif
             </div>
 
             <div class="setting-card">

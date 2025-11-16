@@ -4,13 +4,15 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\Route;
 use Carbon\Carbon;
+use App\Models\MasterBahanBaku;
+use App\Models\Pengaturan;
 use App\Models\Pesanan;
-use App\Models\Transaksi;
-use App\Models\User;
 use App\Models\Produk;
+use App\Models\Produksi;
+use App\Models\Transaksi;
+use App\Models\TransaksiItem;
+use App\Models\User;
 
 class AdminController extends Controller
 {
@@ -39,193 +41,481 @@ class AdminController extends Controller
         return redirect()->back()->withInput()->with('error', 'Login gagal! Username atau password salah.');
     }
 
-    public function dashboard()
+    public function chartData(Request $request)
     {
-        // Dashboard metrics mapped to cocofarma domain
-        $today = Carbon::today();
-        $yesterday = Carbon::yesterday();
+        $range = $request->get('range', 'weekly');
+        $range = in_array($range, ['weekly', 'monthly', 'yearly'], true) ? $range : 'weekly';
 
-        // New Orders today and percent change vs yesterday
-        $newOrdersToday = Pesanan::whereDate('tanggal_pesanan', $today)->count();
-        $newOrdersYesterday = Pesanan::whereDate('tanggal_pesanan', $yesterday)->count();
-        $newOrdersPct = $this->computePctChange($newOrdersToday, $newOrdersYesterday);
-        $newOrdersDir = $this->directionFromChange($newOrdersToday, $newOrdersYesterday);
+        $now = Carbon::now();
+        Carbon::setLocale(app()->getLocale());
 
-    // Production total over last 7 days and percent change vs previous 7-day window
-    $periodEnd = Carbon::now()->endOfDay();
-    $periodStart = Carbon::now()->subDays(6)->startOfDay();
-    $produksiLast7 = \App\Models\Produksi::whereBetween('tanggal_produksi', [$periodStart, $periodEnd])->where('status','selesai')->sum('jumlah_hasil');
+        [$penjualanData, $produksiData, $pesananData, $categories, $chartTitle] = $this->buildChartData($range, $now);
 
-    // previous 7-day window for comparison
-    $prevStart = Carbon::now()->subDays(13)->startOfDay();
-    $prevEnd = Carbon::now()->subDays(7)->endOfDay();
-    $produksiPrev7 = \App\Models\Produksi::whereBetween('tanggal_produksi', [$prevStart, $prevEnd])->where('status','selesai')->sum('jumlah_hasil');
+        return response()->json([
+            'penjualanData' => $penjualanData,
+            'produksiData' => $produksiData,
+            'pesananData' => $pesananData,
+            'categories' => $categories,
+            'chartTitle' => $chartTitle,
+        ]);
+    }
 
-    $produksiPct = $this->computePctChange($produksiLast7, $produksiPrev7);
-    $produksiDir = $this->directionFromChange($produksiLast7, $produksiPrev7);
+    public function dashboard(Request $request)
+    {
+        $pageTitle = 'Dashboard';
+        $range = $request->get('range', 'weekly');
+        $range = in_array($range, ['weekly', 'monthly', 'yearly'], true) ? $range : 'weekly';
 
-        // New user registrations today
-        $usersToday = User::whereDate('created_at', $today)->count();
-        $usersYesterday = User::whereDate('created_at', $yesterday)->count();
-        $usersPct = $this->computePctChange($usersToday, $usersYesterday);
-        $usersDir = $this->directionFromChange($usersToday, $usersYesterday);
+        $now = Carbon::now();
+        Carbon::setLocale(app()->getLocale());
+        $today = $now->copy()->startOfDay();
 
-        // Unique customers (distinct nama_pelanggan) in last 30 days vs previous 30 days
-        $uniqueNowStart = Carbon::now()->subDays(29)->startOfDay();
-        $uniqueNowEnd = Carbon::now()->endOfDay();
-        $uniqueVisitors = Pesanan::whereBetween('tanggal_pesanan', [$uniqueNowStart, $uniqueNowEnd])->distinct('nama_pelanggan')->count('nama_pelanggan');
+        $totalPesananBaru = Pesanan::where('status', 'baru')->count();
+        $produkTerjual = (int) round(
+            TransaksiItem::whereHas('transaksi', function ($query) {
+                $query->where('jenis_transaksi', 'penjualan')->where('status', 'selesai');
+            })->sum('jumlah')
+        );
+        $totalProduksi = Produksi::count();
+        $totalUser = User::count();
 
-        $uniquePrevStart = Carbon::now()->subDays(59)->startOfDay();
-        $uniquePrevEnd = Carbon::now()->subDays(30)->endOfDay();
-        $uniquePrev = Pesanan::whereBetween('tanggal_pesanan', [$uniquePrevStart, $uniquePrevEnd])->distinct('nama_pelanggan')->count('nama_pelanggan');
-        $uniquePct = $this->computePctChange($uniqueVisitors, $uniquePrev);
-        $uniqueDir = $this->directionFromChange($uniqueVisitors, $uniquePrev);
+        $lastMonthDate = $now->copy()->subMonthNoOverflow();
+        $lastMonthStart = $lastMonthDate->copy()->startOfMonth();
+        $lastMonthEnd = $lastMonthDate->copy()->endOfMonth();
 
-        // Chart data: last 6 months produksi and penjualan
-        $chart = [];
-        for ($i = 5; $i >= 0; $i--) {
-            $date = Carbon::now()->subMonths($i);
-            $monthStart = $date->copy()->startOfMonth();
-            $monthEnd = $date->copy()->endOfMonth();
-            $monthName = $date->format('M');
+        $prevMonthDate = $lastMonthDate->copy()->subMonthNoOverflow();
+        $prevMonthStart = $prevMonthDate->copy()->startOfMonth();
+        $prevMonthEnd = $prevMonthDate->copy()->endOfMonth();
 
-            $produksiSum = \App\Models\Produksi::whereBetween('tanggal_produksi', [$monthStart, $monthEnd])->where('status','selesai')->sum('jumlah_hasil');
-            $penjualanSum = Transaksi::whereBetween('tanggal_transaksi', [$monthStart, $monthEnd])->where('jenis_transaksi','penjualan')->where('status','selesai')->sum('total');
+        // For testing purposes, use current month data instead of last month
+        $currentMonthStart = $now->copy()->startOfMonth();
+        $currentMonthEnd = $now->copy()->endOfMonth();
 
-            $chart[] = [
-                'month' => $monthName,
-                'produksi' => (int)$produksiSum,
-                'penjualan' => (float)$penjualanSum
-            ];
+        $totalPendapatanLastMonth = (float) Transaksi::whereBetween('tanggal_transaksi', [$currentMonthStart, $currentMonthEnd])
+            ->where('jenis_transaksi', 'penjualan')
+            ->where('status', 'selesai')
+            ->sum('total');
+
+        $totalBiayaLastMonth = (float) Transaksi::whereBetween('tanggal_transaksi', [$currentMonthStart, $currentMonthEnd])
+            ->where('jenis_transaksi', 'pembelian')
+            ->where('status', 'selesai')
+            ->sum('total');
+
+        if ($totalBiayaLastMonth <= 0) {
+            $totalBiayaLastMonth = (float) Produksi::whereBetween('tanggal_produksi', [$currentMonthStart, $currentMonthEnd])
+                ->where('status', 'selesai')
+                ->sum('biaya_produksi');
         }
 
-        // Goals: attempt to read a JSON list from Pengaturan 'dashboard_goals'.
-        // Each goal in list should have: key, label, target, color (optional)
-        $rawGoals = setting('dashboard_goals', null);
-        $goals = [];
+        $totalPendapatanPrevMonth = (float) Transaksi::whereBetween('tanggal_transaksi', [$lastMonthStart, $lastMonthEnd])
+            ->where('jenis_transaksi', 'penjualan')
+            ->where('status', 'selesai')
+            ->sum('total');
 
-        $monthStart = Carbon::now()->startOfMonth();
-        $monthEnd = Carbon::now()->endOfMonth();
+        $totalBiayaPrevMonth = (float) Transaksi::whereBetween('tanggal_transaksi', [$lastMonthStart, $lastMonthEnd])
+            ->where('jenis_transaksi', 'pembelian')
+            ->where('status', 'selesai')
+            ->sum('total');
 
-        // Helper to compute current value by known key
-        $computeValueByKey = function ($key) use ($monthStart, $monthEnd) {
-            $key = strtolower($key);
-            switch ($key) {
-                case 'produksi':
-                case 'production':
-                    return (int) \App\Models\Produksi::whereBetween('tanggal_produksi', [$monthStart, $monthEnd])->where('status','selesai')->sum('jumlah_hasil');
-                case 'penjualan':
-                case 'sales':
-                    return (float) Transaksi::whereBetween('tanggal_transaksi', [$monthStart, $monthEnd])->where('jenis_transaksi','penjualan')->where('status','selesai')->sum('total');
-                case 'pesanan':
-                case 'orders':
-                    return (int) Pesanan::whereBetween('tanggal_pesanan', [$monthStart, $monthEnd])->count();
-                case 'users':
-                case 'registrations':
-                    return (int) User::whereBetween('created_at', [$monthStart, $monthEnd])->count();
-                default:
-                    // Unknown key: attempt to read a setting with that key as fallback
-                    $val = setting($key, 0);
-                    return is_numeric($val) ? $val : 0;
-            }
-        };
+        if ($totalBiayaPrevMonth <= 0) {
+            $totalBiayaPrevMonth = (float) Produksi::whereBetween('tanggal_produksi', [$lastMonthStart, $lastMonthEnd])
+                ->where('status', 'selesai')
+                ->sum('biaya_produksi');
+        }
 
-        if ($rawGoals) {
-            $decoded = null;
-            if (is_string($rawGoals)) {
-                $decoded = json_decode($rawGoals, true);
-            } elseif (is_array($rawGoals)) {
-                $decoded = $rawGoals;
-            }
+        $totalLabaLastMonth = $totalPendapatanLastMonth - $totalBiayaLastMonth;
+        $totalLabaPrevMonth = $totalPendapatanPrevMonth - $totalBiayaPrevMonth;
 
-            if (is_array($decoded)) {
-                foreach ($decoded as $g) {
-                    $key = $g['key'] ?? ($g['label'] ?? 'unknown');
-                    $label = $g['label'] ?? ucfirst($key);
-                    $target = isset($g['target']) ? (float)$g['target'] : 0;
-                    $color = $g['color'] ?? 'green';
-                    $value = $computeValueByKey($key);
-                    $pct = $target > 0 ? (int) round(($value / $target) * 100) : 0;
+        $pctPendapatan = $this->computePctChange($totalPendapatanLastMonth, $totalPendapatanPrevMonth);
+        $pctBiaya = $this->computePctChange($totalBiayaLastMonth, $totalBiayaPrevMonth);
+        $pctLaba = $this->computePctChange($totalLabaLastMonth, $totalLabaPrevMonth);
 
-                    $goals[] = [
-                        'key' => $key,
-                        'label' => $label,
-                        'value' => $value,
-                        'target' => $target,
-                        'pct' => $pct,
-                        'color' => $color
-                    ];
+        $dirPendapatan = $this->directionFromChange($totalPendapatanLastMonth, $totalPendapatanPrevMonth);
+        $dirBiaya = $this->directionFromChange($totalBiayaLastMonth, $totalBiayaPrevMonth);
+        $dirLaba = $this->directionFromChange($totalLabaLastMonth, $totalLabaPrevMonth);
+
+        $targetPendapatan = (float) setting('total_pendapatan_target', 0);
+        $targetBiaya = (float) setting('total_biaya_target', 0);
+        $targetLaba = (float) setting('total_laba_target', 0);
+
+        $targetDirPendapatan = $this->directionFromTarget($totalPendapatanLastMonth, $targetPendapatan);
+        $targetDirBiaya = $this->directionFromTarget($totalBiayaLastMonth, $targetBiaya);
+        $targetDirLaba = $this->directionFromTarget($totalLabaLastMonth, $targetLaba);
+
+        $targetPctPendapatan = $this->targetProgressPercentage($totalPendapatanLastMonth, $targetPendapatan);
+        $targetPctBiaya = $this->targetProgressPercentage($totalBiayaLastMonth, $targetBiaya);
+        $targetPctLaba = $this->targetProgressPercentage($totalLabaLastMonth, $targetLaba);
+
+        $summaryCards = [
+            [
+                'id' => 'card1-title',
+                'value' => $totalPesananBaru,
+                'formatted' => number_format($totalPesananBaru, 0, ',', '.'),
+                'label' => 'Pesanan Baru',
+                'icon' => 'fas fa-shopping-bag',
+                'background_class' => 'bolopa-bg-teal',
+                'text_class' => 'text-white',
+                'icon_wrapper_class' => 'bolopa-card-icon',
+                'footer_text_class' => 'text-white-50',
+                'link' => route('backoffice.pesanan.index'),
+                'aria_label' => number_format($totalPesananBaru, 0, ',', '.') . ' pesanan baru',
+            ],
+            [
+                'id' => 'card2-title',
+                'value' => $produkTerjual,
+                'formatted' => number_format($produkTerjual, 0, ',', '.'),
+                'label' => 'Produk Terjual',
+                'icon' => 'fas fa-box',
+                'background_class' => 'bolopa-bg-success-variant',
+                'text_class' => 'text-white',
+                'icon_wrapper_class' => 'bolopa-card-icon',
+                'footer_text_class' => 'text-white-50',
+                'link' => route('backoffice.transaksi.index'),
+                'aria_label' => number_format($produkTerjual, 0, ',', '.') . ' produk terjual',
+            ],
+            [
+                'id' => 'card3-title',
+                'value' => $totalProduksi,
+                'formatted' => number_format($totalProduksi, 0, ',', '.'),
+                'label' => 'Produksi',
+                'icon' => 'fas fa-cogs',
+                'background_class' => 'bolopa-bg-warning-variant',
+                'text_class' => 'text-dark',
+                'icon_wrapper_class' => 'bolopa-card-icon text-dark',
+                'footer_text_class' => 'text-dark-50',
+                'link' => route('backoffice.produksi.index'),
+                'aria_label' => number_format($totalProduksi, 0, ',', '.') . ' produksi',
+            ],
+            [
+                'id' => 'card4-title',
+                'value' => $totalUser,
+                'formatted' => number_format($totalUser, 0, ',', '.'),
+                'label' => 'User Aktif',
+                'icon' => 'fas fa-users',
+                'background_class' => 'bolopa-bg-danger-variant',
+                'text_class' => 'text-white',
+                'icon_wrapper_class' => 'bolopa-card-icon',
+                'footer_text_class' => 'text-white-50',
+                'link' => route('backoffice.master-user.index'),
+                'aria_label' => number_format($totalUser, 0, ',', '.') . ' user aktif',
+            ],
+        ];
+
+        $financialSummary = [
+            [
+                'label' => 'TOTAL PENDAPATAN',
+                'formatted' => 'Rp ' . number_format($totalPendapatanLastMonth, 0, ',', '.'),
+                'pct' => $pctPendapatan,
+                'direction' => $dirPendapatan,
+                'pct_class' => $this->directionToTextClass($dirPendapatan),
+                'card_class' => 'bolopa-bg-success',
+                'icon' => 'fas fa-dollar-sign',
+            ],
+            [
+                'label' => 'TOTAL BIAYA',
+                'formatted' => 'Rp ' . number_format($totalBiayaLastMonth, 0, ',', '.'),
+                'pct' => $pctBiaya,
+                'direction' => $dirBiaya,
+                'pct_class' => $this->directionToTextClass($dirBiaya),
+                'card_class' => 'bolopa-bg-danger',
+                'icon' => 'fas fa-money-bill-wave',
+            ],
+            [
+                'label' => 'TOTAL LABA',
+                'formatted' => 'Rp ' . number_format($totalLabaLastMonth, 0, ',', '.'),
+                'pct' => $pctLaba,
+                'direction' => $dirLaba,
+                'pct_class' => $this->directionToTextClass($dirLaba),
+                'card_class' => 'bolopa-bg-primary',
+                'icon' => 'fas fa-chart-line',
+            ],
+        ];
+
+        [$penjualanData, $produksiData, $pesananData, $categories, $chartTitle] = $this->buildChartData($range, $now);
+
+        $goals = $this->buildGoals($currentMonthStart, $currentMonthEnd, $today);
+        $goalCount = count($goals);
+        $completedGoals = count(array_filter($goals, function($goal) {
+            return ($goal['pct'] ?? 0) >= 100;
+        }));
+        $goalCompletionRate = $goalCount > 0 ? (int) round(($completedGoals / $goalCount) * 100) : 0;
+        $goalDirection = $goalCompletionRate >= 100 ? 'up' : ($goalCompletionRate >= 80 ? 'same' : 'down');
+        if ($goalCount === 0) {
+            $goalDirection = 'same';
+        }
+
+        $statsStrip = [
+            [
+                'label' => 'TOTAL PENDAPATAN',
+                'amount' => 'Rp ' . number_format($totalPendapatanLastMonth, 0, ',', '.'),
+                'pct' => $targetPctPendapatan,
+                'direction' => $targetDirPendapatan,
+                'pct_class' => $this->directionToTextClass($targetDirPendapatan),
+            ],
+            [
+                'label' => 'TOTAL BIAYA',
+                'amount' => 'Rp ' . number_format($totalBiayaLastMonth, 0, ',', '.'),
+                'pct' => $targetPctBiaya,
+                'direction' => $targetDirBiaya,
+                'pct_class' => $this->directionToTextClass($targetDirBiaya),
+            ],
+            [
+                'label' => 'TOTAL LABA',
+                'amount' => 'Rp ' . number_format($totalLabaLastMonth, 0, ',', '.'),
+                'pct' => $targetPctLaba,
+                'direction' => $targetDirLaba,
+                'pct_class' => $this->directionToTextClass($targetDirLaba),
+            ],
+            [
+                'label' => 'PENYELESAIAN TUJUAN',
+                'amount' => $completedGoals . '/' . $goalCount,
+                'pct' => $goalCompletionRate,
+                'direction' => $goalDirection,
+                'pct_class' => $this->directionToTextClass($goalDirection),
+            ],
+        ];
+
+        $lastOrders = Pesanan::orderByDesc('created_at')
+            ->take(10)
+            ->get()
+            ->map(function (Pesanan $order) {
+                $status = $order->status;
+                $badgeClass = match ($status) {
+                    'selesai' => 'badge-success',
+                    'diproses' => 'badge-warning',
+                    'dibatalkan' => 'badge-danger',
+                    default => 'badge-secondary',
+                };
+
+                return [
+                    'id' => $order->kode_pesanan ?? ('#ORD-' . str_pad((string) $order->id, 4, '0', STR_PAD_LEFT)),
+                    'customer' => $order->nama_pelanggan ?? 'N/A',
+                    'amount' => 'Rp ' . number_format((float) $order->total_harga, 0, ',', '.'),
+                    'time' => $order->created_at ? $order->created_at->diffForHumans() : '-',
+                    'status' => $status,
+                    'status_label' => $order->status_label,
+                    'badge_class' => $badgeClass,
+                ];
+            })
+            ->values()
+            ->toArray();
+
+        $bahanBaku = MasterBahanBaku::with(['bahanBakusAktif:id,master_bahan_id,stok'])
+            ->latest()
+            ->take(5)
+            ->get();
+
+        return view('admin.dashboard', [
+            'pageTitle' => $pageTitle,
+            'summaryCards' => $summaryCards,
+            'financialSummary' => $financialSummary,
+            'statsStrip' => $statsStrip,
+            'penjualanData' => $penjualanData,
+            'produksiData' => $produksiData,
+            'pesananData' => $pesananData,
+            'categories' => $categories,
+            'chartTitle' => $chartTitle,
+            'range' => $range,
+            'goals' => $goals,
+            'lastOrders' => $lastOrders,
+            'bahanBaku' => $bahanBaku,
+        ]);
+    }
+
+    private function buildChartData(string $range, Carbon $now): array
+    {
+        $penjualanData = [];
+        $produksiData = [];
+        $pesananData = [];
+        $categories = [];
+        $title = '';
+
+        switch ($range) {
+            case 'monthly':
+                $start = $now->copy()->startOfMonth();
+                $days = $start->daysInMonth;
+
+                for ($i = 0; $i < $days; $i++) {
+                    $date = $start->copy()->addDays($i);
+                    $penjualanData[] = (float) Transaksi::whereDate('tanggal_transaksi', $date)
+                        ->where('jenis_transaksi', 'penjualan')
+                        ->where('status', 'selesai')
+                        ->sum('total');
+                    $produksiData[] = (int) Produksi::whereDate('created_at', $date)->count();
+                    $pesananData[] = (int) Pesanan::whereDate('created_at', $date)
+                        ->where('status', 'baru')
+                        ->count();
+                    $categories[] = str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT);
                 }
+                $title = 'Ringkasan Bulanan: Penjualan, Produksi & Pesanan';
+                break;
+
+            case 'yearly':
+                $monthLabels = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Ags', 'Sep', 'Okt', 'Nov', 'Des'];
+                for ($month = 1; $month <= 12; $month++) {
+                    $penjualanData[] = (float) Transaksi::whereYear('tanggal_transaksi', $now->year)
+                        ->whereMonth('tanggal_transaksi', $month)
+                        ->where('jenis_transaksi', 'penjualan')
+                        ->where('status', 'selesai')
+                        ->sum('total');
+                    $produksiData[] = (int) Produksi::whereYear('created_at', $now->year)
+                        ->whereMonth('created_at', $month)
+                        ->count();
+                    $pesananData[] = (int) Pesanan::whereYear('created_at', $now->year)
+                        ->whereMonth('created_at', $month)
+                        ->where('status', 'baru')
+                        ->count();
+                }
+                $categories = $monthLabels;
+                $title = 'Ringkasan Tahunan: Penjualan, Produksi & Pesanan';
+                break;
+
+            default:
+                $start = $now->copy()->subDays(6);
+
+                for ($i = 0; $i < 7; $i++) {
+                    $date = $start->copy()->addDays($i);
+                    $penjualanData[] = (float) Transaksi::whereDate('tanggal_transaksi', $date)
+                        ->where('jenis_transaksi', 'penjualan')
+                        ->where('status', 'selesai')
+                        ->sum('total');
+                    $produksiData[] = (int) Produksi::whereDate('created_at', $date)->count();
+                    $pesananData[] = (int) Pesanan::whereDate('created_at', $date)
+                        ->where('status', 'baru')
+                        ->count();
+                    $categories[] = ucfirst($date->locale('id')->isoFormat('ddd'));
+                }
+                $title = 'Ringkasan Harian: Penjualan, Produksi & Pesanan';
+                break;
+        }
+
+        return [$penjualanData, $produksiData, $pesananData, $categories, $title];
+    }
+
+    private function buildGoals(Carbon $lastMonthStart, Carbon $lastMonthEnd, Carbon $today): array
+    {
+        $goalsSetting = Pengaturan::where('nama_pengaturan', 'dashboard_goals')->value('nilai');
+
+        if (!$goalsSetting) {
+            return [];
+        }
+
+        $decoded = is_array($goalsSetting) ? $goalsSetting : json_decode($goalsSetting, true);
+        if (!is_array($decoded)) {
+            return [];
+        }
+
+        $goals = [];
+        foreach ($decoded as $goal) {
+            if (!is_array($goal)) {
+                continue;
             }
-        }
 
-        // Fallback: if no goals persisted, keep default three goals for backwards compatibility
-        if (empty($goals)) {
-            $monthlyProductionTarget = (int) setting('monthly_production_goal', 200);
-            $monthlySalesTarget = (float) setting('monthly_sales_goal', 50000000);
-            $monthlyOrderTarget = (int) setting('monthly_order_goal', 50);
+            $target = isset($goal['target']) ? (float) $goal['target'] : 0.0;
+            if ($target <= 0) {
+                continue;
+            }
 
-            $produksiThisMonth = (int) \App\Models\Produksi::whereBetween('tanggal_produksi', [$monthStart, $monthEnd])->where('status','selesai')->sum('jumlah_hasil');
-            $salesThisMonth = (float) Transaksi::whereBetween('tanggal_transaksi', [$monthStart, $monthEnd])->where('jenis_transaksi','penjualan')->where('status','selesai')->sum('total');
-            $ordersThisMonth = (int) Pesanan::whereBetween('tanggal_pesanan', [$monthStart, $monthEnd])->count();
+            $key = strtolower($goal['key'] ?? ($goal['label'] ?? '')); 
+            if ($key === '') {
+                continue;
+            }
 
-            $goals = [
-                [
-                    'key' => 'produksi',
-                    'label' => 'Produksi',
-                    'value' => $produksiThisMonth,
-                    'target' => $monthlyProductionTarget,
-                    'pct' => $monthlyProductionTarget > 0 ? (int) round(($produksiThisMonth / $monthlyProductionTarget) * 100) : 0,
-                    'color' => 'green'
-                ],
-                [
-                    'key' => 'penjualan',
-                    'label' => 'Penjualan',
-                    'value' => $salesThisMonth,
-                    'target' => $monthlySalesTarget,
-                    'pct' => $monthlySalesTarget > 0 ? (int) round(($salesThisMonth / $monthlySalesTarget) * 100) : 0,
-                    'color' => 'yellow'
-                ],
-                [
-                    'key' => 'pesanan',
-                    'label' => 'Pesanan',
-                    'value' => $ordersThisMonth,
-                    'target' => $monthlyOrderTarget,
-                    'pct' => $monthlyOrderTarget > 0 ? (int) round(($ordersThisMonth / $monthlyOrderTarget) * 100) : 0,
-                    'color' => 'red'
-                ]
+            $label = $goal['label'] ?? ucfirst($key);
+            $color = $goal['color'] ?? '#007bff';
+            $value = $this->resolveGoalValue($key, $lastMonthStart, $lastMonthEnd, $today);
+            $pct = $target > 0 ? (int) round(($value / $target) * 100) : 0;
+
+            $stateClass = '';
+            if ($pct >= 100) {
+                $stateClass = 'at-target';
+            } elseif ($pct >= 80) {
+                $stateClass = 'nearing-target';
+            }
+
+            $goals[] = [
+                'key' => $key,
+                'label' => $label,
+                'value' => $value,
+                'target' => $target,
+                'pct' => max(0, $pct),
+                'color_class' => $this->mapGoalColorToClass($color),
+                'state_class' => $stateClass,
             ];
         }
 
-        // Last orders: fetch recent Pesanan and Transaksi (mixed) limited to 10 for brevity
-        $recentProductions = \App\Models\Produksi::with('produk')->orderBy('tanggal_produksi','desc')->limit(5)->get()->map(function($p){
-            return [
-                'type' => 'Produksi',
-                'label' => $p->produk->nama_produk ?? 'Unknown',
-                'date' => $p->tanggal_produksi->format('Y-m-d'),
-                'meta' => $p->jumlah_hasil
-            ];
-        });
+        return $goals;
+    }
 
-        $recentOrders = Pesanan::orderBy('tanggal_pesanan','desc')->limit(5)->get()->map(function($o){
-            return [
-                'type' => 'Pesanan',
-                'label' => $o->kode_pesanan ?? ('Order#'.$o->id),
-                'date' => $o->tanggal_pesanan->format('Y-m-d'),
-                'meta' => $o->total_harga
-            ];
-        });
+    private function resolveGoalValue(string $key, Carbon $lastMonthStart, Carbon $lastMonthEnd, Carbon $today): float
+    {
+        return match ($key) {
+            'produk' => (float) Produk::count(),
+            'penjualan' => (float) Transaksi::whereBetween('tanggal_transaksi', [$lastMonthStart, $lastMonthEnd])
+                ->where('jenis_transaksi', 'penjualan')
+                ->where('status', 'selesai')
+                ->sum('total'),
+            'bahan_baku' => (float) MasterBahanBaku::count(),
+            'produksi' => (float) Produksi::whereBetween('tanggal_produksi', [$lastMonthStart, $lastMonthEnd])
+                ->where('status', 'selesai')
+                ->sum('jumlah_hasil'),
+            'pesanan' => (float) Pesanan::whereBetween('tanggal_pesanan', [$lastMonthStart, $lastMonthEnd])->count(),
+            'user' => (float) User::count(),
+            'packing' => (float) Produksi::where('status', 'selesai')
+                ->whereDate('created_at', $today)
+                ->count(),
+            'qc' => (float) Produksi::where('status', 'proses')
+                ->whereDate('created_at', $today)
+                ->count(),
+            default => 0.0,
+        };
+    }
 
-        $lastActivities = $recentProductions->concat($recentOrders)->sortByDesc('date')->values()->all();
+    private function directionToTextClass(string $direction): string
+    {
+        return match ($direction) {
+            'up' => 'text-success',
+            'down' => 'text-danger',
+            default => 'text-warning',
+        };
+    }
 
-        return view('admin.dashboard', compact(
-            'newOrdersToday', 'newOrdersPct', 'newOrdersDir',
-            // production metrics (replaces previous cancelRate variables)
-            'produksiLast7', 'produksiPct', 'produksiDir',
-            'usersToday', 'usersPct', 'usersDir',
-            'uniqueVisitors', 'uniquePct', 'uniqueDir',
-            'chart', 'goals', 'lastActivities'
-        ));
+    private function mapGoalColorToClass(string $color): string
+    {
+        $normalized = strtolower(trim($color));
+
+        $nameMap = [
+            'blue' => 'blue',
+            'red' => 'red',
+            'green' => 'green',
+            'yellow' => 'yellow',
+            'purple' => 'purple',
+            'orange' => 'orange',
+        ];
+
+        if (isset($nameMap[$normalized])) {
+            return $nameMap[$normalized];
+        }
+
+        if (strpos($normalized, '#') !== 0) {
+            return 'blue';
+        }
+
+        $colorMap = [
+            '#007bff' => 'blue',
+            '#ff0000' => 'red',
+            '#dc3545' => 'red',
+            '#28a745' => 'green',
+            '#2ecc71' => 'green',
+            '#ffc107' => 'yellow',
+            '#f39c12' => 'yellow',
+            '#9b59b6' => 'purple',
+            '#8e44ad' => 'purple',
+            '#e67e22' => 'orange',
+            '#d35400' => 'orange',
+        ];
+
+        return $colorMap[$normalized] ?? 'blue';
     }
 
     /**
@@ -246,6 +536,29 @@ class AdminController extends Controller
         if ($current > $previous) return 'up';
         if ($current < $previous) return 'down';
         return 'same';
+    }
+
+    private function directionFromTarget($current, $target)
+    {
+        if ($target <= 0) {
+            return 'same';
+        }
+        if ($current > $target) {
+            return 'up';
+        }
+        if ($current < $target) {
+            return 'down';
+        }
+        return 'same';
+    }
+
+    private function targetProgressPercentage($current, $target)
+    {
+        if ($target <= 0) {
+            return 0;
+        }
+
+        return (float) round(($current / $target) * 100, 1);
     }
 
     public function logout(Request $request)

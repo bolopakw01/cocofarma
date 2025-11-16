@@ -7,6 +7,10 @@ use Illuminate\Http\Request;
 use App\Models\User;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Spatie\Permission\Models\Role;
 
 class UserController extends Controller
 {
@@ -40,7 +44,12 @@ class UserController extends Controller
      */
     public function create()
     {
-        return view('admin.pages.master-user.create-master-user');
+        $roles = collect([
+            (object) ['name' => 'super_admin'],
+            (object) ['name' => 'admin']
+        ]);
+
+        return view('admin.pages.master-user.create-master-user', compact('roles'));
     }
 
     /**
@@ -50,12 +59,33 @@ class UserController extends Controller
     {
         $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username',
-            'email' => 'required|string|email|max:255|unique:users,email',
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')->whereNull('deleted_at'),
+            ],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->whereNull('deleted_at'),
+            ],
             'password' => 'required|string|min:8|confirmed',
             'role' => 'required|in:super_admin,admin',
-            'status' => 'required|boolean'
+            'status' => 'required|boolean',
+            'phone' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|max:2048',
         ]);
+
+        $avatarPath = null;
+        if ($request->hasFile('avatar')) {
+            $avatarFile = $request->file('avatar');
+            $filename = Str::uuid()->toString() . '.' . $avatarFile->getClientOriginalExtension();
+            $avatarPath = $avatarFile->storeAs('avatars', $filename, 'public');
+        }
 
         User::create([
             'name' => $request->name,
@@ -63,7 +93,10 @@ class UserController extends Controller
             'email' => $request->email,
             'password' => bcrypt($request->password),
             'role' => $request->role,
-            'status' => $request->status
+            'status' => $request->status,
+            'phone' => $request->phone,
+            'address' => $request->address,
+            'avatar_path' => $avatarPath,
         ]);
 
         return redirect()->route('backoffice.master-user.index')->with('success', 'User berhasil dibuat.');
@@ -83,7 +116,17 @@ class UserController extends Controller
     public function edit(string $id)
     {
         $user = User::findOrFail($id);
-        return view('admin.pages.master-user.edit-master-user', compact('user'));
+        $avatarUrl = null;
+        if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+            $avatarUrl = asset('storage/' . ltrim($user->avatar_path, '/'));
+        }
+
+        $roles = collect([
+            (object) ['name' => 'super_admin'],
+            (object) ['name' => 'admin']
+        ]);
+
+        return view('admin.pages.master-user.edit-master-user', compact('user', 'avatarUrl', 'roles'));
     }
 
     /**
@@ -95,11 +138,25 @@ class UserController extends Controller
 
         $request->validate([
             'name' => 'required|string|max:255',
-            'username' => 'required|string|max:255|unique:users,username,' . $id,
-            'email' => 'required|string|email|max:255|unique:users,email,' . $id,
+            'username' => [
+                'required',
+                'string',
+                'max:255',
+                Rule::unique('users', 'username')->ignore($id)->whereNull('deleted_at'),
+            ],
+            'email' => [
+                'required',
+                'string',
+                'email',
+                'max:255',
+                Rule::unique('users', 'email')->ignore($id)->whereNull('deleted_at'),
+            ],
             'password' => 'nullable|string|min:8|confirmed',
             'role' => 'required|in:super_admin,admin',
-            'status' => 'required|boolean'
+            'status' => 'required|boolean',
+            'phone' => 'nullable|string|max:30',
+            'address' => 'nullable|string|max:1000',
+            'avatar' => 'nullable|image|max:2048',
         ]);
 
         $data = [
@@ -107,12 +164,32 @@ class UserController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'role' => $request->role,
-            'status' => $request->status
+            'status' => $request->status,
+            'phone' => $request->phone,
+            'address' => $request->address,
         ];
+
+        // Handle avatar removal
+        if ($request->input('remove_avatar') == '1') {
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+            $data['avatar_path'] = null;
+        }
 
         // Only update password if provided
         if ($request->filled('password')) {
             $data['password'] = bcrypt($request->password);
+        }
+
+        if ($request->hasFile('avatar')) {
+            if ($user->avatar_path && Storage::disk('public')->exists($user->avatar_path)) {
+                Storage::disk('public')->delete($user->avatar_path);
+            }
+
+            $avatarFile = $request->file('avatar');
+            $filename = Str::uuid()->toString() . '.' . $avatarFile->getClientOriginalExtension();
+            $data['avatar_path'] = $avatarFile->storeAs('avatars', $filename, 'public');
         }
 
         $user->update($data);
