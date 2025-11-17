@@ -11,6 +11,7 @@ use App\Models\BahanBaku;
 use App\Models\StokBahanBaku;
 use App\Models\Produk;
 use App\Models\StokProduk;
+use App\Services\DashboardPerformanceService;
 
 class PengaturanController extends Controller
 {
@@ -299,6 +300,19 @@ class PengaturanController extends Controller
     }
 
     /**
+     * Manage performance configuration used by the dashboard radar chart.
+     */
+    public function performance()
+    {
+        $metrics = Pengaturan::getDashboardPerformanceMetrics();
+        $defaultMetrics = Pengaturan::defaultPerformanceMetrics();
+        $liveMetrics = DashboardPerformanceService::enrich($metrics);
+        $totalActual = collect($liveMetrics)->sum('actual');
+
+        return view('admin.pages.pengaturan.performance', compact('metrics', 'defaultMetrics', 'liveMetrics', 'totalActual'));
+    }
+
+    /**
      * Persist dashboard metric targets from the pengaturan form.
      */
     public function saveDashboardMetrics(Request $request)
@@ -328,6 +342,50 @@ class PengaturanController extends Controller
         }
 
         return redirect()->route('backoffice.pengaturan.dashboard-metrics')->with('success', 'Target dashboard metrics berhasil disimpan.');
+    }
+
+    /**
+     * Store performance indicators for dashboard radar visualization.
+     */
+    public function savePerformance(Request $request)
+    {
+        $data = $request->validate([
+            'metrics' => 'nullable|array',
+            'metrics.*.label' => 'required_with:metrics|string|max:100',
+            'metrics.*.key' => 'nullable|string|max:100',
+            'metrics.*.target' => 'required_with:metrics|numeric|min:0',
+            'metrics.*.benchmark' => 'required_with:metrics|numeric|min:0',
+            'metrics.*.description' => 'nullable|string|max:200',
+        ]);
+
+        $payload = [];
+        if (!empty($data['metrics'])) {
+            foreach ($data['metrics'] as $index => $metric) {
+                $key = !empty($metric['key']) ? trim($metric['key']) : $this->generatePerformanceKey($metric['label'], $index);
+                $payload[] = [
+                    'label' => trim($metric['label']),
+                    'key' => $key,
+                    'target' => (float) $metric['target'],
+                    'benchmark' => (float) $metric['benchmark'],
+                    'description' => trim($metric['description'] ?? ''),
+                ];
+            }
+
+            $keys = array_map('strtolower', array_column($payload, 'key'));
+            if (count($keys) !== count(array_unique($keys))) {
+                return redirect()->back()
+                    ->withErrors(['metrics' => 'Setiap nama indikator performance harus unik.'])
+                    ->withInput();
+            }
+        }
+
+        set_setting('dashboard_performance_metrics', json_encode($payload), 'json');
+
+        if (function_exists('cache')) {
+            try { cache()->forget('app_settings'); } catch (\Exception $e) { }
+        }
+
+        return redirect()->route('backoffice.pengaturan.performance')->with('success', 'Konfigurasi performance berhasil disimpan.');
     }
 
     /**
@@ -438,6 +496,21 @@ class PengaturanController extends Controller
             'success' => true,
             'message' => 'Daftar grade berhasil disimpan.'
         ]);
+    }
+
+    /**
+     * Generate unique, slug-like key for each performance metric based on label.
+     */
+    private function generatePerformanceKey(string $label, int $index): string
+    {
+        $slug = strtolower(preg_replace('/[^a-z0-9]+/i', '_', trim($label)));
+        $slug = trim($slug, '_');
+
+        if ($slug === '') {
+            $slug = 'indikator_' . ($index + 1);
+        }
+
+        return $slug;
     }
 
     /**

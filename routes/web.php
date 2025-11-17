@@ -17,7 +17,7 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('FaizaBuatFEcuy');
 });
 
 Route::get('/dashboard', function () {
@@ -187,6 +187,8 @@ Route::middleware(['admin.auth'])->prefix('backoffice')->name('backoffice.')->gr
                 Route::get('/goals', [PengaturanController::class, 'goals'])->name('goals');
                 Route::get('/dashboard-metrics', [PengaturanController::class, 'dashboardMetrics'])->name('dashboard-metrics');
                 Route::post('/dashboard-metrics', [PengaturanController::class, 'saveDashboardMetrics'])->name('dashboard-metrics.save');
+                Route::get('/performance', [PengaturanController::class, 'performance'])->name('performance');
+                Route::post('/performance', [PengaturanController::class, 'savePerformance'])->name('performance.save');
                 Route::post('/save-goals', [PengaturanController::class, 'saveGoalsList'])->name('save-goals');
                 Route::post('/save-grades', [PengaturanController::class, 'saveGradesList'])->name('save-grades');
                 Route::get('/alerts', [PengaturanController::class, 'alerts'])->name('alerts');

@@ -118,10 +118,12 @@
           <div class="bolopa-goals-panel bolopa-right-column">
             <div class="bolopa-goals-inner">
               <div class="d-flex justify-content-between align-items-center mb-3">
-                <h6 class="mb-0">Penyelesaian Tujuan</h6>
-                <a href="{{ route('backoffice.pengaturan.goals') }}" class="text-white text-decoration-none" title="Atur Goals" style="font-size: 0.875rem;">
-                  <i class="fas fa-cog text-white me-1"></i>Atur
-                </a>
+                <h6 class="mb-0">Goals</h6>
+                @if(auth()->check() && in_array(strtolower(auth()->user()->role ?? ''), ['super','superadmin','super_admin','administrator','admin']))
+                  <a href="{{ route('backoffice.pengaturan.goals') }}" class="text-white text-decoration-none" title="Atur Goals" style="font-size: 0.875rem;">
+                    <i class="fas fa-cog text-white me-1"></i>Atur
+                  </a>
+                @endif
               </div>
               @if(empty($goals))
               <div class="text-center py-4">
@@ -186,9 +188,9 @@
 <!-- Tabel Bahan Baku Terbaru dan Grafik Radar Performance -->
 <div class="container py-1">
   <div class="row g-3">
-    <div class="col-12 col-lg-8">
+    <div class="col-12 {{ !empty($performanceMetrics) ? 'col-lg-8' : '' }}">
       <div class="card">
-        <div class="card-header bg-info text-white">
+        <div class="card-header bg-info text-dark">
           <h5 class="mb-0"><i class="fas fa-boxes me-2" aria-hidden="true"></i>Daftar Bahan Baku Terbaru</h5>
         </div>
         <div class="card-body">
@@ -241,14 +243,17 @@
       </div>
     </div>
 
+    @if(!empty($performanceMetrics))
     <div class="col-12 col-lg-4">
       <div class="card">
         <div class="card-body">
           <h5 class="mb-3 text-center">Grafik Performance</h5>
-          <div id="radar-chart"></div>
+          <div id="radar-chart" aria-label="Grafik Performance"></div>
+          <!-- Legend badges removed as requested -->
         </div>
       </div>
     </div>
+    @endif
   </div>
 </div>
 
@@ -264,6 +269,7 @@
   var penjualanData = @json($penjualanData);
   var produksiData = @json($produksiData);
   var pesananData = @json($pesananData);
+  var performanceMetrics = @json($performanceMetrics ?? []);
 
   var options = {
     chart: {
@@ -358,64 +364,71 @@
   chart.render();
 
   // Radar Chart for Performance
-  var radarOptions = {
-    chart: {
-      height: 350,
-      type: 'radar',
-      toolbar: { show: false }
-    },
-    series: [{
-      name: 'Aktual',
-      data: [80, 90, 70, 85, 75, 88]
-    }, {
-      name: 'Target',
-      data: [100, 100, 100, 100, 100, 100]
-    }, {
-      name: 'Rata-rata Industri',
-      data: [75, 85, 80, 90, 70, 82]
-    }],
-    labels: ['Produksi', 'Penjualan', 'Stok', 'Kualitas', 'Efisiensi', 'Keuangan'],
-    plotOptions: {
-      radar: {
-        size: 140,
-        polygons: {
-          strokeColors: '#e9ecef',
-          fill: {
-            colors: ['#f8f9fa', '#fff']
+  var radarContainer = document.querySelector('#radar-chart');
+  if (radarContainer && performanceMetrics.length) {
+    var radarOptions = {
+      chart: {
+        height: 350,
+        type: 'radar',
+        toolbar: { show: false }
+      },
+      series: [{
+        name: 'Aktual',
+        data: performanceMetrics.map(function(metric){ return metric.actual; })
+      }, {
+        name: 'Target',
+        data: performanceMetrics.map(function(metric){ return metric.target; })
+      }, {
+        name: 'Rata-rata Industri',
+        data: performanceMetrics.map(function(metric){ return metric.benchmark; })
+      }],
+      labels: performanceMetrics.map(function(metric){ return metric.label; }),
+      plotOptions: {
+        radar: {
+          size: 140,
+          polygons: {
+            strokeColors: '#e9ecef',
+            fill: {
+              colors: ['#f8f9fa', '#fff']
+            }
           }
         }
-      }
-    },
-    colors: ['#007bff', '#28a745', '#ffc107'],
-    markers: {
-      size: 4,
-      colors: ['#fff', '#fff', '#fff'],
-      strokeColor: ['#007bff', '#28a745', '#ffc107'],
-      strokeWidth: 2,
-    },
-    tooltip: {
-      y: {
-        formatter: function(val) {
-          return val + '%';
-        }
-      }
-    },
-    yaxis: {
-      tickAmount: 7,
-      labels: {
-        formatter: function(val, i) {
-          if (i % 2 === 0) {
+      },
+      colors: ['#007bff', '#28a745', '#ffc107'],
+      markers: {
+        size: 4,
+        colors: ['#fff', '#fff', '#fff'],
+        strokeColor: ['#007bff', '#28a745', '#ffc107'],
+        strokeWidth: 2,
+      },
+      tooltip: {
+        y: {
+          formatter: function(val) {
+            if (typeof val === 'number') {
+              return val.toLocaleString('id-ID');
+            }
             return val;
-          } else {
-            return '';
+          }
+        }
+      },
+      yaxis: {
+        tickAmount: 7,
+        labels: {
+          formatter: function(val, i) {
+            if (i % 2 !== 0) {
+              return '';
+            }
+            return typeof val === 'number'
+              ? val.toLocaleString('id-ID')
+              : val;
           }
         }
       }
-    }
-  };
+    };
 
-  var radarChart = new ApexCharts(document.querySelector('#radar-chart'), radarOptions);
-  radarChart.render();
+    var radarChart = new ApexCharts(radarContainer, radarOptions);
+    radarChart.render();
+  }
 
   // handle filter buttons - support both original and bolopa-prefixed container
   var btnGroup = document.querySelector('.btn-filter') || document.querySelector('.bolopa-btn-filter');

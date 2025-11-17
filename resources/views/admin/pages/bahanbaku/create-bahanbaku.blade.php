@@ -369,12 +369,14 @@
                     <label for="master_bahan_id">Master Bahan <span style="color: var(--danger);">*</span></label>
                     <select id="master_bahan_id" name="master_bahan_id" required>
                         <option value="">Pilih Master Bahan</option>
-                        @if(isset($masterBahans))
+                        @if(isset($masterBahans) && $masterBahans->count() > 0)
                             @foreach($masterBahans as $master)
                                 <option value="{{ $master->id }}" data-harga="{{ $master->harga_per_satuan }}" data-satuan="{{ $master->satuan }}" {{ old('master_bahan_id') == $master->id ? 'selected' : '' }}>
                                     {{ $master->nama_bahan }} ({{ $master->satuan }})
                                 </option>
                             @endforeach
+                        @else
+                            <option value="" disabled>Tidak ada template bahan baku yang tersedia. Semua template sudah digunakan.</option>
                         @endif
                     </select>
                     @error('master_bahan_id')

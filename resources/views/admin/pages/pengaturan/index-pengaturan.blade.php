@@ -240,18 +240,20 @@
             <div class="setting-card">
                 <div class="setting-header">
                     <div class="setting-icon">
-                        <i class="fas fa-file-alt"></i>
+                        <i class="fas fa-bolt"></i>
                     </div>
                     <div>
-                        <h4 class="setting-title">Laporan Performance</h4>
+                        <h4 class="setting-title">Performance Dashboard</h4>
                     </div>
                 </div>
                 <p class="setting-description">
-                    Generate laporan performa bulanan. Analisis trend penjualan dan produktivitas perusahaan.
+                    Kelola indikator performance untuk radar chart dashboard. Target & benchmark diatur di sini, sedangkan nilai aktual ditarik otomatis dari data pesanan, produksi, dan stok.
                 </p>
-                <a href="{{ route('backoffice.laporan.index') }}" class="btn btn-warning">
-                    <i class="fas fa-chart-line"></i> Buat Laporan
+                @if(Auth::check() && Auth::user()->role === 'super_admin')
+                <a href="{{ route('backoffice.pengaturan.performance') }}" class="btn btn-warning">
+                    <i class="fas fa-sliders-h"></i> Atur Performance
                 </a>
+                @endif
             </div>
 
             <div class="setting-card">

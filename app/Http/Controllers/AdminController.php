@@ -13,6 +13,7 @@ use App\Models\Produksi;
 use App\Models\Transaksi;
 use App\Models\TransaksiItem;
 use App\Models\User;
+use App\Services\DashboardPerformanceService;
 
 class AdminController extends Controller
 {
@@ -305,6 +306,10 @@ class AdminController extends Controller
             ->take(5)
             ->get();
 
+        $performanceMetrics = DashboardPerformanceService::enrich(
+            Pengaturan::getDashboardPerformanceMetrics()
+        );
+
         return view('admin.dashboard', [
             'pageTitle' => $pageTitle,
             'summaryCards' => $summaryCards,
@@ -319,6 +324,7 @@ class AdminController extends Controller
             'goals' => $goals,
             'lastOrders' => $lastOrders,
             'bahanBaku' => $bahanBaku,
+            'performanceMetrics' => $performanceMetrics,
         ]);
     }
 
@@ -385,7 +391,7 @@ class AdminController extends Controller
                         ->count();
                     $categories[] = ucfirst($date->locale('id')->isoFormat('ddd'));
                 }
-                $title = 'Ringkasan Harian: Penjualan, Produksi & Pesanan';
+                $title = 'Ringkasan: Penjualan, Produksi & Pesanan';
                 break;
         }
 

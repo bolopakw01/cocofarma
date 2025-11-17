@@ -87,6 +87,153 @@ class Pengaturan extends Model
         return $fallbackLabels[$gradeKey] ?? $gradeKey;
     }
 
+    /**
+     * Default value set for radar performance metrics.
+     */
+    public static function defaultPerformanceMetrics(): array
+    {
+        return [
+            [
+                'label' => 'Pesanan Bulanan',
+                'key' => 'pesanan_bulanan',
+                'target' => 120,
+                'benchmark' => 100,
+                'description' => 'Total pesanan yang diterima selama bulan berjalan.',
+            ],
+            [
+                'label' => 'Produksi Selesai',
+                'key' => 'produksi_selesai',
+                'target' => 80,
+                'benchmark' => 70,
+                'description' => 'Jumlah batch produksi yang rampung bulan ini.',
+            ],
+            [
+                'label' => 'Stok Produk',
+                'key' => 'stok_produk',
+                'target' => 500,
+                'benchmark' => 450,
+                'description' => 'Total unit stok produk siap jual.',
+            ],
+            [
+                'label' => 'Stok Bahan Baku',
+                'key' => 'stok_bahan',
+                'target' => 300,
+                'benchmark' => 250,
+                'description' => 'Total unit stok bahan baku tersedia.',
+            ],
+            [
+                'label' => 'Produk Aktif',
+                'key' => 'produk_aktif',
+                'target' => 40,
+                'benchmark' => 35,
+                'description' => 'Jumlah SKU aktif yang masih siap jual.',
+            ],
+        ];
+    }
+
+    /**
+     * Options for linking performance indicators with data sources.
+     */
+    public static function performanceSourceOptions(): array
+    {
+        return [
+            'pesanan_total' => 'Total pesanan bulan ini',
+            'produksi_total' => 'Total produksi selesai bulan ini',
+            'stok_produk_total' => 'Total unit stok produk',
+            'bahan_baku_total' => 'Total unit stok bahan baku',
+            'produk_aktif_total' => 'Jumlah produk aktif',
+        ];
+    }
+
+    /**
+     * Decode and sanitize stored performance metrics for reuse in dashboard and settings UI.
+     */
+    public static function getDashboardPerformanceMetrics(): array
+    {
+        $defaults = static::defaultPerformanceMetrics();
+        $raw = static::where('nama_pengaturan', 'dashboard_performance_metrics')->value('nilai');
+
+        if (empty($raw)) {
+            return $defaults;
+        }
+
+        $decoded = json_decode($raw, true);
+        if (!is_array($decoded)) {
+            return $defaults;
+        }
+
+        if ($decoded === []) {
+            return [];
+        }
+
+        $sanitized = [];
+        foreach ($decoded as $index => $metric) {
+            if (!is_array($metric)) {
+                continue;
+            }
+
+            $fallback = $defaults[$index] ?? static::fallbackPerformanceMetric($index);
+            $sanitized[] = static::sanitizePerformanceMetric($metric, $fallback, $index);
+        }
+
+        return !empty($sanitized) ? $sanitized : $defaults;
+    }
+
+    /**
+     * Provide fallback metric when custom entry missing from defaults.
+     */
+    protected static function fallbackPerformanceMetric(int $index): array
+    {
+        return [
+            'label' => 'Indikator ' . ($index + 1),
+            'key' => 'indikator_' . ($index + 1),
+            'target' => 0,
+            'benchmark' => 0,
+            'description' => '',
+        ];
+    }
+
+    /**
+     * Ensure each metric is well-formed and constrained.
+     */
+    protected static function sanitizePerformanceMetric(array $metric, array $fallback, int $index): array
+    {
+        $label = trim((string) ($metric['label'] ?? ''));
+        $key = trim((string) ($metric['key'] ?? ''));
+
+        if ($label === '') {
+            $label = $fallback['label'] ?? 'Indikator ' . ($index + 1);
+        }
+
+        if ($key === '') {
+            $key = preg_replace('/[^a-z0-9]+/i', '_', strtolower($label));
+            if ($key === '' || $key === '_') {
+                $key = 'indikator_' . ($index + 1);
+            }
+        }
+
+        return [
+            'label' => $label,
+            'key' => $key,
+            'target' => static::normalizePerformanceNumber($metric['target'] ?? null, $fallback['target'] ?? 0),
+            'benchmark' => static::normalizePerformanceNumber($metric['benchmark'] ?? null, $fallback['benchmark'] ?? 0),
+            'description' => trim((string) ($metric['description'] ?? ($fallback['description'] ?? ''))),
+        ];
+    }
+
+    /**
+     * Normalize numeric inputs for target and benchmark.
+     */
+    protected static function normalizePerformanceNumber($value, $default = 0): float
+    {
+        if (!is_numeric($value)) {
+            $value = $default;
+        }
+
+        $value = (float) $value;
+        return $value < 0 ? 0.0 : $value;
+    }
+
     // Accessor untuk nilai berdasarkan tipe
     public function getNilaiParsedAttribute()
     {
