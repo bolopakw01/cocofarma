@@ -62,7 +62,8 @@
       <i class="fa-solid fa-leaf fa-3x mb-3"></i>
       <h1>Backoffice Cocofarma</h1>
       <p>Website Manajemen Sistem</p>
-      <a href="http://localhost/cocofarma/public/mimin" class="btn btn-success btn-lg">
+      <?php $adminUrl = url('/mimin'); ?>
+      <a href="<?= $adminUrl ?>" class="btn btn-success btn-lg">
         <i class="fa-solid fa-circle-arrow-right me-2"></i>Test
       </a>
     </div>
