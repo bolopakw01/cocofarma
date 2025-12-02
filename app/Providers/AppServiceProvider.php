@@ -23,9 +23,11 @@ class AppServiceProvider extends ServiceProvider
     {
         if (! $this->app->runningInConsole()) {
             $currentRoot = request()->getSchemeAndHttpHost();
+            $basePath = trim(request()->getBaseUrl(), '/');
 
             if (! empty($currentRoot)) {
-                URL::forceRootUrl($currentRoot);
+                $fullRoot = rtrim($currentRoot.'/'.ltrim($basePath, '/'), '/');
+                URL::forceRootUrl($fullRoot ?: $currentRoot);
             }
 
             if (request()->isSecure()) {
