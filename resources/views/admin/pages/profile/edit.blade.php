@@ -313,19 +313,12 @@
 						</div>
 
 						<div class="col-12 col-md-6">
-							<label for="role" class="form-label">Role / Peran</label>
-							<div class="input-group {{ $user->role !== 'super_admin' ? 'disabled-field' : '' }}">
+							<label class="form-label">Role / Peran</label>
+							<div class="input-group disabled-field">
 								<span class="input-group-text"><i class="fa-solid fa-shield"></i></span>
-								<select id="role" name="role" class="form-select" @if($user->role !== 'super_admin') disabled aria-disabled="true" tabindex="-1" @endif>
-									@foreach($roleOptions as $value => $label)
-										<option value="{{ $value }}" {{ old('role', $user->role) === $value ? 'selected' : '' }}>{{ $label }}</option>
-									@endforeach
-								</select>
+								<input type="text" class="form-control" value="{{ $roleOptions[$user->role] ?? $roleLabel }}" readonly tabindex="-1">
 							</div>
-							@if($user->role !== 'super_admin')
-								<input type="hidden" name="role" value="{{ $user->role }}">
-							@endif
-							<div class="form-text helper-text">Peran hanya dapat diubah oleh Super Admin.</div>
+							<div class="form-text helper-text">Role tidak dapat diubah dari halaman ini.</div>
 						</div>
 
 						<div class="col-12 col-md-6">

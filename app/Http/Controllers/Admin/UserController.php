@@ -17,23 +17,29 @@ class UserController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $perPage = request('per_page', 10); // Default 10, bisa diubah via parameter
+        $perPage = $request->input('per_page', 10); // Default 10, bisa diubah via parameter
+        $currentUserId = optional($request->user())->id;
+
+        $query = User::query();
+        if ($currentUserId) {
+            $query->where('id', '!=', $currentUserId);
+        }
 
         if ($perPage === 'all') {
             // Return all results but wrap them in a paginator so the view stays compatible
-            $allItems = User::query()->get();
+            $allItems = $query->get();
             $currentPage = Paginator::resolveCurrentPage();
             $perPageCount = $allItems->count() ?: 1; // avoid zero
             $currentItems = $allItems->slice(($currentPage - 1) * $perPageCount, $perPageCount)->values();
 
             $users = new LengthAwarePaginator($currentItems, $allItems->count(), $perPageCount, $currentPage, [
                 'path' => Paginator::resolveCurrentPath(),
-                'query' => request()->query()
+                'query' => $request->query()
             ]);
         } else {
-            $users = User::query()->paginate((int) $perPage)->appends(request()->query());
+            $users = $query->paginate((int) $perPage)->appends($request->query());
         }
 
         return view('admin.pages.master-user.index-master-user', compact('users'));

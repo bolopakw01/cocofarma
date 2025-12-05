@@ -27,7 +27,6 @@ class AdminProfileUpdateRequest extends FormRequest
             ],
             'phone' => ['nullable', 'string', 'max:30'],
             'address' => ['nullable', 'string', 'max:1000'],
-            'role' => ['nullable', Rule::in(['super_admin', 'admin'])],
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
             'avatar' => ['nullable', 'image', 'max:2048'],
         ];

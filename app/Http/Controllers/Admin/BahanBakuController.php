@@ -11,6 +11,7 @@ use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Pagination\Paginator;
+use Illuminate\Validation\Rule;
 
 class BahanBakuController extends Controller
 {
@@ -74,11 +75,9 @@ class BahanBakuController extends Controller
         $viewPath = $isMaster ? 'admin.pages.master-bahan.create-master-bahan' : 'admin.pages.bahanbaku.create-bahanbaku';
 
         if (!$isMaster) {
-            // Untuk operasional, load master bahan yang belum digunakan (tidak memiliki bahan baku aktif)
+            // Untuk operasional, tampilkan seluruh master bahan aktif agar bisa dipakai ulang
             $masterBahans = MasterBahanBaku::aktif()
-                ->whereDoesntHave('bahanBakus', function($query) {
-                    $query->whereNull('deleted_at');
-                })
+                ->orderBy('nama_bahan')
                 ->get();
             return view($viewPath, compact('masterBahans'));
         }
@@ -145,18 +144,9 @@ class BahanBakuController extends Controller
             $request->validate([
                 'master_bahan_id' => [
                     'required',
-                    'exists:master_bahan_baku,id',
-                    function ($attribute, $value, $fail) {
-                        $master = MasterBahanBaku::find($value);
-                        if (!$master || $master->status !== 'aktif') {
-                            $fail('Master bahan baku tidak valid atau tidak aktif.');
-                            return;
-                        }
-                        $hasActiveBahan = $master->bahanBakus()->whereNull('deleted_at')->exists();
-                        if ($hasActiveBahan) {
-                            $fail('Template bahan baku ini sudah digunakan dan tidak dapat digunakan lagi kecuali jika bahan baku yang ada dihapus.');
-                        }
-                    },
+                    Rule::exists('master_bahan_baku', 'id')->where(function ($query) {
+                        $query->where('status', 'aktif');
+                    }),
                 ],
                 'nama_bahan' => [
                     'required',
@@ -348,14 +338,9 @@ class BahanBakuController extends Controller
             $bahanBaku = MasterBahanBaku::findOrFail($id);
         } else {
             $bahanBaku = BahanBaku::findOrFail($id);
-            // Load master bahan yang belum digunakan atau yang sedang digunakan oleh bahan ini
+            // Load seluruh master bahan aktif agar operator bisa berpindah template jika diperlukan
             $masterBahans = MasterBahanBaku::aktif()
-                ->where(function($query) use ($bahanBaku) {
-                    $query->whereDoesntHave('bahanBakus', function($q) {
-                        $q->whereNull('deleted_at');
-                    })
-                    ->orWhere('id', $bahanBaku->master_bahan_id);
-                })
+                ->orderBy('nama_bahan')
                 ->get();
             return view($viewPath, compact('bahanBaku', 'masterBahans'));
         }

@@ -478,6 +478,8 @@
 
 <!-- Template for order item row - REMOVED: Now using JavaScript to create rows -->
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     let itemIndex = 0;
 
@@ -615,40 +617,64 @@
     }
 
     function handleProductChange(select) {
-        const selectedOption = select.options[select.selectedIndex];
-        const price = selectedOption.getAttribute('data-price') || 0;
-        const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
-        const row = select.closest('.item-row');
-        const priceInput = row.querySelector('.price-input');
-        const quantityInput = row.querySelector('.quantity-input');
+            const row = select.closest('.item-row');
+            const priceInput = row.querySelector('.price-input');
+            const quantityInput = row.querySelector('.quantity-input');
+            const selectedOption = select.options[select.selectedIndex];
 
-        if (!select.value) {
-            priceInput.value = '';
-            quantityInput.value = '';
-            quantityInput.removeAttribute('max');
+            if (!select.value) {
+                priceInput.value = '';
+                quantityInput.value = '';
+                quantityInput.removeAttribute('max');
+                row.removeAttribute('data-preorder-confirmed');
+                calculateSubtotal(row);
+                calculateTotal();
+                return;
+            }
+
+            const price = selectedOption.getAttribute('data-price') || 0;
+            const stokTersedia = parseFloat(selectedOption.getAttribute('data-stok')) || 0;
+
+            if (stokTersedia <= 0 && row.getAttribute('data-preorder-confirmed') !== 'true') {
+                Swal.fire({
+                    title: 'Produk belum tersedia',
+                    text: 'Stok produk ini habis. Lanjutkan sebagai pesanan pre-order?',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonText: 'Ya, lanjutkan',
+                    cancelButtonText: 'Batalkan'
+                }).then(result => {
+                    if (result.isConfirmed) {
+                        row.setAttribute('data-preorder-confirmed', 'true');
+                        handleProductChange(select);
+                    } else {
+                        row.removeAttribute('data-preorder-confirmed');
+                        select.value = '';
+                        handleProductChange(select);
+                    }
+                });
+                return;
+            }
+
+            if (stokTersedia > 0) {
+                row.removeAttribute('data-preorder-confirmed');
+            }
+
+            priceInput.value = Math.round(price);
+
+            if (stokTersedia > 0) {
+                quantityInput.max = stokTersedia;
+            } else {
+                quantityInput.removeAttribute('max');
+            }
+
+            if (!quantityInput.value || quantityInput.value == 0) {
+                quantityInput.value = 1;
+            }
+
             calculateSubtotal(row);
             calculateTotal();
-            return;
         }
-
-        // Allow ordering even if stock is 0 (pre-order capability)
-        priceInput.value = Math.round(price); // Display as integer
-        
-        // Set max quantity only if stock is available, otherwise allow any quantity
-        if (stokTersedia > 0) {
-            quantityInput.max = stokTersedia;
-        } else {
-            quantityInput.removeAttribute('max');
-        }
-
-        // Set default quantity to 1 if empty
-        if (!quantityInput.value || quantityInput.value == 0) {
-            quantityInput.value = 1;
-        }
-        
-        calculateSubtotal(row);
-        calculateTotal();
-    }
 
     function calculateSubtotal(row) {
         const quantity = parseFloat(row.querySelector('.quantity-input').value) || 0;

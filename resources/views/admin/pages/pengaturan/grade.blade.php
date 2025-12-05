@@ -310,6 +310,8 @@
 @push('scripts')
 <script>
 let grades = @json($grades ?? []);
+const saveGradesUrl = '{{ route("backoffice.pengaturan.save-grades") }}';
+const csrfToken = '{{ csrf_token() }}';
 
 function renderGrades() {
     const container = document.getElementById('gradesContainer');
@@ -377,14 +379,16 @@ function attachEventListeners() {
                 cancelButtonColor: '#6c757d',
                 confirmButtonText: 'Ya, Hapus!',
                 cancelButtonText: 'Batal'
-            }).then((result) => {
+            }).then(async (result) => {
                 if (result.isConfirmed) {
-                    deleteGrade(index);
-                    Swal.fire(
-                        'Terhapus!',
-                        'Grade telah berhasil dihapus.',
-                        'success'
-                    );
+                    const success = await deleteGrade(index);
+                    if (success) {
+                        Swal.fire(
+                            'Terhapus!',
+                            'Grade telah berhasil dihapus.',
+                            'success'
+                        );
+                    }
                 }
             });
         });
@@ -395,31 +399,22 @@ function closeEditModal() {
     document.getElementById('editGradeModal').style.display = 'none';
 }
 
-function deleteGrade(index) {
-    // Store original grades in case deletion fails
-    const originalGrades = [...grades];
-
-    // Remove the grade temporarily
+async function deleteGrade(index) {
     const deletedGrade = grades.splice(index, 1)[0];
+    renderGrades();
 
-    // Try to save, if it fails, restore the original array
-    saveGrades()
-        .then(success => {
-            if (!success) {
-                // Restore original grades if save failed
-                grades.splice(0, grades.length, ...originalGrades);
-                renderGrades();
-            }
-        })
-        .catch(error => {
-            // Restore original grades if save failed
-            grades.splice(0, grades.length, ...originalGrades);
-            renderGrades();
-        });
+    const success = await saveGrades();
+    if (!success) {
+        grades.splice(index, 0, deletedGrade);
+        renderGrades();
+        return false;
+    }
+
+    return true;
 }
 
 // Form submit handlers
-document.getElementById('addGradeForm').addEventListener('submit', function(e) {
+document.getElementById('addGradeForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const formData = new FormData(this);
@@ -429,8 +424,15 @@ document.getElementById('addGradeForm').addEventListener('submit', function(e) {
     };
 
     grades.push(newGrade);
-    saveGrades();
     renderGrades();
+
+    const success = await saveGrades();
+    if (!success) {
+        grades.pop();
+        renderGrades();
+        return;
+    }
+
     this.reset();
 
     Swal.fire({
@@ -442,19 +444,27 @@ document.getElementById('addGradeForm').addEventListener('submit', function(e) {
     });
 });
 
-document.getElementById('editGradeForm').addEventListener('submit', function(e) {
+document.getElementById('editGradeForm').addEventListener('submit', async function(e) {
     e.preventDefault();
 
     const formData = new FormData(this);
-    const index = parseInt(formData.get('index'));
+    const index = parseInt(formData.get('index'), 10);
+    const previousGrade = { ...grades[index] };
 
     grades[index] = {
         name: formData.get('name'),
         label: formData.get('label')
     };
 
-    saveGrades();
     renderGrades();
+
+    const success = await saveGrades();
+    if (!success) {
+        grades[index] = previousGrade;
+        renderGrades();
+        return;
+    }
+
     closeEditModal();
 
     Swal.fire({
@@ -466,55 +476,44 @@ document.getElementById('editGradeForm').addEventListener('submit', function(e) 
     });
 });
 
-function saveGrades() {
-    return fetch('{{ route("backoffice.pengaturan.save-grades") }}', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}'
-        },
-        body: JSON.stringify({ grades: grades })
-    })
-    .then(response => {
-        // Check if response is redirect (302) which indicates success
-        if (response.redirected) {
-            console.log('Grades saved successfully (redirected)');
-            return true;
+async function saveGrades() {
+    try {
+        const response = await fetch(saveGradesUrl, {
+            method: 'POST',
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'Accept': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest',
+                'X-CSRF-TOKEN': csrfToken
+            },
+            body: JSON.stringify({ grades })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Gagal menyimpan grade (status ${response.status})`);
         }
 
-        // Try to parse as JSON for other responses
-        const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-            return response.json().then(data => {
-                if (data.success) {
-                    console.log('Grades saved successfully');
-                    return true;
-                } else {
-                    // Show specific error message
-                    Swal.fire({
-                        title: 'Error!',
-                        text: data.message || 'Terjadi kesalahan saat menyimpan grades.',
-                        icon: 'error',
-                        confirmButtonText: 'OK'
-                    });
-                    return false;
-                }
-            });
-        } else {
-            // If not JSON, assume success for redirect responses
-            return response.ok;
+        const contentType = response.headers.get('content-type') || '';
+        if (contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data.success) {
+                return true;
+            }
+            throw new Error(data.message || 'Terjadi kesalahan saat menyimpan grades.');
         }
-    })
-    .catch(error => {
+
+        return true;
+    } catch (error) {
         console.error('Error:', error);
         Swal.fire({
             title: 'Error!',
-            text: 'Terjadi kesalahan saat menyimpan grades.',
+            text: error.message || 'Terjadi kesalahan saat menyimpan grades.',
             icon: 'error',
             confirmButtonText: 'OK'
         });
         return false;
-    });
+    }
 }
 
 // Initialize

@@ -338,7 +338,7 @@
                                 </option>
                             @endforeach
                         @else
-                            <option value="" disabled>Tidak ada template bahan baku yang tersedia.</option>
+                            <option value="" disabled>Belum ada master bahan aktif. Tambahkan master bahan terlebih dahulu.</option>
                         @endif
                     </select>
                     @error('master_bahan_id')

@@ -40,14 +40,12 @@ class AdminProfileController extends Controller
         $user = $request->user();
         $data = $request->validated();
 
-        if ($user->role !== 'super_admin') {
-            unset($data['role']);
-        }
-
         if (isset($data['password']) && $data['password']) {
             $user->password = Hash::make($data['password']);
         }
         unset($data['password']);
+
+        unset($data['role']);
 
         if ($request->hasFile('avatar')) {
             $avatarFile = $request->file('avatar');

@@ -48,10 +48,14 @@ if (!function_exists('set_setting')) {
      */
     function set_setting(string $key, $value, string $type = 'string')
     {
-            $res = \App\Models\Pengaturan::updateOrCreate(
+            $res = \App\Models\Pengaturan::withTrashed()->updateOrCreate(
                 ['nama_pengaturan' => $key],
                 ['nilai' => $value, 'tipe' => $type]
             );
+
+            if (method_exists($res, 'trashed') && $res->trashed()) {
+                $res->restore();
+            }
 
             // Clear the in-process static cache by forcing a fresh value on next call
             // We do this by storing null into the closure-scoped static via cache key reset.
