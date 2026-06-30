@@ -18,7 +18,7 @@ return new class extends Migration
             ->where('status', 'selesai')
             ->update([
                 'status_transfer' => 'transferred',
-                'tanggal_transfer' => DB::raw('COALESCE(tanggal_transfer, NOW())'),
+                'tanggal_transfer' => DB::raw('COALESCE(tanggal_transfer, CURRENT_TIMESTAMP)'),
             ]);
     }
 

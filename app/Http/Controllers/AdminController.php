@@ -71,7 +71,7 @@ class AdminController extends Controller
         Carbon::setLocale(app()->getLocale());
         $today = $now->copy()->startOfDay();
 
-        $totalPesananBaru = Pesanan::where('status', 'baru')->count();
+        $totalPesananBaru = Pesanan::whereIn('status', ['baru', 'pending'])->count();
         $produkTerjual = (int) round(
             TransaksiItem::whereHas('transaksi', function ($query) {
                 $query->where('jenis_transaksi', 'penjualan')->where('status', 'selesai');
@@ -132,7 +132,7 @@ class AdminController extends Controller
         $pctLaba = $this->computePctChange($totalLabaLastMonth, $totalLabaPrevMonth);
 
         $dirPendapatan = $this->directionFromChange($totalPendapatanLastMonth, $totalPendapatanPrevMonth);
-        $dirBiaya = $this->directionFromChange($totalBiayaLastMonth, $totalBiayaPrevMonth);
+        $dirBiaya = $this->directionFromChange($totalBiayaLastMonth, $totalBiayaPrevMonth, true);
         $dirLaba = $this->directionFromChange($totalLabaLastMonth, $totalLabaPrevMonth);
 
         $targetPendapatan = (float) setting('total_pendapatan_target', 0);
@@ -140,7 +140,7 @@ class AdminController extends Controller
         $targetLaba = (float) setting('total_laba_target', 0);
 
         $targetDirPendapatan = $this->directionFromTarget($totalPendapatanLastMonth, $targetPendapatan);
-        $targetDirBiaya = $this->directionFromTarget($totalBiayaLastMonth, $targetBiaya);
+        $targetDirBiaya = $this->directionFromTarget($totalBiayaLastMonth, $targetBiaya, true);
         $targetDirLaba = $this->directionFromTarget($totalLabaLastMonth, $targetLaba);
 
         $targetPctPendapatan = $this->targetProgressPercentage($totalPendapatanLastMonth, $targetPendapatan);
@@ -310,6 +310,11 @@ class AdminController extends Controller
             Pengaturan::getDashboardPerformanceMetrics()
         );
 
+        // Hanya tampilkan performance metrics jika ada actual data (bukan hanya target/benchmark)
+        $hasActualPerformanceData = collect($performanceMetrics)->some(function ($metric) {
+            return ($metric['actual'] ?? 0) > 0;
+        });
+
         return view('admin.dashboard', [
             'pageTitle' => $pageTitle,
             'summaryCards' => $summaryCards,
@@ -324,7 +329,7 @@ class AdminController extends Controller
             'goals' => $goals,
             'lastOrders' => $lastOrders,
             'bahanBaku' => $bahanBaku,
-            'performanceMetrics' => $performanceMetrics,
+            'performanceMetrics' => $hasActualPerformanceData ? $performanceMetrics : [],
         ]);
     }
 
@@ -347,10 +352,8 @@ class AdminController extends Controller
                         ->where('jenis_transaksi', 'penjualan')
                         ->where('status', 'selesai')
                         ->sum('total');
-                    $produksiData[] = (int) Produksi::whereDate('created_at', $date)->count();
-                    $pesananData[] = (int) Pesanan::whereDate('created_at', $date)
-                        ->where('status', 'baru')
-                        ->count();
+                    $produksiData[] = (int) Produksi::whereDate('tanggal_produksi', $date)->sum('jumlah_target');
+                    $pesananData[] = (int) Pesanan::whereDate('tanggal_pesanan', $date)->count();
                     $categories[] = str_pad((string) ($i + 1), 2, '0', STR_PAD_LEFT);
                 }
                 $title = 'Ringkasan Bulanan: Penjualan, Produksi & Pesanan';
@@ -364,12 +367,11 @@ class AdminController extends Controller
                         ->where('jenis_transaksi', 'penjualan')
                         ->where('status', 'selesai')
                         ->sum('total');
-                    $produksiData[] = (int) Produksi::whereYear('created_at', $now->year)
-                        ->whereMonth('created_at', $month)
-                        ->count();
-                    $pesananData[] = (int) Pesanan::whereYear('created_at', $now->year)
-                        ->whereMonth('created_at', $month)
-                        ->where('status', 'baru')
+                    $produksiData[] = (int) Produksi::whereYear('tanggal_produksi', $now->year)
+                        ->whereMonth('tanggal_produksi', $month)
+                        ->sum('jumlah_target');
+                    $pesananData[] = (int) Pesanan::whereYear('tanggal_pesanan', $now->year)
+                        ->whereMonth('tanggal_pesanan', $month)
                         ->count();
                 }
                 $categories = $monthLabels;
@@ -385,10 +387,8 @@ class AdminController extends Controller
                         ->where('jenis_transaksi', 'penjualan')
                         ->where('status', 'selesai')
                         ->sum('total');
-                    $produksiData[] = (int) Produksi::whereDate('created_at', $date)->count();
-                    $pesananData[] = (int) Pesanan::whereDate('created_at', $date)
-                        ->where('status', 'baru')
-                        ->count();
+                    $produksiData[] = (int) Produksi::whereDate('tanggal_produksi', $date)->sum('jumlah_target');
+                    $pesananData[] = (int) Pesanan::whereDate('tanggal_pesanan', $date)->count();
                     $categories[] = ucfirst($date->locale('id')->isoFormat('ddd'));
                 }
                 $title = 'Ringkasan: Penjualan, Produksi & Pesanan';
@@ -468,10 +468,10 @@ class AdminController extends Controller
             'pesanan' => (float) Pesanan::whereBetween('tanggal_pesanan', [$lastMonthStart, $lastMonthEnd])->count(),
             'user' => (float) User::count(),
             'packing' => (float) Produksi::where('status', 'selesai')
-                ->whereDate('created_at', $today)
+                ->whereDate('tanggal_produksi', $today)
                 ->count(),
             'qc' => (float) Produksi::where('status', 'proses')
-                ->whereDate('created_at', $today)
+                ->whereDate('tanggal_produksi', $today)
                 ->count(),
             default => 0.0,
         };
@@ -537,23 +537,23 @@ class AdminController extends Controller
         return (int) round((($current - $previous) / max(1, $previous)) * 100);
     }
 
-    private function directionFromChange($current, $previous)
+    private function directionFromChange($current, $previous, $isCost = false)
     {
-        if ($current > $previous) return 'up';
-        if ($current < $previous) return 'down';
+        if ($current > $previous) return $isCost ? 'down' : 'up';
+        if ($current < $previous) return $isCost ? 'up' : 'down';
         return 'same';
     }
 
-    private function directionFromTarget($current, $target)
+    private function directionFromTarget($current, $target, $isCost = false)
     {
         if ($target <= 0) {
             return 'same';
         }
         if ($current > $target) {
-            return 'up';
+            return $isCost ? 'down' : 'up';
         }
         if ($current < $target) {
-            return 'down';
+            return $isCost ? 'up' : 'down';
         }
         return 'same';
     }

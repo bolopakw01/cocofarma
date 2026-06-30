@@ -28,16 +28,18 @@ class DashboardPerformanceService
         $actual = 0;
 
         // Detect metric type based on keywords in label
-        if (str_contains($label, 'penjualan') || str_contains($label, 'pesanan') || str_contains($label, 'order')) {
+        if (str_contains($label, 'penjualan') || str_contains($label, 'pendapatan')) {
+            $actual = static::salesTotal();
+        } elseif (str_contains($label, 'pesanan') || str_contains($label, 'order')) {
             $actual = static::orderTotal();
         } elseif (str_contains($label, 'produksi') || str_contains($label, 'batch')) {
             $actual = static::productionTotal();
+        } elseif (str_contains($label, 'produk aktif')) {
+            $actual = static::activeProductTotal();
         } elseif (str_contains($label, 'stok produk') || str_contains($label, 'produk')) {
             $actual = static::productStockTotal();
         } elseif (str_contains($label, 'bahan baku') || str_contains($label, 'material')) {
             $actual = static::materialStockTotal();
-        } elseif (str_contains($label, 'produk aktif')) {
-            $actual = static::activeProductTotal();
         } else {
             // Default to order total if no keywords match
             $actual = static::orderTotal();
@@ -47,6 +49,15 @@ class DashboardPerformanceService
         $metric['actual_value'] = $actual;
 
         return $metric;
+    }
+
+    private static function salesTotal(): float
+    {
+        [$start, $end] = static::currentMonthRange();
+
+        return (float) Pesanan::whereBetween('created_at', [$start, $end])
+            ->whereIn('status', ['selesai', 'diproses'])
+            ->sum('total_harga');
     }
 
     private static function orderTotal(): float
@@ -61,8 +72,7 @@ class DashboardPerformanceService
         [$start, $end] = static::currentMonthRange();
 
         return (float) Produksi::whereBetween('tanggal_produksi', [$start, $end])
-            ->where('status', 'selesai')
-            ->count();
+            ->sum('jumlah_target');
     }
 
     private static function productStockTotal(): float

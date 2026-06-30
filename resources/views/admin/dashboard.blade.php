@@ -42,6 +42,16 @@
   background: linear-gradient(135deg, #00bfff 0%, #1e90ff 100%) !important;
   transform: translateY(-2px);
 }
+
+.stats-item[data-dir="up"] .stat-icon {
+  filter: invert(27%) sepia(82%) saturate(3270%) hue-rotate(145deg) brightness(90%) contrast(80%);
+}
+.stats-item[data-dir="down"] .stat-icon {
+  filter: invert(27%) sepia(97%) saturate(2213%) hue-rotate(337deg) brightness(90%) contrast(90%);
+}
+.stats-item[data-dir="same"] .stat-icon, .stats-item:not([data-dir="up"]):not([data-dir="down"]) .stat-icon {
+  filter: invert(76%) sepia(9%) saturate(6357%) hue-rotate(360deg) brightness(103%) contrast(108%);
+}
 </style>
 @endsection
 
@@ -274,30 +284,29 @@
   var options = {
     chart: {
       height: 380,
-      type: 'area',
+      type: 'line',
       animations: { enabled: true, easing: 'easeinout', speed: 800, animateGradually: { enabled: true, delay: 150 } },
       toolbar: { show: false },
       zoom: { enabled: false },
-      dropShadow: { enabled: true, top: 10, left: 0, blur: 15, color: 'rgba(13,110,253,0.2)', opacity: 0.8 },
+      dropShadow: { enabled: true, top: 10, left: 0, blur: 15, color: 'rgba(13,110,253,0.1)', opacity: 0.5 },
       background: 'transparent'
     },
     series: [
-      { name: 'Penjualan', data: penjualanData },
-      { name: 'Produksi', data: produksiData },
-      { name: 'Pesanan Baru', data: pesananData }
+      { name: 'Penjualan', type: 'column', data: penjualanData },
+      { name: 'Produksi', type: 'area', data: produksiData },
+      { name: 'Pesanan Baru', type: 'line', data: pesananData }
     ],
     colors: ['#007bff', '#28a745', '#ffc107'],
-    stroke: { curve: 'smooth', width: 4, lineCap: 'round' },
-    markers: { size: 5, colors: ['#007bff', '#28a745', '#ffc107'], strokeColors: '#fff', strokeWidth: 3, hover: { size: 8 } },
+    stroke: { width: [0, 3, 4], curve: 'smooth' },
+    markers: { size: [0, 0, 6], colors: ['#fff'], strokeColors: ['#007bff', '#28a745', '#ffc107'], strokeWidth: 3, hover: { size: 8 } },
     fill: {
-      type: 'gradient',
+      type: ['solid', 'gradient', 'solid'],
       gradient: {
         shade: 'light',
         type: 'vertical',
         shadeIntensity: 0.5,
-        gradientToColors: ['#4dabf7', '#34d399', '#ffda6a'],
         inverseColors: false,
-        opacityFrom: 0.6,
+        opacityFrom: 0.5,
         opacityTo: 0.1,
         stops: [0, 50, 100]
       }
@@ -308,10 +317,38 @@
       axisBorder: { show: false },
       axisTicks: { show: false }
     },
-    yaxis: {
-      labels: { style: { colors: '#6c757d', fontSize: '12px' }, formatter: function(val) { return val.toLocaleString('id-ID'); } },
-      tickAmount: 5
-    },
+    yaxis: [
+      {
+        seriesName: 'Penjualan',
+        labels: { 
+          style: { colors: '#007bff', fontSize: '11px', fontWeight: 600 }, 
+          formatter: function(val) { 
+            if(val >= 1000000) return (val/1000000).toFixed(1) + 'M';
+            if(val >= 1000) return (val/1000).toFixed(1) + 'k';
+            return val.toLocaleString('id-ID');
+          } 
+        }
+      },
+      {
+        seriesName: 'Produksi',
+        opposite: true,
+        labels: { 
+          style: { colors: '#28a745', fontSize: '11px', fontWeight: 600 }, 
+          formatter: function(val) { 
+            if(val >= 1000) return (val/1000).toFixed(1) + 'k';
+            return Math.round(val).toLocaleString('id-ID'); 
+          } 
+        }
+      },
+      {
+        seriesName: 'Pesanan Baru',
+        opposite: true,
+        labels: { 
+          style: { colors: '#ffc107', fontSize: '11px', fontWeight: 600 },
+          formatter: function(val) { return Math.round(val); }
+        }
+      }
+    ],
     tooltip: {
       shared: true,
       intersect: false,
@@ -345,8 +382,7 @@
       options: {
         chart: { height: 300 },
         title: { style: { fontSize: '16px' } },
-        xaxis: { labels: { style: { fontSize: '11px' } } },
-        yaxis: { labels: { style: { fontSize: '11px' } } }
+        xaxis: { labels: { style: { fontSize: '11px' } } }
       }
     }, {
       breakpoint: 576,
@@ -354,7 +390,6 @@
         chart: { height: 250 },
         title: { style: { fontSize: '14px' } },
         xaxis: { labels: { style: { fontSize: '10px' } } },
-        yaxis: { labels: { style: { fontSize: '10px' } } },
         legend: { position: 'top', horizontalAlign: 'center', offsetY: -5 }
       }
     }]
@@ -373,14 +408,18 @@
         toolbar: { show: false }
       },
       series: [{
-        name: 'Aktual',
-        data: performanceMetrics.map(function(metric){ return metric.actual; })
+        name: 'Aktual (%)',
+        data: performanceMetrics.map(function(metric){ 
+            return Math.round((metric.actual / Math.max(1, metric.target)) * 100); 
+        })
       }, {
-        name: 'Target',
-        data: performanceMetrics.map(function(metric){ return metric.target; })
+        name: 'Target (100%)',
+        data: performanceMetrics.map(function(metric){ return 100; })
       }, {
-        name: 'Rata-rata Industri',
-        data: performanceMetrics.map(function(metric){ return metric.benchmark; })
+        name: 'Rata-rata Industri (%)',
+        data: performanceMetrics.map(function(metric){ 
+            return Math.round((metric.benchmark / Math.max(1, metric.target)) * 100); 
+        })
       }],
       labels: performanceMetrics.map(function(metric){ return metric.label; }),
       plotOptions: {
@@ -394,6 +433,13 @@
           }
         }
       },
+      fill: {
+        opacity: 0.25
+      },
+      stroke: {
+        width: 2,
+        dashArray: 0
+      },
       colors: ['#007bff', '#28a745', '#ffc107'],
       markers: {
         size: 4,
@@ -403,24 +449,25 @@
       },
       tooltip: {
         y: {
-          formatter: function(val) {
-            if (typeof val === 'number') {
-              return val.toLocaleString('id-ID');
-            }
-            return val;
+          formatter: function(val, opts) {
+            var metricIndex = opts.dataPointIndex;
+            var metric = performanceMetrics[metricIndex];
+            var rawValue = 0;
+            
+            if (opts.seriesIndex === 0) rawValue = metric.actual;
+            else if (opts.seriesIndex === 1) rawValue = metric.target;
+            else if (opts.seriesIndex === 2) rawValue = metric.benchmark;
+            
+            return val + '% (' + (typeof rawValue === 'number' ? rawValue.toLocaleString('id-ID') : rawValue) + ')';
           }
         }
       },
       yaxis: {
-        tickAmount: 7,
+        tickAmount: 5,
+        max: 120,
         labels: {
-          formatter: function(val, i) {
-            if (i % 2 !== 0) {
-              return '';
-            }
-            return typeof val === 'number'
-              ? val.toLocaleString('id-ID')
-              : val;
+          formatter: function(val) {
+            return val + '%';
           }
         }
       }
@@ -452,9 +499,9 @@
       .then(data => {
         // Update series data
         chart.updateSeries([
-          { name: 'Penjualan', data: data.penjualanData },
-          { name: 'Produksi', data: data.produksiData },
-          { name: 'Pesanan Baru', data: data.pesananData }
+          { name: 'Penjualan', type: 'column', data: data.penjualanData },
+          { name: 'Produksi', type: 'area', data: data.produksiData },
+          { name: 'Pesanan Baru', type: 'line', data: data.pesananData }
         ]);
 
         // Update xaxis categories and title

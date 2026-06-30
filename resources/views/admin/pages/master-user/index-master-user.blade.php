@@ -306,7 +306,7 @@
                                 $createdAt = $user->created_at ? $user->created_at->format('Y-m-d H:i:s') : '';
                             @endphp
                             <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-info bolopa-tabel-btn-action"
-                                onclick="showDetail({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ addslashes($user->username) }}', '{{ addslashes($user->email) }}', '{{ $user->role }}', {{ $user->status ? 'true' : 'false' }}, '{{ addslashes($avatarUrl) }}', '{{ addslashes($phone) }}', '{{ addslashes($address) }}', '{{ addslashes($createdAt) }}', '{{ route('backoffice.master-user.edit', $user->id) }}')"
+                                onclick='showDetail({{ $user->id }}, @json($user->name), @json($user->username), @json($user->email), @json($user->role), {{ $user->status ? "true" : "false" }}, @json($avatarUrl), @json($phone), @json($address), @json($createdAt), @json(route("backoffice.master-user.edit", $user->id)))'
                                 aria-label="Lihat detail {{ $user->name }}">
                                 <x-admin.icon name="view" alt="Detail" size="16" />
                             </button>
@@ -314,7 +314,7 @@
                                 <x-admin.icon name="edit" alt="Edit" size="16" />
                             </a>
                             <button type="button" class="bolopa-tabel-btn bolopa-tabel-btn-danger bolopa-tabel-btn-action"
-                                onclick="confirmDelete({{ $user->id }}, '{{ addslashes($user->name) }}', '{{ route('backoffice.master-user.destroy', $user->id) }}')"
+                                onclick='confirmDelete({{ $user->id }}, @json($user->name), @json(route("backoffice.master-user.destroy", $user->id)))'
                                 aria-label="Hapus {{ $user->name }}">
                                 <x-admin.icon name="delete" alt="Hapus" size="16" />
                             </button>
