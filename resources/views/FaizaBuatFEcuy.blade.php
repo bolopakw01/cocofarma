@@ -571,7 +571,7 @@
           <div class="product-info">
             <h3>Briket Arang Premium</h3>
             <p>Terbuat dari 100% arang batok kelapa pilihan. Menghasilkan panas tinggi, tanpa asap, tanpa bau, dan durasi pembakaran yang lama. Sangat cocok untuk Shisha & BBQ.</p>
-            <a href="https://wa.me/6281234567890" target="_blank" class="btn-outline-custom">
+            <a href="https://wa.me/6289616374345?text=Halo%20Cocofarma,%20saya%20tertarik%20untuk%20memesan%20produk%20Briket%20Arang%20Premium.%20Bisa%20minta%20informasi%20lebih%20lanjut?" target="_blank" class="btn-outline-custom">
               <i class="fab fa-whatsapp me-2"></i>Pesan
             </a>
           </div>
@@ -586,7 +586,7 @@
           <div class="product-info">
             <h3>Asap Cair Food Grade</h3>
             <p>Pengawet makanan alami yang diproses dengan kondensasi dan filtrasi tingkat tinggi. Sangat aman dikonsumsi untuk memperpanjang umur simpan daging dan ikan.</p>
-            <a href="https://wa.me/6281234567890" target="_blank" class="btn-outline-custom">
+            <a href="https://wa.me/6289616374345?text=Halo%20Cocofarma,%20saya%20tertarik%20untuk%20memesan%20produk%20Asap%20Cair%20Food%20Grade.%20Bisa%20minta%20informasi%20lebih%20lanjut?" target="_blank" class="btn-outline-custom">
               <i class="fab fa-whatsapp me-2"></i>Pesan
             </a>
           </div>
@@ -601,7 +601,7 @@
           <div class="product-info">
             <h3>Asap Cair Penguat Rasa</h3>
             <p>Memberikan aroma asap (smokey flavor) yang khas dan otentik pada masakan Anda tanpa harus melakukan proses pengasapan secara tradisional.</p>
-            <a href="https://wa.me/6281234567890" target="_blank" class="btn-outline-custom">
+            <a href="https://wa.me/6289616374345?text=Halo%20Cocofarma,%20saya%20tertarik%20untuk%20memesan%20produk%20Asap%20Cair%20Penguat%20Rasa.%20Bisa%20minta%20informasi%20lebih%20lanjut?" target="_blank" class="btn-outline-custom">
               <i class="fab fa-whatsapp me-2"></i>Pesan
             </a>
           </div>
@@ -616,7 +616,7 @@
           <div class="product-info">
             <h3>Asap Cair Pertanian</h3>
             <p>Solusi pestisida dan insektisida organik. Sangat efektif membasmi hama tanaman, mengusir tikus, serta memperbaiki kualitas dan keasaman tanah.</p>
-            <a href="https://wa.me/6281234567890" target="_blank" class="btn-outline-custom">
+            <a href="https://wa.me/6289616374345?text=Halo%20Cocofarma,%20saya%20tertarik%20untuk%20memesan%20produk%20Asap%20Cair%20Pertanian.%20Bisa%20minta%20informasi%20lebih%20lanjut?" target="_blank" class="btn-outline-custom">
               <i class="fab fa-whatsapp me-2"></i>Pesan
             </a>
           </div>
@@ -631,7 +631,7 @@
           <div class="product-info">
             <h3>Hensa Hand Sanitizer</h3>
             <p>Pembersih tangan higienis berbahan dasar turunan asap cair organik. Membunuh kuman dan bakteri 99.9% secara instan, aman bagi kulit serta ramah lingkungan.</p>
-            <a href="https://wa.me/6281234567890" target="_blank" class="btn-outline-custom">
+            <a href="https://wa.me/6289616374345?text=Halo%20Cocofarma,%20saya%20tertarik%20untuk%20memesan%20produk%20Hensa%20Hand%20Sanitizer.%20Bisa%20minta%20informasi%20lebih%20lanjut?" target="_blank" class="btn-outline-custom">
               <i class="fab fa-whatsapp me-2"></i>Pesan
             </a>
           </div>
@@ -686,7 +686,7 @@
             <div class="contact-icon"><i class="fas fa-phone-alt"></i></div>
             <div class="contact-text">
               <h5>Telepon / WhatsApp</h5>
-              <p>+62 812 3456 7890<br>Senin - Sabtu, 08:00 - 17:00</p>
+              <p><a href="https://wa.me/6289616374345?text=Halo%20Cocofarma,%20saya%20ingin%20bertanya%20seputar%20produk%20Anda." target="_blank" style="color: var(--primary); text-decoration: none; font-weight: 600;">+62 896-1637-4345</a><br>Senin - Sabtu, 08:00 - 17:00</p>
             </div>
           </div>
 
