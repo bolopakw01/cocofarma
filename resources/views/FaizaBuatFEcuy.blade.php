@@ -1,3 +1,13 @@
+{{-- 
+  ========================================================================
+  PROJECT    : Cocofarma Landing Page
+  AUTHOR     : BolopaKW
+  DATE       : {{ date('Y-m-d') }}
+  DESCRIPTION: Halaman utama (Landing Page) modern untuk produk Briket Arang
+               dan Asap Cair dengan implementasi UI/UX premium, Glassmorphism, 
+               AOS animations, dan Bootstrap 5 ScrollSpy.
+  ======================================================================== 
+--}}
 <!DOCTYPE html>
 <html lang="id">
 <head>
@@ -699,7 +709,7 @@
   <!-- Footer -->
   <footer>
     <div class="container">
-      <p>&copy; 2026 PT Cocofarma Nusantara. All Rights Reserved.</p>
+      <p>&copy; {{ date('Y') }} Cocofarma. All Rights Reserved.</p>
     </div>
   </footer>
 
